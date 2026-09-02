@@ -43,6 +43,7 @@ Local/free restaurant ordering is intended to remain usable later without ARP.to
 ## Documentation
 
 - [Architecture](Documentation/ARCHITECTURE.md)
+- [Domain model](Documentation/DOMAIN_MODEL.md)
 - [Roadmap](Documentation/ROADMAP.md)
 - [Development](Documentation/DEVELOPMENT.md)
 

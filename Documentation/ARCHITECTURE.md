@@ -31,7 +31,7 @@ ARP Restaurant will own restaurant-specific data and presentation:
 - restaurant presentation
 - simple direct ordering
 
-This bootstrap does not implement that domain yet.
+This bootstrap does not implement that domain yet. The 0.1 contract is defined in [DOMAIN_MODEL.md](DOMAIN_MODEL.md): Menu → Category → Placement → Item. Commercial price belongs to Placement via PriceOption. Restaurant identity, structured address, currency, timezone, and semantic page roles live in TYPO3 Site Settings, not in a Restaurant table.
 
 ## Mosaic Gallery
 
@@ -63,4 +63,4 @@ TYPO3 page configuration owns public page paths. Future Restaurant code must ope
 
 External integrations should eventually use stable public identifiers rather than TYPO3 `uid` values.
 
-TYPO3 uids are local to one CMS instance. Public restaurant, menu, item, and order identifiers should be stable across environments and external systems.
+TYPO3 uids are local to one CMS instance. Public restaurant, menu, category, item, placement, and price-option identifiers are UUID values defined in the domain contract. They identify logical localized entities, not physical translation rows. They must stay stable across environments and external systems.

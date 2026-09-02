@@ -16,6 +16,8 @@ Working version: `0.1.0-dev`. This is unreleased bootstrap work. Do not create G
 
 `ext_emconf.php` is kept for TYPO3 13 Classic/TER tooling. Canonical TYPO3 14 Classic-mode metadata lives in `composer.json` (`extra.typo3/cms.version` and `Package.providesPackages`).
 
+The 0.1 domain contract is [DOMAIN_MODEL.md](DOMAIN_MODEL.md). Do not add TCA, SQL, or PHP models until a later implementation task owns that work.
+
 ## Local installation
 
 This repository is an extension, not a full TYPO3 project. To activate it, add it to a TYPO3 13.4 LTS or 14.3 LTS Composer project as a path or VCS repository, require `anatolkin/arp-restaurant`, run `php vendor/bin/typo3 extension:setup`, and add the **ARP Restaurant** Site Set to the site configuration.
