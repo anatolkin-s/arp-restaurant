@@ -102,6 +102,15 @@ The canonical contextual appearance of one Item in one Category.
 
 Owns sort order in that section, visibility in that context, and commercial PriceOptions for that offer. This is the menu-facing occurrence later OrderItem snapshots should cite together with Item and PriceOption identity.
 
+Placement is localization-aware as a **structural** TYPO3 record so connected localization and IRRE can keep:
+
+```
+default Menu → default Category → default Placement
+translated Menu → translated Category → translated Placement
+```
+
+It has no independently translated editorial fields in 0.1. Visible dish names come from the Item overlay.
+
 ### PriceOption
 
 A priced offer row owned by exactly one Placement.
@@ -140,13 +149,13 @@ Placement never points at two menus. Menu membership is always through Category.
 
 Use normal TYPO3 localization and Site Languages. Do not add a custom translation system.
 
-| Entity | Localizable | Translated fields | Language-independent |
+| Entity | Localizable | Translated fields | Language-independent / synchronized |
 |---|---|---|---|
 | Menu | yes | title, description | public UUID, hidden, sorting, starttime/endtime |
-| Category | yes | title, description | public UUID, menu relation, sorting, hidden |
-| Item | yes | title, description, media metadata overlays | public UUID, FAL files |
-| Placement | no | — | all fields; translated Item overlay supplies the name |
-| PriceOption | yes | label only | public UUID, amount, placement relation, sorting |
+| Category | yes | title, description | public UUID, sorting, hidden. Physical menu relation may point to the translated Menu row; logical Menu identity stays synchronized. |
+| Item | yes | title, description, media metadata overlays | public UUID, FAL files (TYPO3-native) |
+| Placement | yes (structural) | none in 0.1 | public UUID; logical Item identity; sorting, visibility, scheduling, and commercial structure stay synchronized with the default-language Placement. Physical category/item relations may point to translated parent rows. |
+| PriceOption | yes | label only (optional) | public UUID, amount. Placement relation and structural/commercial fields stay synchronized with the default-language PriceOption. Physical placement relation may point to the translated Placement row. |
 | OpeningHourPeriod | yes | optional label | weekday, open, close, sorting |
 
 Rules:
@@ -155,7 +164,12 @@ Rules:
 - TYPO3 translations are **separate physical rows** (`sys_language_uid` / `l10n_parent` / `l10n_source`).
 - Connected translations represent the same logical entity and share its public UUID. A translation must not mint a second UUID.
 - Public UUID identifies the logical localized entity, not a physical TYPO3 row. Do not assume `public_uuid` can have a global UNIQUE database constraint across all translated rows.
-- Exact TCA/localization implementation is deferred to DOMAIN-1.
+- Do not require physical `uid` equality across translations. Translated structural relations may point to translated parent rows.
+- Placement is localization-aware so TYPO3 IRRE can maintain translated Menu → Category → Placement trees without custom lookup semantics.
+- A localized Placement is a separate TYPO3 row but the same logical Placement (example: default uid 100 and German uid 145 share one public UUID).
+- Logical Item identity on a Placement stays synchronized across translations.
+- Sorting, visibility, scheduling, and commercial structure of a Placement stay synchronized with the default-language logical Placement.
+- Exact TCA/localization implementation is deferred to DOMAIN-1A.
 - External/API lookup must respect TYPO3 localization and default-language identity.
 - Price amounts and currency are not translated. Currency lives in Site Settings.
 - Opening-hour clock times are not translated.
@@ -246,7 +260,7 @@ Expected on domain tables (TCA later):
 | `hidden` | Yes for Menu, Category, Item, Placement, PriceOption, OpeningHourPeriod. |
 | `starttime` / `endtime` | Menu, Item, Placement (seasonal menus and limited-time dishes). Not used on PriceOption or weekly hours. |
 | `sorting` | Category in Menu, Placement in Category, PriceOption on Placement, OpeningHourPeriod in weekday order. |
-| Localization | As section D. Placement is not localized. |
+| Localization | As section D. Placement is localization-aware as a structural record, with no independently translated editorial fields in 0.1. |
 | `deleted` | Soft delete on all domain tables. |
 | `crdate` / `tstamp` | Standard TYPO3 timestamps. |
 | Media | Item images via FAL `sys_file_reference`. No Mosaic classes or Mosaic-specific fields. |
