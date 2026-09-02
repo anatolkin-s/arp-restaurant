@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en" datatype="plaintext" original="messages" date="2026-09-02T00:00:00Z" product-name="arp_restaurant">
+    <header/>
+    <body>
+      <trans-unit id="field.public_uuid">
+        <source>Public UUID</source>
+      </trans-unit>
+      <trans-unit id="field.public_uuid.description">
+        <source>Stable public identity. Shared by connected translations. Not the TYPO3 uid.</source>
+      </trans-unit>
+      <trans-unit id="field.title">
+        <source>Title</source>
+      </trans-unit>
+      <trans-unit id="field.description">
+        <source>Description</source>
+      </trans-unit>
+      <trans-unit id="field.sorting">
+        <source>Sorting</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_menu">
+        <source>Menu</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_menu.categories">
+        <source>Categories</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_category">
+        <source>Category</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_category.menu">
+        <source>Menu</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_category.placements">
+        <source>Placements</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_item">
+        <source>Item</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_item.images">
+        <source>Images</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_placement">
+        <source>Placement</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_placement.category">
+        <source>Category</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_placement.item">
+        <source>Item</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_placement.price_options">
+        <source>Price options</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption">
+        <source>Price option</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption.label">
+        <source>Label</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption.label.description">
+        <source>Optional. Leave empty for a simple price. Use for variants such as Small, Large, Glass, or Bottle.</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption.amount">
+        <source>Amount (minor units)</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption.amount.description">
+        <source>Store the price as an integer in minor units of the restaurant currency. 1600 = 16.00, 1250 = 12.50. Currency is not stored on this field.</source>
+      </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption.placement">
+        <source>Placement</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
