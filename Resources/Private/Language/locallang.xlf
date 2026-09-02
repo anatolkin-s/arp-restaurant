@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en" datatype="plaintext" original="messages" date="2026-09-02T00:00:00Z" product-name="arp_restaurant">
+    <header/>
+    <body>
+      <trans-unit id="extension.title">
+        <source>ARP Restaurant</source>
+      </trans-unit>
+      <trans-unit id="extension.description">
+        <source>Restaurant domain and presentation foundation for TYPO3 CMS.</source>
+      </trans-unit>
+      <trans-unit id="settings.category.restaurant">
+        <source>ARP Restaurant</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

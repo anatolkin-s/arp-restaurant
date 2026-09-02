@@ -1,0 +1,40 @@
+{
+    "name": "anatolkin/arp-restaurant",
+    "description": "ARP Restaurant - Restaurant domain and presentation foundation for TYPO3 CMS 13.4 LTS and 14.3 LTS",
+    "type": "typo3-cms-extension",
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "typo3",
+        "restaurant",
+        "menu",
+        "cms"
+    ],
+    "authors": [
+        {
+            "name": "Sergey Fedorov",
+            "email": "typo3@anatolkin.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2 <8.6",
+        "typo3/cms-core": "^13.4 || ^14.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Anatolkin\\ArpRestaurant\\": "Classes/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "arp_restaurant",
+            "version": "0.1.0-dev",
+            "Package": {
+                "providesPackages": {}
+            }
+        }
+    },
+    "support": {
+        "issues": "https://github.com/anatolkin-s/arp-restaurant/issues",
+        "source": "https://github.com/anatolkin-s/arp-restaurant"
+    }
+}

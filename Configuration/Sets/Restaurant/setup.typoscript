@@ -1,0 +1,4 @@
+# ARP Restaurant Site Set (bootstrap)
+# No frontend plugins, page paths, or domain TypoScript are defined yet.
+# Future TypoScript must resolve restaurant pages via semantic site settings /
+# page UIDs, never via hardcoded public paths.

@@ -1,0 +1,8 @@
+# Bootstrap placeholder. Restaurant site settings will be defined in later milestones.
+# Do not encode public page paths here. TYPO3 page configuration owns public URLs.
+# Future settings should use semantic page roles (page UIDs), not literal URL paths.
+categories:
+  ArpRestaurant:
+    label: 'ARP Restaurant'
+
+settings: {}

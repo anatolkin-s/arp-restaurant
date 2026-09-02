@@ -1,0 +1,4 @@
+# Bootstrap defaults. No restaurant settings are active yet.
+# Future settings must use semantic page roles / page UIDs, never hardcoded public
+# paths such as /menu, /gallery, /contact, /order, or /item.
+{}
