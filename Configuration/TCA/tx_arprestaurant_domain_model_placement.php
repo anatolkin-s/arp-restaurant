@@ -30,6 +30,8 @@ return [
         'title' => $lll . 'tx_arprestaurant_domain_model_placement',
         'label' => 'item',
         'label_alt' => 'public_uuid',
+        'label_userFunc' => \Anatolkin\ArpRestaurant\Backend\RecordLabel\RecordLabelProvider::class . '->getPlacementTitle',
+        'formattedLabel_userFunc' => \Anatolkin\ArpRestaurant\Backend\RecordLabel\RecordLabelProvider::class . '->getPlacementTitle',
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
         'delete' => 'deleted',

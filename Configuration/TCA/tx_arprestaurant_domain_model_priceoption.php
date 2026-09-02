@@ -11,6 +11,8 @@ return [
         'title' => $lll . 'tx_arprestaurant_domain_model_priceoption',
         'label' => 'label',
         'label_alt' => 'amount',
+        'label_userFunc' => \Anatolkin\ArpRestaurant\Backend\RecordLabel\RecordLabelProvider::class . '->getPriceOptionTitle',
+        'formattedLabel_userFunc' => \Anatolkin\ArpRestaurant\Backend\RecordLabel\RecordLabelProvider::class . '->getPriceOptionTitle',
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
         'delete' => 'deleted',

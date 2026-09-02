@@ -66,6 +66,9 @@
       <trans-unit id="tx_arprestaurant_domain_model_priceoption.amount.description">
         <source>Store the price as an integer in minor units of the restaurant currency. 1600 = 16.00, 1250 = 12.50. Currency is not stored on this field.</source>
       </trans-unit>
+      <trans-unit id="tx_arprestaurant_domain_model_priceoption.amountFallback">
+        <source>%s minor units</source>
+      </trans-unit>
       <trans-unit id="tx_arprestaurant_domain_model_priceoption.placement">
         <source>Placement</source>
       </trans-unit>

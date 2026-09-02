@@ -38,6 +38,7 @@ return [
         'translationSource' => 'l10n_source',
         'transOrigDiffSourceField' => 'l10n_diffsource',
         'versioningWS' => true,
+        'hideTable' => true,
         'default_sortby' => 'title',
         'enablecolumns' => [
             'disabled' => 'hidden',

@@ -9,3 +9,6 @@ services:
     exclude:
       - '../Classes/Domain/Model/*'
       - '../Classes/README.md'
+
+  Anatolkin\ArpRestaurant\Backend\RecordLabel\RecordLabelProvider:
+    public: true
