@@ -125,4 +125,8 @@ Not in this milestone: identity resolution, Apply, DataHandler, QueryBuilder wri
 
 Accepted on TYPO3 13.4.34 and TYPO3 14.3.6 at extension SHA `bd53dbe9acd08ac1df96113747027f0ed59502ae`.
 
-Editable temporary draft, server revalidation, Restore order vs Reset draft, Variant-run warnings/errors, and Fluid accessor collision fixes are live-accepted. No restaurant-record writes, no DataHandler, DB unchanged. Identity resolution and Apply remain later work: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md).
+Editable temporary draft, server revalidation, Restore order vs Reset draft, Variant-run warnings/errors, and Fluid accessor collision fixes are live-accepted. No restaurant-record writes, no DataHandler, DB unchanged.
+
+### EDITOR-2B2 — REPO IMPLEMENTED / READ-ONLY / NO WRITES
+
+Explicit POST `bulkIdentityResolve` revalidates the posted draft, then performs pid-scoped QueryBuilder SELECTs for target Menu / Item / Category identity. Outcomes are `identityResolved` or `resolutionBlocked` with create/reuse/ambiguous statuses, last-seen snapshots, and a future create/reuse summary. No Apply button, no DataHandler, no restaurant-record writes, no `Item.sku` / `Placement.menu_code`. Runtime acceptance on TYPO3 13/14 is pending.

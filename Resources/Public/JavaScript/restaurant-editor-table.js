@@ -232,10 +232,14 @@
             root.classList.add('arp-editor-draft--stale');
             const dirty = root.querySelector('[data-arp-draft-dirty]');
             const serverStatus = root.querySelectorAll('[data-arp-server-status]');
+            const identityBadges = root.querySelectorAll('[data-arp-identity-badge]');
             if (dirty) {
                 dirty.hidden = false;
             }
             serverStatus.forEach((node) => {
+                node.hidden = true;
+            });
+            identityBadges.forEach((node) => {
                 node.hidden = true;
             });
         }

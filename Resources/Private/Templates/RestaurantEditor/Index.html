@@ -235,6 +235,60 @@
                                         </p>
                                     </f:then>
                                 </f:if>
+                                <f:if condition="{bulk.identity}">
+                                    <div class="arp-editor-identity" data-arp-identity-resolution="1" data-arp-server-status="1">
+                                        <f:if condition="{bulk.identity.outcome} == 'identityResolved'">
+                                            <f:then>
+                                                <p class="typo3-message message-ok">
+                                                    <f:translate key="{lll}bulk.identity.resolved"/>
+                                                </p>
+                                            </f:then>
+                                            <f:else>
+                                                <p class="typo3-message message-error">
+                                                    <f:translate key="{lll}bulk.identity.blocked"/>
+                                                </p>
+                                                <f:for each="{bulk.identity.blockers}" as="blocker">
+                                                    <p class="arp-editor-note">
+                                                        <f:switch expression="{blocker.code}">
+                                                            <f:case value="ambiguousItem"><f:translate key="{lll}bulk.identity.blocker.ambiguousItem" arguments="{0: blocker.normalizedTitle, 1: blocker.matchCount}"/></f:case>
+                                                            <f:case value="ambiguousCategory"><f:translate key="{lll}bulk.identity.blocker.ambiguousCategory" arguments="{0: blocker.normalizedTitle, 1: blocker.matchCount}"/></f:case>
+                                                            <f:case value="missingTargetMenu"><f:translate key="{lll}bulk.identity.blocker.missingTargetMenu"/></f:case>
+                                                            <f:case value="wrongPidTargetMenu"><f:translate key="{lll}bulk.identity.blocker.wrongPidTargetMenu"/></f:case>
+                                                            <f:case value="translatedTargetMenu"><f:translate key="{lll}bulk.identity.blocker.translatedTargetMenu"/></f:case>
+                                                            <f:case value="unusableTargetMenuUuid"><f:translate key="{lll}bulk.identity.blocker.unusableTargetMenuUuid"/></f:case>
+                                                            <f:case value="missingPublicUuid"><f:translate key="{lll}bulk.identity.blocker.missingPublicUuid" arguments="{0: blocker.entityKind, 1: blocker.normalizedTitle}"/></f:case>
+                                                            <f:case value="nonLiveWorkspace"><f:translate key="{lll}bulk.identity.blocker.nonLiveWorkspace"/></f:case>
+                                                            <f:case value="pageContentEditDenied"><f:translate key="{lll}bulk.identity.blocker.pageContentEditDenied"/></f:case>
+                                                            <f:case value="tablesModifyDenied"><f:translate key="{lll}bulk.identity.blocker.tablesModifyDenied"/></f:case>
+                                                            <f:defaultCase><f:translate key="{lll}bulk.identity.blocked"/></f:defaultCase>
+                                                        </f:switch>
+                                                    </p>
+                                                </f:for>
+                                            </f:else>
+                                        </f:if>
+                                        <f:if condition="{bulk.identity.targetMenu}">
+                                            <p class="arp-editor-note">
+                                                <f:translate key="{lll}bulk.identity.target" arguments="{0: bulk.identity.targetMenu.title}"/>
+                                            </p>
+                                        </f:if>
+                                        <f:if condition="{bulk.identity.categoryResolutions} || {bulk.identity.itemResolutions}">
+                                            <div class="arp-editor-identity-summary">
+                                                <p class="arp-editor-identity-summary__title"><f:translate key="{lll}bulk.identity.summaryHeading"/></p>
+                                                <p class="arp-editor-note">
+                                                    <f:translate key="{lll}bulk.identity.summaryCreate" arguments="{0: bulk.identity.summary.createCategories, 1: bulk.identity.summary.createItems, 2: bulk.identity.summary.createPlacements, 3: bulk.identity.summary.createPriceOptions}"/>
+                                                </p>
+                                                <p class="arp-editor-note">
+                                                    <f:translate key="{lll}bulk.identity.summaryReuse" arguments="{0: bulk.identity.summary.reuseCategories, 1: bulk.identity.summary.reuseItems}"/>
+                                                </p>
+                                                <f:if condition="{bulk.identity.summary.ambiguousCategories} || {bulk.identity.summary.ambiguousItems}">
+                                                    <p class="arp-editor-note">
+                                                        <f:translate key="{lll}bulk.identity.summaryAmbiguous" arguments="{0: bulk.identity.summary.ambiguousCategories, 1: bulk.identity.summary.ambiguousItems}"/>
+                                                    </p>
+                                                </f:if>
+                                            </div>
+                                        </f:if>
+                                    </div>
+                                </f:if>
                                 <p class="typo3-message message-notice" data-arp-draft-dirty="1" hidden="hidden">
                                     <f:translate key="{lll}bulk.draftChanged"/>
                                 </p>
@@ -262,6 +316,7 @@
                                     <input type="hidden" name="menu" value="{bulk.menuUid}"/>
                                     <input type="hidden" name="formToken" value="{bulk.revalidateToken}"/>
                                     <input type="hidden" name="resetToken" value="{bulk.resetToken}"/>
+                                    <input type="hidden" name="resolveToken" value="{bulk.resolveToken}"/>
                                     <textarea name="bulkSource" hidden="hidden">{bulk.rawInput}</textarea>
                                     <div class="arp-editor-table-wrap">
                                         <table class="arp-editor-table arp-editor-table--preview" data-arp-editor-table="1" data-arp-draft="1">
@@ -310,12 +365,18 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <f:for each="{bulk.draft.rows}" as="row">
+                                                <f:for each="{bulk.draft.rows}" as="row" iteration="rowIterator">
                                                     <f:variable name="categoryErrorClass" value=""/>
                                                     <f:variable name="itemErrorClass" value=""/>
                                                     <f:variable name="variantErrorClass" value=""/>
                                                     <f:variable name="priceErrorClass" value=""/>
                                                     <f:variable name="variantWarningClass" value=""/>
+                                                    <f:variable name="categoryResolution" value=""/>
+                                                    <f:variable name="itemResolution" value=""/>
+                                                    <f:if condition="{bulk.identity}">
+                                                        <f:variable name="categoryResolution" value="{bulk.identity.boundRows.{rowIterator.index}.categoryResolution}"/>
+                                                        <f:variable name="itemResolution" value="{bulk.identity.boundRows.{rowIterator.index}.itemResolution}"/>
+                                                    </f:if>
                                                     <f:for each="{row.errors}" as="errorCode">
                                                         <f:if condition="{errorCode} == 'missingCategory'">
                                                             <f:variable name="categoryErrorClass" value="arp-editor-cell--error"/>
@@ -350,6 +411,16 @@
                                                                 maxlength="255"
                                                                 autocomplete="off"
                                                             />
+                                                            <f:if condition="{categoryResolution}">
+                                                                <span class="arp-editor-identity-badge" data-arp-identity-badge="1">
+                                                                    <f:switch expression="{categoryResolution.status}">
+                                                                        <f:case value="create"><f:translate key="{lll}bulk.identity.badge.create"/></f:case>
+                                                                        <f:case value="reuse"><f:translate key="{lll}bulk.identity.badge.reuse"/></f:case>
+                                                                        <f:case value="ambiguous"><f:translate key="{lll}bulk.identity.badge.ambiguous" arguments="{0: categoryResolution.matchCount}"/></f:case>
+                                                                        <f:case value="inaccessible"><f:translate key="{lll}bulk.identity.badge.inaccessible"/></f:case>
+                                                                    </f:switch>
+                                                                </span>
+                                                            </f:if>
                                                         </td>
                                                         <td data-arp-col="item" class="{itemErrorClass}">
                                                             <input
@@ -360,6 +431,16 @@
                                                                 maxlength="255"
                                                                 autocomplete="off"
                                                             />
+                                                            <f:if condition="{itemResolution}">
+                                                                <span class="arp-editor-identity-badge" data-arp-identity-badge="1">
+                                                                    <f:switch expression="{itemResolution.status}">
+                                                                        <f:case value="create"><f:translate key="{lll}bulk.identity.badge.create"/></f:case>
+                                                                        <f:case value="reuse"><f:translate key="{lll}bulk.identity.badge.reuse"/></f:case>
+                                                                        <f:case value="ambiguous"><f:translate key="{lll}bulk.identity.badge.ambiguous" arguments="{0: itemResolution.matchCount}"/></f:case>
+                                                                        <f:case value="inaccessible"><f:translate key="{lll}bulk.identity.badge.inaccessible"/></f:case>
+                                                                    </f:switch>
+                                                                </span>
+                                                            </f:if>
                                                         </td>
                                                         <td data-arp-col="variant" class="{variantErrorClass} {variantWarningClass}">
                                                             <input
@@ -434,6 +515,9 @@
                                     <p class="arp-editor-draft-actions">
                                         <button type="submit" name="bulkDraftRevalidate" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.revalidate"/>
+                                        </button>
+                                        <button type="submit" name="bulkIdentityResolve" value="1" class="btn btn-default">
+                                            <f:translate key="{lll}bulk.resolveIdentities"/>
                                         </button>
                                         <button type="submit" name="bulkDraftReset" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.resetDraft"/>

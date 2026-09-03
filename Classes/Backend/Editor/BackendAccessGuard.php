@@ -48,4 +48,35 @@ final class BackendAccessGuard
 
         return true;
     }
+
+    /**
+     * Conservative FUTURE-APPLY preflight for identity resolution.
+     * Does not write. DataHandler remains final permission authority later.
+     *
+     * @param array<string, mixed> $pageRow page row already readable via readPage()
+     * @return string empty when OK; otherwise a blocker code
+     */
+    public function futureApplyPermissionBlocker(
+        array $pageRow,
+        BackendUserAuthentication $backendUser,
+    ): string {
+        if ((int)$backendUser->workspace !== 0) {
+            return 'nonLiveWorkspace';
+        }
+
+        if (
+            !$backendUser->isAdmin()
+            && !$backendUser->doesUserHaveAccess($pageRow, Permission::CONTENT_EDIT)
+        ) {
+            return 'pageContentEditDenied';
+        }
+
+        foreach (self::REQUIRED_TABLES as $table) {
+            if (!$backendUser->check('tables_modify', $table)) {
+                return 'tablesModifyDenied';
+            }
+        }
+
+        return '';
+    }
 }

@@ -6,9 +6,13 @@ namespace Anatolkin\ArpRestaurant\Backend\Controller;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendAccessGuard;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendRecordEditUrlBuilder;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidator;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkPreviewView;
+use Anatolkin\ArpRestaurant\Backend\Editor\Identity\BulkIdentityResolutionResult;
+use Anatolkin\ArpRestaurant\Backend\Editor\Identity\BulkIdentityResolver;
+use Anatolkin\ArpRestaurant\Backend\Editor\Identity\RestaurantIdentityReader;
 use Anatolkin\ArpRestaurant\Backend\Editor\MenuGraphReader;
 use Anatolkin\ArpRestaurant\Backend\Editor\ModuleLinkButtonFactory;
 use Anatolkin\ArpRestaurant\Backend\Editor\ViewModel\EditorScreen;
@@ -34,6 +38,7 @@ final class RestaurantEditorController
     private const BULK_PREVIEW_ACTION = 'bulkPreview';
     private const BULK_REVALIDATE_ACTION = 'bulkDraftRevalidate';
     private const BULK_RESET_ACTION = 'bulkDraftReset';
+    private const BULK_RESOLVE_ACTION = 'bulkIdentityResolve';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -45,6 +50,8 @@ final class RestaurantEditorController
         private readonly FormProtectionFactory $formProtectionFactory,
         private readonly BulkMenuParser $bulkMenuParser,
         private readonly BulkDraftValidator $bulkDraftValidator,
+        private readonly RestaurantIdentityReader $identityReader,
+        private readonly BulkIdentityResolver $identityResolver,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -100,20 +107,29 @@ final class RestaurantEditorController
 
         $activeMenuUid = $screen->selectedMenu->uid ?? $requestedMenuUid;
         $moduleTemplate->assign('screen', $screen);
-        $moduleTemplate->assign('bulk', $this->buildBulkPreview($request, $pid, $activeMenuUid));
+        $moduleTemplate->assign(
+            'bulk',
+            $this->buildBulkPreview($request, $pid, $activeMenuUid, $page, $backendUser)
+        );
 
         return $moduleTemplate->renderResponse('RestaurantEditor/Index');
     }
 
+    /**
+     * @param array<string, mixed> $page
+     */
     private function buildBulkPreview(
         ServerRequestInterface $request,
         int $pid,
         int $menuUid,
+        array $page,
+        BackendUserAuthentication $backendUser,
     ): BulkPreviewView {
         $formProtection = $this->formProtectionFactory->createFromRequest($request);
         $previewToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_PREVIEW_ACTION);
         $revalidateToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_REVALIDATE_ACTION);
         $resetToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESET_ACTION);
+        $resolveToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESOLVE_ACTION);
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
@@ -123,11 +139,13 @@ final class RestaurantEditorController
         $parseGlobalError = '';
         $draft = null;
         $requestError = '';
+        $identity = null;
 
         $body = $request->getParsedBody();
         $isPreviewPost = is_array($body) && isset($body['bulkPreview']);
         $isResetPost = is_array($body) && isset($body['bulkDraftReset']);
         $isRevalidatePost = is_array($body) && isset($body['bulkDraftRevalidate']);
+        $isResolvePost = is_array($body) && isset($body['bulkIdentityResolve']);
         if ($isPreviewPost) {
             $rawInput = (string)($body['bulkPaste'] ?? '');
             $submittedToken = (string)($body['formToken'] ?? '');
@@ -162,6 +180,24 @@ final class RestaurantEditorController
             } else {
                 $draft = $this->bulkDraftValidator->validatePosted($body['rows'] ?? null);
             }
+        } elseif ($isResolvePost) {
+            $rawInput = (string)($body['bulkSource'] ?? '');
+            $submittedToken = (string)($body['resolveToken'] ?? '');
+            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_RESOLVE_ACTION)) {
+                $requestError = 'invalidCsrf';
+            } else {
+                $draft = $this->bulkDraftValidator->validatePosted($body['rows'] ?? null);
+                if ($draft->isDraftValid()) {
+                    $claimedMenuUid = (int)($body['menu'] ?? 0);
+                    $identity = $this->resolveIdentities(
+                        $draft,
+                        $pid,
+                        $claimedMenuUid,
+                        $page,
+                        $backendUser,
+                    );
+                }
+            }
         }
 
         return new BulkPreviewView(
@@ -169,6 +205,7 @@ final class RestaurantEditorController
             previewToken: $previewToken,
             revalidateToken: $revalidateToken,
             resetToken: $resetToken,
+            resolveToken: $resolveToken,
             rawInput: $rawInput,
             parseGlobalError: $parseGlobalError,
             draft: $draft,
@@ -177,6 +214,67 @@ final class RestaurantEditorController
             menuUid: $menuUid,
             maxBytes: BulkMenuParser::DEFAULT_MAX_BYTES,
             maxRows: BulkMenuParser::DEFAULT_MAX_ROWS,
+            identity: $identity,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     */
+    private function resolveIdentities(
+        BulkDraftValidationResult $draft,
+        int $pid,
+        int $claimedMenuUid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+    ): BulkIdentityResolutionResult {
+        $permissionBlocker = $this->accessGuard->futureApplyPermissionBlocker($page, $backendUser);
+        if ($permissionBlocker !== '') {
+            return $this->identityResolver->resolve(
+                $draft,
+                null,
+                [],
+                [],
+                $permissionBlocker,
+            );
+        }
+
+        $menuLookup = $this->identityReader->lookupTargetMenu($pid, $claimedMenuUid, $backendUser);
+        if ($menuLookup->snapshot === null) {
+            return $this->identityResolver->resolve(
+                $draft,
+                null,
+                [],
+                [],
+                '',
+                $menuLookup->blocker !== '' ? $menuLookup->blocker : 'missingTargetMenu',
+            );
+        }
+
+        $itemTitles = [];
+        $categoryTitles = [];
+        foreach ($draft->rows as $row) {
+            $itemTitles[$row->item] = $row->item;
+            $categoryTitles[$row->category] = $row->category;
+        }
+
+        $itemCandidates = $this->identityReader->findItemCandidates(
+            $pid,
+            array_values($itemTitles),
+            $backendUser,
+        );
+        $categoryCandidates = $this->identityReader->findCategoryCandidates(
+            $pid,
+            $menuLookup->snapshot->uid,
+            array_values($categoryTitles),
+            $backendUser,
+        );
+
+        return $this->identityResolver->resolve(
+            $draft,
+            $menuLookup->snapshot,
+            $itemCandidates,
+            $categoryCandidates,
         );
     }
 

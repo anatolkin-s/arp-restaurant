@@ -4,7 +4,7 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: **DESIGN ONLY** for Apply / identity / DataHandler. Current runtime remains read-only for restaurant records.
+Status: **DESIGN ONLY** for Apply / DataHandler writes. EDITOR-2B2 implements **read-only** identity resolution. Restaurant records remain unwritten.
 
 ## EDITOR-2B1 implementation status
 
@@ -43,6 +43,25 @@ Canonical identity remains [DOMAIN_MODEL.md](DOMAIN_MODEL.md) section E. This co
 
 Supported TYPO3 lines: **13.4 LTS** and **14.3 LTS**.
 
+## EDITOR-2B2 implementation status
+
+EDITOR-2B2 adds **read-only** identity resolution after DraftValid:
+
+| Implemented | Not implemented |
+|---|---|
+| Explicit POST `bulkIdentityResolve` (dedicated CSRF) | Apply / Import / Save / `ApplyReady` |
+| Revalidate posted draft before any identity read | DataHandler, QueryBuilder writes, Extbase writes |
+| Target Menu re-resolved by uid+pid+default language | Menu creation |
+| Item CREATE / REUSE / AMBIGUOUS (pid-wide, case-sensitive PHP) | `Item.sku`, `Placement.menu_code` |
+| Category CREATE / REUSE / AMBIGUOUS (target Menu only) | `public_uuid` minting or repair |
+| Last-seen `uid` / `public_uuid` / `tstamp` / `pid` snapshots on REUSE | POS / ARP.top integrations |
+| Future create/reuse/ambiguous summary + Placement/PriceOption counts | Automatic resolution on Preview/load/typing |
+| Compact Create/Reuse/Ambiguous badges; no Apply button | |
+
+Missing/unusable `public_uuid` on a sole REUSE candidate fails closed (`inaccessible` + blocker). Outcomes are `identityResolved` or `resolutionBlocked` — not ApplyReady. Future Apply must re-check concurrency and access.
+
+Transitions that **must not** write still include: parse, preview, cell edit, search, sort, restore order, reset, revalidate, **and** identity resolution.
+
 ---
 
 ## Current audit (as of this document)
@@ -52,10 +71,12 @@ Inspected in-repo sources, not a live DataHandler run:
 - TCA: Menu → IRRE Category → IRRE Placement → reusable Item + IRRE PriceOption. `public_uuid` is TCA `type=uuid` v4, required, `l10n_mode=exclude`. All five tables have `tstamp`, `deleted`, `versioningWS`, localization fields. No title UNIQUE. No `UNIQUE(category,item)`. No `sku` / `menu_code` columns.
 - `BulkMenuParser` / `BulkMenuRow`: TSV parse + validate only. No database. One pasted row is one preview row, not an Item.
 - `BulkDraftValidator` / `BulkDraftRow`: POST `bulkDraftRevalidate` rebuilds normalized draft state (trim, `DecimalMinorUnitParser`, consecutive Category+Item run rules). No QueryBuilder identity lookup. No writes.
-- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` is CSRF-protected parse; POST `bulkDraftRevalidate` is a separate CSRF-protected draft check; POST `bulkDraftReset` rebuilds the draft from preserved TSV. No DataHandler. Module `workspaces: live`.
+- `RestaurantIdentityReader`: QueryBuilder **SELECT only** for target Menu + Item/Category title candidates (DeletedRestriction, WorkspaceRestriction, `sys_language_uid=0`, selected pid; Categories constrained to target Menu). Hidden/scheduled included. Final title equality is PHP `===` after trim.
+- `BulkIdentityResolver`: pure CREATE/REUSE/AMBIGUOUS decisions + summary counts; unit-tested without DB.
+- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` / `bulkDraftRevalidate` / `bulkDraftReset` / `bulkIdentityResolve` are separate CSRF actions. No DataHandler. Module `workspaces: live`.
 - `MenuGraphReader`: default language (`sys_language_uid=0`), selected pid only, deleted excluded, hidden/scheduled included. Item reads are pid-bounded.
-- `BackendAccessGuard`: page show + `tables_select` on all five restaurant tables. Fail closed.
-- Fluid table: read projection. `#` is transient view state.
+- `BackendAccessGuard`: page show + `tables_select` for module open; identity resolution adds future-Apply preflight (`CONTENT_EDIT`, `tables_modify`, live workspace). Fail closed. DataHandler remains final write authority later.
+- Fluid table: read projection. `#` is transient view state. Identity badges/summary are stale after draft cell edits until Resolve again.
 
 DOMAIN-1A is not redesigned. One pasted commercial row is **not** automatically one Item. Item stays reusable identity. Placement stays the occurrence in a Category. PriceOption stays the commercial variant/price on that Placement.
 

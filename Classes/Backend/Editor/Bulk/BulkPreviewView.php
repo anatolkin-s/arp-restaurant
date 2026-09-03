@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Anatolkin\ArpRestaurant\Backend\Editor\Bulk;
 
+use Anatolkin\ArpRestaurant\Backend\Editor\Identity\BulkIdentityResolutionResult;
+
 final readonly class BulkPreviewView
 {
     public function __construct(
@@ -11,6 +13,7 @@ final readonly class BulkPreviewView
         public string $previewToken,
         public string $revalidateToken,
         public string $resetToken,
+        public string $resolveToken,
         public string $rawInput,
         public string $parseGlobalError,
         public ?BulkDraftValidationResult $draft,
@@ -19,5 +22,6 @@ final readonly class BulkPreviewView
         public int $menuUid,
         public int $maxBytes,
         public int $maxRows,
+        public ?BulkIdentityResolutionResult $identity = null,
     ) {}
 }

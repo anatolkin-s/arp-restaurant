@@ -106,7 +106,7 @@
         <source>Bulk paste</source>
       </trans-unit>
       <trans-unit id="bulk.previewOnly">
-        <source>Temporary draft only. Parsed and edited rows stay in this request; nothing is written to the database.</source>
+        <source>Temporary draft only. Parsed and edited rows stay in this request until Apply (not available yet). Resolve identities reads stored titles but does not write.</source>
       </trans-unit>
       <trans-unit id="bulk.help">
         <source>Paste tab-separated columns in this order: Category, Item, Variant, Price. A header row with those names is optional. Variant may be blank. At most 200 data rows and 64 KiB.</source>
@@ -126,11 +126,77 @@
       <trans-unit id="bulk.resetDraft">
         <source>Reset draft</source>
       </trans-unit>
+      <trans-unit id="bulk.resolveIdentities">
+        <source>Resolve identities</source>
+      </trans-unit>
       <trans-unit id="bulk.draftValid">
         <source>Draft is valid. Identity resolution has not been performed yet.</source>
       </trans-unit>
       <trans-unit id="bulk.draftChanged">
         <source>Draft changed — revalidate.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.resolved">
+        <source>Identity resolution complete. Nothing was written.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocked">
+        <source>Identity resolution blocked.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.target">
+        <source>Target: %s</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.summaryHeading">
+        <source>Identity resolution</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.summaryCreate">
+        <source>Create: %1$d Categories, %2$d Items, %3$d Placements, %4$d Price options</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.summaryReuse">
+        <source>Reuse: %1$d Categories, %2$d Items</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.summaryAmbiguous">
+        <source>Ambiguous: %1$d Categories, %2$d Items</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.badge.create">
+        <source>Create</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.badge.reuse">
+        <source>Reuse</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.badge.ambiguous">
+        <source>Ambiguous (%s)</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.badge.inaccessible">
+        <source>Blocked</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.ambiguousItem">
+        <source>Ambiguous Item: %1$s — %2$d matches.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.ambiguousCategory">
+        <source>Ambiguous Category: %1$s — %2$d matches.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.missingTargetMenu">
+        <source>Target Menu is missing or inaccessible.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.wrongPidTargetMenu">
+        <source>Target Menu is not on the selected page.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.translatedTargetMenu">
+        <source>Target Menu must be the default-language record.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.unusableTargetMenuUuid">
+        <source>Target Menu has a missing or unusable public UUID.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.missingPublicUuid">
+        <source>Reuse candidate %1$s “%2$s” has a missing or unusable public UUID.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.nonLiveWorkspace">
+        <source>Identity resolution requires the live workspace.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.pageContentEditDenied">
+        <source>You can view this page, but future Apply would require page content edit permission.</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.blocker.tablesModifyDenied">
+        <source>You can read restaurant tables, but future Apply would require modify permission on all restaurant tables.</source>
       </trans-unit>
       <trans-unit id="bulk.summary">
         <source>%1$d valid row(s), %2$d invalid row(s). Nothing was saved.</source>
@@ -145,7 +211,7 @@
         <source>valid</source>
       </trans-unit>
       <trans-unit id="bulk.error.invalidCsrf">
-        <source>The request could not be verified. Use Preview, Revalidate draft, or Reset draft again.</source>
+        <source>The request could not be verified. Use Preview, Revalidate draft, Resolve identities, or Reset draft again.</source>
       </trans-unit>
       <trans-unit id="bulk.error.emptyPaste">
         <source>Paste at least one data row.</source>
