@@ -64,3 +64,5 @@ TYPO3 page configuration owns public page paths. Future Restaurant code must ope
 External integrations should eventually use stable public identifiers rather than TYPO3 `uid` values.
 
 TYPO3 uids are local to one CMS instance. Public restaurant, menu, category, item, placement, and price-option identifiers are UUID values defined in the domain contract. They identify logical localized entities, not physical translation rows. They must stay stable across environments and external systems.
+
+A default-language business copy receives a new logical UUID. Connected translations of that copy share the new UUID. `t3_origuid` may still record TYPO3 copy provenance; it is not the public business identity.

@@ -193,6 +193,13 @@ OpeningHourPeriod has **no** public UUID in 0.1. It is weekly schedule data, not
 - Localization overlays share the parent UUID. They are separate rows, so uniqueness is logical (default-language identity), not a global UNIQUE over every language row.
 - Copies/duplicates receive a new UUID.
 
+Copy semantics:
+
+- A default-language business copy creates a new logical UUID.
+- Connected translations of that copy share the new UUID.
+- `t3_origuid` may retain TYPO3 copy provenance.
+- `public_uuid` represents business identity, not copy provenance.
+
 Orders and OrderItems are out of scope for 0.1. When ordering is designed later, an OrderItem snapshot should be able to reference/copy:
 
 - Item public UUID

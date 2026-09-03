@@ -12,3 +12,6 @@ services:
 
   Anatolkin\ArpRestaurant\Backend\RecordLabel\RecordLabelProvider:
     public: true
+
+  Anatolkin\ArpRestaurant\Backend\DataHandling\CopiedTranslationUuidHook:
+    public: true

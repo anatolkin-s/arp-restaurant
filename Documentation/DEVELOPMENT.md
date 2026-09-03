@@ -32,6 +32,18 @@ composer validate --strict
 
 Also check JSON/YAML/XML/PHP syntax of the shipped metadata files. TYPO3 runtime activation cannot be verified here until a TYPO3 test installation exists.
 
+Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner exercises the isolated decision logic; it is not a full DataHandler functional suite.
+
+## Copy UUID lifecycle
+
+Deep copy of connected translations is corrected after DataHandler `process_cmdmap()` finishes.
+
+Hook: `$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass']` implementing `processCmdmap_afterFinish()`. That method exists on TYPO3 13.4 and 14.3 and runs after `remapListedDBRecords()` / `processRemapStack()`, so copied `l10n_parent` values are already remapped.
+
+Copied destination UIDs come from `DataHandler::$copyMappingArray_merged`. TYPO3 Explained documents this public property as the source→copy UID map. DataHandler marks it `@internal` and neither 13.4 nor 14.3 expose a public getter, so access is isolated in `CopiedTranslationUuidHook`. Do not read `$copyMappingArray`; Core clears it between copy operations.
+
+The hook writes only `public_uuid` via QueryBuilder. It does not start a nested DataHandler, and it does not change localization, Item reuse, or structural fields.
+
 ## Out of scope until later milestones
 
 Do not add in bootstrap follow-up work unless a later task owns it:
