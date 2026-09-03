@@ -35,7 +35,7 @@
                 <f:if condition="{screen.selectedMenu.categories}">
                     <f:then>
                         <f:for each="{screen.selectedMenu.categories}" as="category">
-                            <details class="arp-editor-category" open>
+                            <details class="arp-editor-block" open>
                                 <summary>
                                     <span class="arp-editor-category-title">{category.title}</span>
                                     <f:if condition="{category.editUrl}">
@@ -49,7 +49,13 @@
                                 <f:if condition="{category.placements}">
                                     <f:then>
                                         <div class="arp-editor-table-wrap">
-                                            <table class="arp-editor-table">
+                                            <table class="arp-editor-table arp-editor-table--saved">
+                                                <colgroup>
+                                                    <col class="arp-editor-col arp-editor-col--item"/>
+                                                    <col class="arp-editor-col arp-editor-col--variant"/>
+                                                    <col class="arp-editor-col arp-editor-col--price"/>
+                                                    <col class="arp-editor-col arp-editor-col--status"/>
+                                                </colgroup>
                                                 <thead>
                                                     <tr>
                                                         <th><f:translate key="{lll}column.item"/></th>
@@ -162,42 +168,61 @@
                                 <f:translate key="{lll}bulk.summary" arguments="{0: bulk.result.validCount, 1: bulk.result.invalidCount}"/>
                             </p>
                             <f:for each="{bulk.result.sections}" as="section">
-                                <section class="arp-editor-bulk-section">
-                                    <h3>
+                                <section class="arp-editor-block">
+                                    <div class="arp-editor-block__head{f:if(condition: section.category, then: '', else: ' arp-editor-block__head--error')}">
                                         <f:if condition="{section.category}">
                                             <f:then>{section.category}</f:then>
                                             <f:else><f:translate key="{lll}bulk.uncategorized"/></f:else>
                                         </f:if>
-                                    </h3>
+                                    </div>
                                     <div class="arp-editor-table-wrap">
-                                        <table class="arp-editor-table">
+                                        <table class="arp-editor-table arp-editor-table--preview">
+                                            <colgroup>
+                                                <col class="arp-editor-col arp-editor-col--item"/>
+                                                <col class="arp-editor-col arp-editor-col--variant"/>
+                                                <col class="arp-editor-col arp-editor-col--price"/>
+                                                <col class="arp-editor-col arp-editor-col--line"/>
+                                                <col class="arp-editor-col arp-editor-col--status arp-editor-col--status-preview"/>
+                                            </colgroup>
                                             <thead>
                                                 <tr>
                                                     <th><f:translate key="{lll}column.item"/></th>
                                                     <th><f:translate key="{lll}column.variant"/></th>
                                                     <th class="arp-editor-table__price"><f:translate key="{lll}column.price"/></th>
-                                                    <th><f:translate key="{lll}bulk.column.line"/></th>
+                                                    <th class="arp-editor-table__line"><f:translate key="{lll}bulk.column.line"/></th>
                                                     <th><f:translate key="{lll}column.status"/></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <f:for each="{section.rows}" as="row">
-                                                    <tr class="{f:if(condition: row.valid, then: '', else: 'arp-editor-row--invalid')}">
-                                                        <td><span class="arp-editor-item">{row.item}</span></td>
+                                                    <f:variable name="itemErrorClass" value=""/>
+                                                    <f:variable name="priceErrorClass" value=""/>
+                                                    <f:for each="{row.errors}" as="errorCode">
+                                                        <f:if condition="{errorCode} == 'missingItem'">
+                                                            <f:variable name="itemErrorClass" value="arp-editor-cell--error"/>
+                                                        </f:if>
+                                                        <f:if condition="{errorCode} == 'missingPrice' || {errorCode} == 'invalidPrice' || {errorCode} == 'negativePrice' || {errorCode} == 'tooManyDecimals'">
+                                                            <f:variable name="priceErrorClass" value=" arp-editor-cell--error"/>
+                                                        </f:if>
+                                                    </f:for>
+                                                    <tr>
+                                                        <td class="{itemErrorClass}">
+                                                            <span class="arp-editor-item">{row.item}</span>
+                                                        </td>
                                                         <td>{row.variantDisplay}</td>
-                                                        <td class="arp-editor-table__price">
+                                                        <td class="arp-editor-table__price{priceErrorClass}">
                                                             <f:if condition="{row.valid}">
                                                                 <f:then>{row.formattedAmount}</f:then>
                                                                 <f:else>{row.priceRaw}</f:else>
                                                             </f:if>
                                                         </td>
-                                                        <td>{row.sourceLine}</td>
+                                                        <td class="arp-editor-table__line">{row.sourceLine}</td>
                                                         <td>
                                                             <f:if condition="{row.valid}">
                                                                 <f:then><f:translate key="{lll}bulk.row.valid"/></f:then>
                                                                 <f:else>
                                                                     <f:for each="{row.errors}" as="errorCode">
-                                                                        <span class="arp-editor-status arp-editor-status--hidden">
+                                                                        <span class="arp-editor-validation">
                                                                             <f:switch expression="{errorCode}">
                                                                                 <f:case value="missingCategory"><f:translate key="{lll}bulk.error.missingCategory"/></f:case>
                                                                                 <f:case value="missingItem"><f:translate key="{lll}bulk.error.missingItem"/></f:case>

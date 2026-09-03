@@ -1,7 +1,7 @@
 .arp-editor-note,
 .arp-editor-page,
 .arp-editor-empty {
-    margin: 0 0 1rem;
+    margin: 0 0 0.75rem;
 }
 
 .arp-editor-note {
@@ -12,16 +12,16 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
-    margin: 0 0 1.25rem;
+    margin: 0 0 0.85rem;
 }
 
 .arp-editor-tab {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.35rem 0.7rem;
+    padding: 0.3rem 0.6rem;
     border: 1px solid var(--typo3-border-color, #ccc);
-    border-radius: 0.25rem;
+    border-radius: 0.2rem;
     text-decoration: none;
 }
 
@@ -37,21 +37,41 @@
     white-space: nowrap;
 }
 
-.arp-editor-category {
-    margin: 0 0 1rem;
-    border: 1px solid var(--typo3-border-color, #ddd);
-    border-radius: 0.25rem;
-    padding: 0.4rem 0.75rem 0.75rem;
+.arp-editor-block {
+    margin: 0 0 0.65rem;
+    border: 1px solid var(--typo3-border-color, #d4d4d4);
+    border-radius: 0.2rem;
+    background: var(--typo3-surface, #fff);
 }
 
-.arp-editor-category > summary {
-    cursor: pointer;
+.arp-editor-block__head,
+.arp-editor-block > summary {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.875rem;
     font-weight: 700;
-    padding: 0.35rem 0;
+    line-height: 1.3;
+    background: var(--typo3-surface-container, #f3f3f3);
+    border-bottom: 1px solid var(--typo3-border-color, #d4d4d4);
+}
+
+.arp-editor-block > summary {
+    cursor: pointer;
+}
+
+.arp-editor-block__head--error {
+    box-shadow: inset 0.18rem 0 0 var(--typo3-state-danger-border, #c45656);
+    background: var(--typo3-state-danger-bg, #f8ecec);
+}
+
+.arp-editor-empty {
+    margin: 0.45rem 0.55rem 0.55rem;
 }
 
 .arp-editor-table-wrap {
@@ -60,26 +80,71 @@
 
 .arp-editor-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
-    font-size: 0.925rem;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+}
+
+.arp-editor-col--variant {
+    width: 11rem;
+}
+
+.arp-editor-col--price {
+    width: 6.75rem;
+}
+
+.arp-editor-col--line {
+    width: 3.25rem;
+}
+
+.arp-editor-col--status {
+    width: 8rem;
+}
+
+.arp-editor-col--status-preview {
+    width: 18rem;
 }
 
 .arp-editor-table th,
 .arp-editor-table td {
     text-align: left;
     vertical-align: top;
-    padding: 0.35rem 0.5rem;
-    border-bottom: 1px solid var(--typo3-border-color, #eee);
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid var(--typo3-border-color, #ddd);
+    border-right: 1px solid var(--typo3-border-color, #ececec);
+    overflow-wrap: anywhere;
+}
+
+.arp-editor-table th:last-child,
+.arp-editor-table td:last-child {
+    border-right: none;
+}
+
+.arp-editor-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--typo3-surface-container-low, #fafafa);
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
 
 .arp-editor-table__price {
     text-align: right;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    overflow-wrap: normal;
+}
+
+.arp-editor-table__line {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
 
 .arp-editor-row--start td {
-    border-top: 1px solid var(--typo3-border-color, #ddd);
+    border-top: 1px solid var(--typo3-border-color, #ccc);
 }
 
 .arp-editor-item {
@@ -99,22 +164,35 @@
     font-weight: 600;
 }
 
+.arp-editor-cell--error {
+    background: var(--typo3-state-danger-bg, #f8ecec);
+    box-shadow: inset 0.18rem 0 0 var(--typo3-state-danger-border, #c45656);
+}
+
+.arp-editor-validation {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--typo3-text-color-danger, #8a3030);
+}
+
 .arp-editor-bulk {
-    margin: 1.5rem 0 0;
-    border: 1px solid var(--typo3-border-color, #ddd);
-    border-radius: 0.25rem;
-    padding: 0.4rem 0.75rem 0.75rem;
+    margin: 1rem 0 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid var(--typo3-border-color, #d4d4d4);
 }
 
 .arp-editor-bulk > summary {
     cursor: pointer;
+    font-size: 0.875rem;
     font-weight: 700;
-    padding: 0.35rem 0;
+    padding: 0 0 0.35rem;
 }
 
 .arp-editor-bulk-label {
     display: block;
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.3rem;
     font-weight: 600;
 }
 
@@ -122,30 +200,11 @@
     display: block;
     width: 100%;
     max-width: 100%;
-    min-height: 8rem;
+    min-height: 6.5rem;
+    box-sizing: border-box;
     font-family: ui-monospace, Consolas, monospace;
-    font-size: 0.85rem;
+    font-size: 0.8125rem;
     line-height: 1.35;
     white-space: pre;
     tab-size: 4;
-}
-
-.arp-editor-bulk-section {
-    margin: 0 0 1rem;
-}
-
-.arp-editor-bulk-section h3 {
-    margin: 0.75rem 0 0.35rem;
-    font-size: 1rem;
-}
-
-.arp-editor-row--invalid td {
-    background: var(--typo3-state-danger-bg, #f8d7da);
-}
-
-@media (max-width: 700px) {
-    .arp-editor-table th:nth-child(4),
-    .arp-editor-table td:nth-child(4) {
-        min-width: 6rem;
-    }
 }
