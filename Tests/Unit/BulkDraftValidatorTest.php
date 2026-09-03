@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftRow;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidator;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuRow;
@@ -94,6 +95,8 @@ $singleNamed = $validator->validatePosted(['r0' => postedRow(0, 1, 'Drinks', 'Te
 assertTrue($singleNamed->isDraftValid(), 'single named Variant run remains valid');
 assertTrue($singleNamed->rows[0]->warnings === ['singleNamedVariant'], 'single named Variant run has warning');
 assertTrue($singleNamed->invalidCount === 0, 'warnings do not increase invalidCount');
+assertTrue(is_array($singleNamed->rows[0]->warnings), 'BulkDraftRow warnings remains an array/list');
+assertTrue(!method_exists(BulkDraftRow::class, 'hasWarnings'), 'no hasWarnings() accessor can shadow Fluid warnings');
 
 $itemSplit = $validator->validatePosted([
     'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),

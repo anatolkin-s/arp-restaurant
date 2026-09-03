@@ -28,9 +28,4 @@ final readonly class BulkDraftRow
     {
         return $this->errors === [];
     }
-
-    public function hasWarnings(): bool
-    {
-        return $this->warnings !== [];
-    }
 }

@@ -386,7 +386,7 @@
                                                         <td data-arp-col="status">
                                                             <f:if condition="{row.valid}">
                                                                 <f:then>
-                                                                    <f:if condition="{row.hasWarnings}">
+                                                                    <f:if condition="{row.warnings}">
                                                                         <f:then>
                                                                             <f:for each="{row.warnings}" as="warningCode">
                                                                                 <span class="arp-editor-validation arp-editor-validation--warning">
