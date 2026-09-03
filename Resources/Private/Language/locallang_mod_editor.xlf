@@ -157,7 +157,7 @@
         <source>Negative prices are not allowed.</source>
       </trans-unit>
       <trans-unit id="bulk.error.tooManyDecimals">
-        <source>Price may have at most 2 decimal digits.</source>
+        <source>Max. 2 decimals.</source>
       </trans-unit>
     </body>
   </file>

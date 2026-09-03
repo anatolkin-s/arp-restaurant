@@ -90,45 +90,18 @@
 }
 
 .arp-editor-table-wrap {
-    overflow-x: auto;
+    overflow: auto;
     max-width: 100%;
+    max-height: 70vh;
 }
 
 .arp-editor-table {
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 0.8125rem;
     line-height: 1.3;
-}
-
-.arp-editor-col--index {
-    width: 2.75rem;
-}
-
-.arp-editor-col--category {
-    width: 12rem;
-}
-
-.arp-editor-col--variant {
-    width: 11rem;
-}
-
-.arp-editor-col--price {
-    width: 6.75rem;
-}
-
-.arp-editor-col--line {
-    width: 3.25rem;
-}
-
-.arp-editor-col--status {
-    width: 8rem;
-}
-
-.arp-editor-col--status-preview {
-    width: 18rem;
 }
 
 .arp-editor-table th,
@@ -138,7 +111,8 @@
     padding: 0.25rem 0.5rem;
     border-bottom: 1px solid var(--typo3-border-color, #ddd);
     border-right: 1px solid var(--typo3-border-color, #ececec);
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .arp-editor-table th:last-child,
@@ -149,13 +123,28 @@
 .arp-editor-table thead th {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
     font-size: 0.75rem;
     font-weight: 600;
     background: var(--typo3-surface-container-low, #fafafa);
     white-space: nowrap;
-    overflow-wrap: normal;
     box-shadow: inset 0 -1px 0 var(--typo3-border-color, #ddd);
+}
+
+.arp-editor-table td[data-arp-col="item"] {
+    white-space: nowrap;
+}
+
+.arp-editor-table td[data-arp-col="variant"] {
+    white-space: nowrap;
+}
+
+.arp-editor-table td[data-arp-col="category"] {
+    white-space: normal;
+}
+
+.arp-editor-table td[data-arp-col="status"] {
+    white-space: normal;
 }
 
 .arp-editor-sort {
@@ -196,11 +185,11 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    overflow-wrap: normal;
 }
 
 .arp-editor-item {
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .arp-editor-status {
