@@ -44,7 +44,7 @@ Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMe
 
 EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104cc24166a3bd60fdde8b4d452758f` on TYPO3 14.3.6. That gate covers the unified saved/preview grid, cell rules, and cell-level invalid preview highlighting. TYPO3 13 is not part of that runtime acceptance. Production was not touched.
 
-EDITOR-2A.2 is **REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING**. The saved Menu and bulk preview are flat read projections. Search/sort/row numbers are client-side view state only. Sticky headers, search, and sort still need TYPO3 browser runtime acceptance. Inline editing, import/write, and persistent restaurant item codes are not in this milestone.
+EDITOR-2A.2 is **REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING**. The saved Menu and bulk preview are flat read projections. Search/sort/row numbers are client-side view state only. Sticky headers, search, and sort still need TYPO3 browser runtime acceptance. Inline editing, import/write, `Item.sku`, and `Placement.menu_code` are not in this milestone.
 
 ## Copy UUID lifecycle
 

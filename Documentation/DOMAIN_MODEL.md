@@ -33,7 +33,7 @@ An Item is stored once. Placement is the menu-context listing and the offer that
 - Lunch can offer it at $23 and Dinner at $29 because PriceOption belongs to Placement, not Item.
 - Category remains a per-menu section, so Lunch Mains and Dinner Entrees can still differ.
 - Editor UX can still look simple: a Category lists placements, and an editor either creates a new Item or reuses an existing one.
-- Extra entity cost is one small join record, not an e-commerce catalog (no SKU inventory, no product types, no variant graphs).
+- Extra entity cost is one small join record, not an e-commerce catalog (no inventory/stock system, no product types, no variant graphs).
 
 **Choice: B.** It avoids forced Item duplication for real restaurant menus while remaining small enough for 0.1. Every on-menu appearance uses a Placement, including items that appear only once.
 
@@ -96,11 +96,15 @@ Canonical dish/product identity: Margherita Pizza, Caesar Salad, Grilled Salmon.
 
 Owns editorial identity, description, and FAL media. Does not own commercial price. Does not belong to a Category. An Item with no Placement exists in the catalog but is not on any menu.
 
+`Item.sku` is a reserved optional catalog identifier on the Item (see identity layers). It is not implemented in this milestone.
+
 ### Placement
 
 The canonical contextual appearance of one Item in one Category.
 
 Owns sort order in that section, visibility in that context, and commercial PriceOptions for that offer. This is the menu-facing occurrence later OrderItem snapshots should cite together with Item and PriceOption identity.
+
+`Placement.menu_code` is a reserved per-menu appearance code (see identity layers). It is not the Item SKU and is not implemented in this milestone.
 
 Placement is localization-aware as a **structural** TYPO3 record so connected localization and IRRE can keep:
 
@@ -153,8 +157,8 @@ Use normal TYPO3 localization and Site Languages. Do not add a custom translatio
 |---|---|---|---|
 | Menu | yes | title, description | public UUID, hidden, sorting, starttime/endtime |
 | Category | yes | title, description | public UUID, sorting, hidden. Physical menu relation may point to the translated Menu row; logical Menu identity stays synchronized. |
-| Item | yes | title, description, media metadata overlays | public UUID, FAL files (TYPO3-native) |
-| Placement | yes (structural) | none in 0.1 | public UUID; logical Item identity; sorting, visibility, scheduling, and commercial structure stay synchronized with the default-language Placement. Physical category/item relations may point to translated parent rows. |
+| Item | yes | title, description, media metadata overlays | public UUID, FAL files (TYPO3-native). Reserved `sku`, when implemented, is language-independent. |
+| Placement | yes (structural) | none in 0.1 | public UUID; logical Item identity; sorting, visibility, scheduling, and commercial structure stay synchronized with the default-language Placement. Physical category/item relations may point to translated parent rows. Reserved `menu_code`, when implemented, is language-independent. |
 | PriceOption | yes | label only (optional) | public UUID, amount. Placement relation and structural/commercial fields stay synchronized with the default-language PriceOption. Physical placement relation may point to the translated Placement row. |
 | OpeningHourPeriod | yes | optional label | weekday, open, close, sorting |
 
@@ -174,13 +178,35 @@ Rules:
 - Price amounts and currency are not translated. Currency lives in Site Settings.
 - Opening-hour clock times are not translated.
 
-## E. Public UUID rules
+## E. Identity layers
 
-TYPO3 `uid` is local database identity only. External systems, including a future ARP.top connector, must not use `uid`.
+Restaurant identity is layered. These layers must not be conflated.
 
-For 0.1, public UUID version 4 strings (`char(36)`) are required on:
+### 1. TYPO3 `uid`
 
-- restaurant/site identity (Site Settings)
+TYPO3 `uid` is physical/local storage identity only.
+
+It MUST NOT be used as:
+
+- ARP.top identity
+- public API identity
+- POS identity
+- synchronization identity
+- import/export business identity
+
+`uid` may differ between installations, copies, and translations. It never crosses the integration boundary.
+
+### 2. `public_uuid`
+
+`public_uuid` is the canonical stable logical identity.
+
+`Item.public_uuid` identifies the logical reusable restaurant Item. Connected translations share the same `public_uuid`. The same Item reused in multiple Placements continues to have one Item `public_uuid`.
+
+ARP.top and future integrations must reference ARP entities through `public_uuid`, never TYPO3 `uid`.
+
+Public UUID ownership remains:
+
+- restaurant/site identity
 - Menu
 - Category
 - Item
@@ -188,6 +214,8 @@ For 0.1, public UUID version 4 strings (`char(36)`) are required on:
 - PriceOption
 
 OpeningHourPeriod has **no** public UUID in 0.1. It is weekly schedule data, not an externally addressed business entity.
+
+For 0.1, public UUID version 4 strings (`char(36)`) are required on the entities listed above.
 
 - UUID is assigned on first insert of the default-language record and is immutable.
 - Localization overlays share the parent UUID. They are separate rows, so uniqueness is logical (default-language identity), not a global UNIQUE over every language row.
@@ -200,8 +228,65 @@ Copy semantics:
 - `t3_origuid` may retain TYPO3 copy provenance.
 - `public_uuid` represents business identity, not copy provenance.
 
-The compact backend editor is an additional UI over these records. Native List/FormEngine/IRRE remain available. Multiple Placement records for one Category+Item are legal. The compact editor's flat table is a read projection of this graph; it does not change ownership. Bulk paste in that editor is currently preview-only. Transient table row numbers are not restaurant item codes. A future persistent menu code, if added, would likely belong to Placement because the same reusable Item can carry a different code on Lunch and Dinner.
+### 3. SKU (`Item.sku`)
 
+Reserved concept, **not implemented** here and **not** to be added by EDITOR-2B0.
+
+Semantics:
+
+- optional restaurant/catalog identifier
+- human/business facing
+- example: `SALMON-01`
+- belongs to Item, not Placement
+- language-independent
+- not TYPO3 `uid`
+- not `public_uuid`
+- not a POS-specific ID
+- not canonical synchronization identity
+
+No database UNIQUE constraint is defined in this design task. TCA, copy, and import uniqueness behavior will be defined in a separate bounded domain task before implementation.
+
+### 4. `menu_code` (`Placement.menu_code`)
+
+Reserved concept. `menu_code` belongs to Placement, not Item.
+
+Example:
+
+```
+Item:
+  sku = SALMON-01
+
+Lunch Placement:
+  menu_code = L12
+
+Dinner Placement:
+  menu_code = D08
+```
+
+SKU and `menu_code` MUST NOT be conflated. Compact-editor `#` row numbers remain transient view state and are neither SKU nor `menu_code`.
+
+### 5. External system identifiers
+
+Do not add provider-specific fields such as `square_id`, `toast_id`, `clover_id`, or `pos_id` to Item or other core domain records.
+
+Future integrations should use a provider-neutral external-reference mapping, conceptually:
+
+- provider
+- entity_type
+- entity_public_uuid
+- external_id
+
+That mapping may attach an external ID to Item, Menu, Category, Placement, or PriceOption. Exact persistence design is deferred.
+
+### 6. Integration invariant
+
+TYPO3 `uid` never crosses the integration boundary.
+
+`public_uuid` is the stable ARP-side identity.
+
+Restaurant SKU/`menu_code` values and provider-specific external IDs are additional identifiers attached to that identity; they do not replace it.
+
+The compact backend editor is an additional UI over these records. Native List/FormEngine/IRRE remain available. Multiple Placement records for one Category+Item are legal. The compact editor's flat table is a read projection of this graph; it does not change ownership. Bulk paste in that editor is currently preview-only.
 
 Orders and OrderItems are out of scope for 0.1. When ordering is designed later, an OrderItem snapshot should be able to reference/copy:
 
@@ -285,7 +370,7 @@ Hidden parent records hide their live appearance: a hidden Menu hides its catego
 - Multi-location restaurants (would require a Restaurant record)
 - Mosaic Gallery rendering of Item FAL media
 - Order, Cart, and immutable OrderItem snapshots (0.3+)
-- ARP.top connector using public UUIDs (0.5)
+- ARP.top connector using public UUIDs (0.5); never TYPO3 `uid`
 
 ## J. Explicit non-goals for 0.1
 
@@ -296,7 +381,9 @@ Hidden parent records hide their live appearance: a hidden Menu hides its catego
 - Mosaic integration or Composer Mosaic dependency
 - ARP.top integration
 - Custom translation storage
-- Inventory, SKUs, tax rules, multi-currency
+- Inventory, tax rules, multi-currency
+- Item.sku / Placement.menu_code implementation (reserved; not EDITOR-2B0)
+- Provider-specific POS IDs on core records (`square_id`, `toast_id`, `clover_id`, `pos_id`)
 - TYPO3 `sys_category` as the menu section model
 - Holiday hours, modifiers, and multi-location
 - Item-owned prices or a price-override layer on top of Placement

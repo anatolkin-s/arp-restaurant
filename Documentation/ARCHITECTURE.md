@@ -61,9 +61,13 @@ TYPO3 page configuration owns public page paths. Future Restaurant code must ope
 
 ## Public identifiers
 
-External integrations should eventually use stable public identifiers rather than TYPO3 `uid` values.
+Restaurant identity is layered. See [DOMAIN_MODEL.md](DOMAIN_MODEL.md) identity layers for the canonical contract.
 
-TYPO3 uids are local to one CMS instance. Public restaurant, menu, category, item, placement, and price-option identifiers are UUID values defined in the domain contract. They identify logical localized entities, not physical translation rows. They must stay stable across environments and external systems.
+- TYPO3 `uid` is physical/local storage identity only. It never crosses the integration boundary (ARP.top, public API, POS, sync, import/export business identity).
+- `public_uuid` is the canonical stable logical identity for restaurant/site, Menu, Category, Item, Placement, and PriceOption. Connected translations share it. ARP.top and future integrations must use `public_uuid`, never `uid`.
+- `Item.sku` is a reserved optional catalog identifier on Item. It is not implemented and must not be added by EDITOR-2B0.
+- `Placement.menu_code` is a reserved per-appearance code on Placement (for example Lunch `L12` vs Dinner `D08` for the same Item). It is not SKU.
+- Provider-specific IDs (`square_id`, `toast_id`, `clover_id`, `pos_id`) must not be added to core domain records. Future POS mapping is a provider-neutral external-reference table, persistence deferred.
 
 A default-language business copy receives a new logical UUID. Connected translations of that copy share the new UUID. `t3_origuid` may still record TYPO3 copy provenance; it is not the public business identity.
 
@@ -101,7 +105,7 @@ TYPO3 13 remains on the previously accepted editor line at the time of this runt
 
 The compact editor now projects DOMAIN-1A as one flat saved-menu table (`# | Category | Item | Variant | Price | Status`) and one flat bulk-preview table (`# | Category | Item | Variant | Price | Line | Status`). That projection does not change Menu → Category → Placement → Item / PriceOption ownership.
 
-`#` is a transient visible-row index. It is not an Item UUID, TYPO3 uid, restaurant item code, or ordering identity. A future persistent restaurant code (for example L12 vs D8) would belong to Placement, not Item, and is not implemented here.
+`#` is a transient visible-row index. It is not an Item UUID, TYPO3 uid, `Item.sku`, `Placement.menu_code`, or ordering identity. Those reserved codes are not implemented here.
 
 Client-side search and sorting do not query TYPO3, do not write records, and do not change DataHandler/TCA sorting. Original domain render order is the default and can be restored. Inline editing and bulk import/write remain deferred. Bulk paste is still preview-only.
 
