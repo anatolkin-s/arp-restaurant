@@ -16,11 +16,6 @@ final readonly class BulkDraftValidationResult
         public string $globalError = '',
     ) {}
 
-    public function hasGlobalError(): bool
-    {
-        return $this->globalError !== '';
-    }
-
     /**
      * Cell-valid and run-valid. Warnings do not block. Not apply-ready: identity resolution is EDITOR-2B2.
      */

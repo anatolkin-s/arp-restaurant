@@ -210,7 +210,7 @@
                 </f:if>
 
                 <f:if condition="{bulk.draft}">
-                    <f:if condition="{bulk.draft.hasGlobalError}">
+                    <f:if condition="{bulk.draft.globalError}">
                         <f:then>
                             <p class="typo3-message message-error">
                                 <f:switch expression="{bulk.draft.globalError}">

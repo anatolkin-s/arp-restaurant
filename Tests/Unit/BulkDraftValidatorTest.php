@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftRow;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidator;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuRow;
@@ -180,12 +181,20 @@ $dupOrder = $validator->validatePosted([
     'r1' => postedRow(0, 2, 'Mains', 'Salmon', '', '23.00'),
 ]);
 assertTrue($dupOrder->globalError === 'invalidOriginalOrder' && $dupOrder->rows === [], 'duplicate originalOrder rejected');
+assertTrue(is_string($dupOrder->globalError), 'BulkDraftValidationResult globalError remains a string');
+assertTrue(!method_exists(BulkDraftValidationResult::class, 'hasGlobalError'), 'no hasGlobalError() accessor can shadow Fluid globalError');
 
 $gapOrder = $validator->validatePosted([
     'r0' => postedRow(0, 1, 'Starters', 'Hummus', '', '8.00'),
     'r1' => postedRow(2, 2, 'Mains', 'Salmon', '', '23.00'),
 ]);
 assertTrue($gapOrder->globalError === 'invalidOriginalOrder', 'non-canonical originalOrder rejected');
+
+$malformed = $validator->validatePosted(['r0' => ['not' => 'a-row']]);
+assertTrue($malformed->globalError === 'malformedDraft', 'malformed draft keeps exact global error code');
+
+$emptyDraft = $validator->validatePosted([]);
+assertTrue($emptyDraft->globalError === 'emptyDraft', 'empty draft keeps exact global error code');
 
 $tooMany = [];
 for ($i = 0; $i < 201; ++$i) {
@@ -201,6 +210,12 @@ $oversize = $validator->validatePosted(
 );
 assertTrue($oversize->globalError === 'inputTooLarge' && $oversize->rows === [], 'aggregate size limit rejected');
 
+foreach ([$dupOrder, $malformed, $emptyDraft, $limited, $oversize] as $globalErrorResult) {
+    assertTrue(
+        is_string($globalErrorResult->globalError) && $globalErrorResult->globalError !== '',
+        'global-error validation results contain a non-empty string error code'
+    );
+}
 $parsed = $validator->fromParsedRows([
     new BulkMenuRow(2, 'Drinks', 'Tea', '', '3.00', 300, '3.00', []),
     new BulkMenuRow(3, 'Drinks', 'Tea', 'Large', '4.50', 450, '4.50', []),
