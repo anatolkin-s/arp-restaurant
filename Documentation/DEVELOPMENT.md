@@ -32,7 +32,13 @@ composer validate --strict
 
 Also check JSON/YAML/XML/PHP syntax of the shipped metadata files. TYPO3 runtime activation cannot be verified here until a TYPO3 test installation exists.
 
-Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner exercises the isolated decision logic; it is not a full DataHandler functional suite.
+Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner also exercises compact-editor read-model mapping. It is not a full TYPO3 functional suite.
+
+## Compact backend editor
+
+`web_arp_restaurant_editor` is a Core (non-Extbase) backend module. It reads Menu → Category → Placement → Item / PriceOption for the selected page-tree pid and renders a compact table. Native List/FormEngine/IRRE remain available.
+
+The selected context is a storage pid/page, not necessarily a sysfolder. Duplicate Placements for the same Category+Item are rendered separately. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
 
 ## Copy UUID lifecycle
 
@@ -51,7 +57,6 @@ Do not add in bootstrap follow-up work unless a later task owns it:
 - domain models and database tables
 - menu rendering
 - ordering
-- backend modules
 - Mosaic integration code
 - ARP.top integration
 - hardcoded public routes or page paths

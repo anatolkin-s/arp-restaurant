@@ -1,0 +1,132 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+<f:layout name="Module"/>
+
+<f:section name="Content">
+    <f:asset.css identifier="arp-restaurant-editor" href="EXT:arp_restaurant/Resources/Public/Css/restaurant-editor.css"/>
+
+    <h1><f:translate key="{lll}heading"/></h1>
+    <p class="arp-editor-note"><f:translate key="{lll}readonly.notice"/></p>
+
+    <f:if condition="{screen.pageTitle}">
+        <p class="arp-editor-page">{screen.pageTitle}</p>
+    </f:if>
+
+    <f:if condition="{screen.emptyState}">
+        <f:then>
+            <p class="typo3-message message-notice">
+                <f:switch expression="{screen.emptyState}">
+                    <f:case value="selectPage"><f:translate key="{lll}empty.selectPage"/></f:case>
+                    <f:case value="noPageAccess"><f:translate key="{lll}empty.noPageAccess"/></f:case>
+                    <f:case value="noTableAccess"><f:translate key="{lll}empty.noTableAccess"/></f:case>
+                    <f:case value="noMenus"><f:translate key="{lll}empty.noMenus"/></f:case>
+                    <f:default><f:translate key="{lll}empty.selectPage"/></f:default>
+                </f:switch>
+            </p>
+        </f:then>
+        <f:else>
+            <nav class="arp-editor-tabs" aria-label="Menus">
+                <f:for each="{screen.menus}" as="menuTab">
+                    <span class="arp-editor-tab{f:if(condition: menuTab.active, then: ' arp-editor-tab--active')}">
+                        <a href="{menuTab.url}">{menuTab.title}</a>
+                        <f:if condition="{menuTab.editUrl}">
+                            <a class="arp-editor-inline-link" href="{menuTab.editUrl}"><f:translate key="{lll}button.openRecord"/></a>
+                        </f:if>
+                    </span>
+                </f:for>
+            </nav>
+
+            <f:if condition="{screen.selectedMenu}">
+                <f:if condition="{screen.selectedMenu.categories}">
+                    <f:then>
+                        <f:for each="{screen.selectedMenu.categories}" as="category">
+                            <details class="arp-editor-category" open>
+                                <summary>
+                                    <span class="arp-editor-category-title">{category.title}</span>
+                                    <f:if condition="{category.editUrl}">
+                                        <a class="arp-editor-inline-link" href="{category.editUrl}"><f:translate key="{lll}button.openRecord"/></a>
+                                    </f:if>
+                                    <f:for each="{category.statusKeys}" as="statusKey">
+                                        <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 1}"/>
+                                    </f:for>
+                                </summary>
+
+                                <f:if condition="{category.placements}">
+                                    <f:then>
+                                        <div class="arp-editor-table-wrap">
+                                            <table class="arp-editor-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th><f:translate key="{lll}column.item"/></th>
+                                                        <th><f:translate key="{lll}column.variant"/></th>
+                                                        <th class="arp-editor-table__price"><f:translate key="{lll}column.price"/></th>
+                                                        <th><f:translate key="{lll}column.status"/></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <f:for each="{category.placements}" as="placement">
+                                                        <f:if condition="{placement.priceOptions}">
+                                                            <f:then>
+                                                                <f:for each="{placement.priceOptions}" as="option" iteration="optionIterator">
+                                                                    <tr class="{f:if(condition: optionIterator.isFirst, then: 'arp-editor-row--start')}">
+                                                                        <td>
+                                                                            <f:if condition="{optionIterator.isFirst}">
+                                                                                <span class="arp-editor-item">{placement.itemTitle}</span>
+                                                                                <f:if condition="{placement.itemEditUrl}">
+                                                                                    <a class="arp-editor-inline-link" href="{placement.itemEditUrl}"><f:translate key="{lll}button.openItem"/></a>
+                                                                                </f:if>
+                                                                            </f:if>
+                                                                        </td>
+                                                                        <td>{option.displayLabel}</td>
+                                                                        <td class="arp-editor-table__price">{option.formattedAmount}</td>
+                                                                        <td>
+                                                                            <f:if condition="{optionIterator.isFirst}">
+                                                                                <f:for each="{placement.statusKeys}" as="statusKey">
+                                                                                    <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 0}"/>
+                                                                                </f:for>
+                                                                            </f:if>
+                                                                        </td>
+                                                                    </tr>
+                                                                </f:for>
+                                                            </f:then>
+                                                            <f:else>
+                                                                <tr class="arp-editor-row--start">
+                                                                    <td>
+                                                                        <span class="arp-editor-item">{placement.itemTitle}</span>
+                                                                        <f:if condition="{placement.itemEditUrl}">
+                                                                            <a class="arp-editor-inline-link" href="{placement.itemEditUrl}"><f:translate key="{lll}button.openItem"/></a>
+                                                                        </f:if>
+                                                                    </td>
+                                                                    <td>—</td>
+                                                                    <td class="arp-editor-table__price"><f:translate key="{lll}empty.noPriceOptions"/></td>
+                                                                    <td>
+                                                                        <f:for each="{placement.statusKeys}" as="statusKey">
+                                                                            <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 0}"/>
+                                                                        </f:for>
+                                                                    </td>
+                                                                </tr>
+                                                            </f:else>
+                                                        </f:if>
+                                                    </f:for>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </f:then>
+                                    <f:else>
+                                        <p class="arp-editor-empty"><f:translate key="{lll}empty.noPlacements"/></p>
+                                    </f:else>
+                                </f:if>
+                            </details>
+                        </f:for>
+                    </f:then>
+                    <f:else>
+                        <p class="arp-editor-empty"><f:translate key="{lll}empty.noCategories"/></p>
+                    </f:else>
+                </f:if>
+            </f:if>
+        </f:else>
+    </f:if>
+</f:section>
+</html>

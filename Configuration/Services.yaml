@@ -15,3 +15,7 @@ services:
 
   Anatolkin\ArpRestaurant\Backend\DataHandling\CopiedTranslationUuidHook:
     public: true
+
+  Anatolkin\ArpRestaurant\Backend\Editor\BackendRecordEditUrlBuilder:
+    autowire: false
+    autoconfigure: false

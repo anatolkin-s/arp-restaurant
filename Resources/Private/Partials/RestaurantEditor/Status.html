@@ -1,0 +1,18 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+<f:if condition="{skipVisible} && {statusKey} == 'visible'">
+    <f:then></f:then>
+    <f:else>
+        <span class="arp-editor-status arp-editor-status--{statusKey}">
+            <f:switch expression="{statusKey}">
+                <f:case value="visible"><f:translate key="{lll}status.visible"/></f:case>
+                <f:case value="hidden"><f:translate key="{lll}status.hidden"/></f:case>
+                <f:case value="scheduled"><f:translate key="{lll}status.scheduled"/></f:case>
+                <f:case value="itemHidden"><f:translate key="{lll}status.itemHidden"/></f:case>
+            </f:switch>
+        </span>
+    </f:else>
+</f:if>
+</html>

@@ -200,6 +200,8 @@ Copy semantics:
 - `t3_origuid` may retain TYPO3 copy provenance.
 - `public_uuid` represents business identity, not copy provenance.
 
+The compact backend editor is an additional UI over these records. Native List/FormEngine/IRRE remain available. Multiple Placement records for one Category+Item are legal.
+
 Orders and OrderItems are out of scope for 0.1. When ordering is designed later, an OrderItem snapshot should be able to reference/copy:
 
 - Item public UUID

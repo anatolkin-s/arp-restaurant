@@ -66,3 +66,13 @@ External integrations should eventually use stable public identifiers rather tha
 TYPO3 uids are local to one CMS instance. Public restaurant, menu, category, item, placement, and price-option identifiers are UUID values defined in the domain contract. They identify logical localized entities, not physical translation rows. They must stay stable across environments and external systems.
 
 A default-language business copy receives a new logical UUID. Connected translations of that copy share the new UUID. `t3_origuid` may still record TYPO3 copy provenance; it is not the public business identity.
+
+## Compact backend editor
+
+The compact restaurant editor is an **additional** backend UI over the same DOMAIN-1A records. It does not introduce a second restaurant model or database.
+
+- Module: `web_arp_restaurant_editor` (parent `web`, page tree).
+- The selected page-tree node is the storage pid/page. It does not have to be a sysfolder.
+- Multiple Placement records for the same Category+Item are legal and are shown as separate groups.
+- Native List, FormEngine, and IRRE remain valid editing surfaces.
+- EDITOR-1 is read-only. Price display uses an isolated minor-unit formatter; currency and scale authority stay deferred to Site Settings.

@@ -1,0 +1,107 @@
+.arp-editor-note,
+.arp-editor-page,
+.arp-editor-empty {
+    margin: 0 0 1rem;
+}
+
+.arp-editor-note {
+    color: var(--typo3-text-color-variant, inherit);
+}
+
+.arp-editor-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0 0 1.25rem;
+}
+
+.arp-editor-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--typo3-border-color, #ccc);
+    border-radius: 0.25rem;
+    text-decoration: none;
+}
+
+.arp-editor-tab--active {
+    font-weight: 700;
+    background: var(--typo3-surface-container, #eee);
+}
+
+.arp-editor-inline-link {
+    font-size: 0.75rem;
+    font-weight: 400;
+    margin-left: 0.35rem;
+    white-space: nowrap;
+}
+
+.arp-editor-category {
+    margin: 0 0 1rem;
+    border: 1px solid var(--typo3-border-color, #ddd);
+    border-radius: 0.25rem;
+    padding: 0.4rem 0.75rem 0.75rem;
+}
+
+.arp-editor-category > summary {
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    padding: 0.35rem 0;
+}
+
+.arp-editor-table-wrap {
+    overflow-x: auto;
+}
+
+.arp-editor-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.925rem;
+}
+
+.arp-editor-table th,
+.arp-editor-table td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--typo3-border-color, #eee);
+}
+
+.arp-editor-table__price {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.arp-editor-row--start td {
+    border-top: 1px solid var(--typo3-border-color, #ddd);
+}
+
+.arp-editor-item {
+    font-weight: 600;
+}
+
+.arp-editor-status {
+    display: inline-block;
+    margin-right: 0.35rem;
+    font-size: 0.75rem;
+    text-transform: lowercase;
+}
+
+.arp-editor-status--hidden,
+.arp-editor-status--scheduled,
+.arp-editor-status--itemHidden {
+    font-weight: 600;
+}
+
+@media (max-width: 700px) {
+    .arp-editor-table th:nth-child(4),
+    .arp-editor-table td:nth-child(4) {
+        min-width: 6rem;
+    }
+}

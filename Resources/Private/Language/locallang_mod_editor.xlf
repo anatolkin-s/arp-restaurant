@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en" datatype="plaintext" original="messages" date="2026-09-03T00:00:00Z" product-name="arp_restaurant">
+    <header/>
+    <body>
+      <trans-unit id="mlang_tabs_tab">
+        <source>Restaurant Menus</source>
+      </trans-unit>
+      <trans-unit id="mlang_labels_tablabel">
+        <source>Compact restaurant menu viewer</source>
+      </trans-unit>
+      <trans-unit id="mlang_labels_tabdescr">
+        <source>Read-only compact view of restaurant menus stored on the selected page. Native List and FormEngine remain available.</source>
+      </trans-unit>
+      <trans-unit id="heading">
+        <source>Restaurant Menus</source>
+      </trans-unit>
+      <trans-unit id="button.openList">
+        <source>Open List</source>
+      </trans-unit>
+      <trans-unit id="button.openRecord">
+        <source>Open record</source>
+      </trans-unit>
+      <trans-unit id="button.openItem">
+        <source>Open item</source>
+      </trans-unit>
+      <trans-unit id="column.item">
+        <source>Item</source>
+      </trans-unit>
+      <trans-unit id="column.variant">
+        <source>Variant</source>
+      </trans-unit>
+      <trans-unit id="column.price">
+        <source>Price</source>
+      </trans-unit>
+      <trans-unit id="column.status">
+        <source>Status</source>
+      </trans-unit>
+      <trans-unit id="status.visible">
+        <source>visible</source>
+      </trans-unit>
+      <trans-unit id="status.hidden">
+        <source>hidden</source>
+      </trans-unit>
+      <trans-unit id="status.scheduled">
+        <source>scheduled</source>
+      </trans-unit>
+      <trans-unit id="status.itemHidden">
+        <source>item hidden</source>
+      </trans-unit>
+      <trans-unit id="empty.selectPage">
+        <source>Select a page in the page tree. Restaurant records are loaded from that storage page.</source>
+      </trans-unit>
+      <trans-unit id="empty.noPageAccess">
+        <source>You do not have access to the selected page.</source>
+      </trans-unit>
+      <trans-unit id="empty.noTableAccess">
+        <source>You do not have permission to read restaurant records.</source>
+      </trans-unit>
+      <trans-unit id="empty.noMenus">
+        <source>No menus on this page yet. Create a Menu record in the List module, or use the native FormEngine editor.</source>
+      </trans-unit>
+      <trans-unit id="empty.noCategories">
+        <source>This menu has no categories.</source>
+      </trans-unit>
+      <trans-unit id="empty.noPlacements">
+        <source>This category has no dishes yet.</source>
+      </trans-unit>
+      <trans-unit id="empty.noPriceOptions">
+        <source>No price</source>
+      </trans-unit>
+      <trans-unit id="readonly.notice">
+        <source>Read-only compact view of the same DOMAIN-1A records. Native List, FormEngine, and IRRE remain available.</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
