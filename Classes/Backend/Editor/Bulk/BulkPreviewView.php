@@ -8,9 +8,11 @@ final readonly class BulkPreviewView
 {
     public function __construct(
         public string $formAction,
-        public string $formToken,
+        public string $previewToken,
+        public string $revalidateToken,
         public string $rawInput,
-        public ?BulkMenuParseResult $result,
+        public string $parseGlobalError,
+        public ?BulkDraftValidationResult $draft,
         public string $requestError,
         public int $pid,
         public int $menuUid,

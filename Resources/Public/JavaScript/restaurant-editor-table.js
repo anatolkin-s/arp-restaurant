@@ -3,10 +3,33 @@
 
     const SELECTOR_GRID = '[data-arp-editor-grid]';
 
+    function controlValue(cell) {
+        const controls = cell.querySelectorAll('input, textarea, select');
+        if (!controls.length) {
+            return null;
+        }
+        const parts = [];
+        controls.forEach((control) => {
+            if (control.type === 'hidden') {
+                return;
+            }
+            parts.push(control.value || '');
+        });
+        return parts.join(' ');
+    }
+
+    function cellSearchText(cell) {
+        const fromControl = controlValue(cell);
+        if (fromControl !== null) {
+            return fromControl;
+        }
+        return cell.innerText || '';
+    }
+
     function searchText(row) {
         const parts = [];
         row.querySelectorAll('[data-arp-col]').forEach((cell) => {
-            parts.push(cell.innerText || '');
+            parts.push(cellSearchText(cell));
         });
         return parts.join(' ').toLowerCase();
     }
@@ -20,10 +43,45 @@
         return Number.isFinite(value) ? value : null;
     }
 
+    /**
+     * View-only numeric key matching DecimalMinorUnitParser (2 fraction digits).
+     * Invalid or empty prices sort last. Not used as submitted amountMinor.
+     */
+    function parsePriceSortValue(raw) {
+        const value = String(raw || '').trim();
+        if (value === '' || value.charAt(0) === '-') {
+            return null;
+        }
+        if (!/^\d+(\.\d+)?$/.test(value)) {
+            return null;
+        }
+        const parts = value.split('.');
+        const whole = parts[0];
+        const fraction = parts[1] || '';
+        if (fraction.length > 2 || whole.length > 9) {
+            return null;
+        }
+        const padded = (fraction + '00').slice(0, 2);
+        return Number(whole) * 100 + Number(padded);
+    }
+
+    function priceSortValue(row) {
+        const cell = row.querySelector('[data-arp-col="price"]');
+        const fromControl = cell ? controlValue(cell) : null;
+        if (fromControl !== null) {
+            return parsePriceSortValue(fromControl);
+        }
+        return numberValue(row, 'data-arp-price');
+    }
+
     function textValue(row, column) {
         const cell = row.querySelector('[data-arp-col="' + column + '"]');
         if (!cell) {
             return '';
+        }
+        const fromControl = controlValue(cell);
+        if (fromControl !== null) {
+            return fromControl.trim();
         }
         const explicit = cell.getAttribute('data-arp-sort-value');
         if (explicit !== null) {
@@ -35,9 +93,8 @@
     function compareRows(a, b, key, type, direction) {
         let result = 0;
         if (type === 'number') {
-            const attr = key === 'price' ? 'data-arp-price' : 'data-arp-line';
-            const left = numberValue(a, attr);
-            const right = numberValue(b, attr);
+            const left = key === 'price' ? priceSortValue(a) : numberValue(a, 'data-arp-line');
+            const right = key === 'price' ? priceSortValue(b) : numberValue(b, 'data-arp-line');
             const leftEmpty = left === null;
             const rightEmpty = right === null;
             if (leftEmpty && rightEmpty) {
@@ -70,7 +127,9 @@
 
         const rows = Array.prototype.slice.call(tbody.rows);
         rows.forEach((row, index) => {
-            row.setAttribute('data-arp-order', String(index));
+            if (!row.hasAttribute('data-arp-order')) {
+                row.setAttribute('data-arp-order', String(index));
+            }
         });
 
         const search = root.querySelector('[data-arp-editor-search]');
@@ -159,6 +218,11 @@
 
         if (search) {
             search.addEventListener('input', refresh);
+        }
+
+        if (table.getAttribute('data-arp-draft') === '1') {
+            tbody.addEventListener('input', refresh);
+            tbody.addEventListener('change', refresh);
         }
 
         table.querySelectorAll('[data-arp-sort]').forEach((button) => {

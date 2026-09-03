@@ -4,7 +4,27 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: **DESIGN ONLY**. Current runtime remains read-only for restaurant records. Preview, search, sort, and cell display must not persist.
+Status: **DESIGN ONLY** for Apply / identity / DataHandler. Current runtime remains read-only for restaurant records.
+
+## EDITOR-2B1 implementation status
+
+EDITOR-2B1 implements an **editable temporary draft** and **server-authoritative revalidation**. It does not change sections B–N.
+
+| Implemented | Not implemented |
+|---|---|
+| Compact cell editors on bulk preview rows only | Identity resolution (create / reuse / ambiguous) |
+| `BulkDraftValidator` rebuilds normalized draft from posted strings | `ApplyReady`, Apply / Import / Save |
+| POST `bulkDraftRevalidate` (dedicated CSRF action) | DataHandler, QueryBuilder writes, Extbase writes |
+| `DraftValid` = cell + Placement-run validation passed | Database Item/Category title matching |
+| View search/sort remain presentation-only | `Item.sku`, `Placement.menu_code`, `public_uuid` minting |
+
+Successful revalidation is **DraftValid**, not ApplyReady. Suggested UI copy: “Draft is valid. Identity resolution has not been performed yet.”
+
+Semantic draft order is `originalOrder` (parsed order). The server restores that order before Placement-run validation. Client DOM order, visible `#`, search hiding, and sort must not become the server draft order. All posted rows are revalidated, including rows hidden by search.
+
+The existing **65536-byte** bound is reused as the maximum concatenated length of editable Category + Item + Variant + Price strings on revalidate. Nested form metadata is not an extra unbounded payload. Maximum **200** rows remains.
+
+Transitions that **must not** write still include: parse, preview render, cell edit of draft values, search, sort, filter, reset original order, numbering, and `bulkDraftRevalidate`.
 
 Canonical identity remains [DOMAIN_MODEL.md](DOMAIN_MODEL.md) section E. This contract consumes that identity; it does not add `Item.sku`, `Placement.menu_code`, or provider-specific IDs.
 
@@ -18,7 +38,8 @@ Inspected in-repo sources, not a live DataHandler run:
 
 - TCA: Menu → IRRE Category → IRRE Placement → reusable Item + IRRE PriceOption. `public_uuid` is TCA `type=uuid` v4, required, `l10n_mode=exclude`. All five tables have `tstamp`, `deleted`, `versioningWS`, localization fields. No title UNIQUE. No `UNIQUE(category,item)`. No `sku` / `menu_code` columns.
 - `BulkMenuParser` / `BulkMenuRow`: TSV parse + validate only. No database. One pasted row is one preview row, not an Item.
-- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` is CSRF-protected parse. No DataHandler. Module `workspaces: live`.
+- `BulkDraftValidator` / `BulkDraftRow`: POST `bulkDraftRevalidate` rebuilds normalized draft state (trim, `DecimalMinorUnitParser`, consecutive Category+Item run rules). No QueryBuilder identity lookup. No writes.
+- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` is CSRF-protected parse; POST `bulkDraftRevalidate` is a separate CSRF-protected draft check. No DataHandler. Module `workspaces: live`.
 - `MenuGraphReader`: default language (`sys_language_uid=0`), selected pid only, deleted excluded, hidden/scheduled included. Item reads are pid-bounded.
 - `BackendAccessGuard`: page show + `tables_select` on all five restaurant tables. Fail closed.
 - Fluid table: read projection. `#` is transient view state.
@@ -32,9 +53,10 @@ DOMAIN-1A is not redesigned. One pasted commercial row is **not** automatically 
 ```
 raw TSV
   → parse (BulkMenuParser; no DB)
-  → normalized draft (in-request / future session; not TYPO3 records)
-  → optional editable preview (future UI; still not persisted)
-  → validation + identity resolution (pid-scoped QueryBuilder reads)
+  → normalized draft (in-request only; not TYPO3 records)
+  → editable preview (EDITOR-2B1; still not persisted)
+  → server revalidation → DraftValid XOR blocked (EDITOR-2B1; no identity)
+  → validation + identity resolution (pid-scoped QueryBuilder reads; EDITOR-2B2+)
   → apply-ready XOR blocked
   → explicit user confirmation
   → TYPO3 DataHandler command
@@ -46,6 +68,7 @@ raw TSV
 | `Empty` | No paste | no |
 | `ParsedInvalid` | Global parse error or any row parse-invalid | no |
 | `Draft` | All rows parse-valid; identities not resolved | no |
+| `DraftValid` | Cell + run validation passed; identities not resolved (EDITOR-2B1) | no |
 | `Blocked` | Parse-valid but not apply-ready (ambiguity, access, stale, language, …) | no |
 | `ApplyReady` | All blockers cleared; confirmation allowed | no |
 | `Confirmed` | User posted Apply with valid CSRF | no until DataHandler starts |
@@ -54,7 +77,7 @@ raw TSV
 | `PartialFailure` | DataHandler finished with some records created and `errorLog` non-empty | maybe partial |
 | `Failed` | Apply refused before DataHandler, or DataHandler failed with nothing usable | no or unknown; reload |
 
-Transitions that **must not** write: parse, preview render, cell edit of draft values, search, sort, filter, reset original order, numbering.
+Transitions that **must not** write: parse, preview render, cell edit of draft values, search, sort, filter, reset original order, numbering, `bulkDraftRevalidate`.
 
 The draft remains separate from persisted TYPO3 records until `Applying`.
 
@@ -62,7 +85,7 @@ The draft remains separate from persisted TYPO3 records until `Applying`.
 
 ## B. Draft row model
 
-Minimum editable fields (future cell editors; not implemented here):
+Minimum editable fields (EDITOR-2B1 implements these on the bulk draft table only; the saved Menu table stays read-only):
 
 | Draft field | Source TSV | Normalized form |
 |---|---|---|
@@ -79,7 +102,9 @@ Per draft row, keep all of:
 - **source line** — original TSV line number (unchanged by sort/filter)
 - **relation/identity resolution** — see section C
 
-Suggested conceptual record (documentation only; no PHP class in this task):
+EDITOR-2B1 runtime record is `BulkDraftRow` (draft-local `draftKey`, `originalOrder`, `sourceLine`, editable strings, `amountMinor`, parse/run errors). Identity `Resolution` remains documentation-only until EDITOR-2B2.
+
+Suggested conceptual record including later identity fields:
 
 ```
 DraftRow

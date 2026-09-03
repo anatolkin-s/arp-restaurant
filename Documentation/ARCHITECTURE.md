@@ -114,3 +114,9 @@ This milestone is repository implementation only. Cursor has no VPS access; TYPO
 ### EDITOR-2B0 — DESIGN ONLY / NO WRITES
 
 The first write-capable import is specified in [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md). Current runtime stays read-only. Do not implement DataHandler Apply, SKU, or `menu_code` from this status note.
+
+### EDITOR-2B1 — REPO IMPLEMENTED / NO WRITES
+
+Bulk preview rows are an editable in-request draft. `BulkDraftValidator` is the server authority: it trims Category/Item/Variant, re-parses Price via `DecimalMinorUnitParser`, restores canonical `originalOrder`, and blocks mixed empty/named Variant runs. POST `bulkDraftRevalidate` is a dedicated CSRF action. Successful validation is `DraftValid`, not `ApplyReady`.
+
+Not in this milestone: identity resolution, Apply, DataHandler, QueryBuilder writes, `Item.sku`, `Placement.menu_code`. Search/sort remain view-only and must not change semantic draft order. Hidden search rows still POST. Preview from the TSV box rebuilds/resets the draft; edited cells do not rewrite the textarea.

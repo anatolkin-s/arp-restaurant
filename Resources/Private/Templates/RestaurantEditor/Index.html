@@ -176,6 +176,7 @@
                 <summary><f:translate key="{lll}bulk.heading"/></summary>
                 <p class="arp-editor-note"><f:translate key="{lll}bulk.previewOnly"/></p>
                 <p class="arp-editor-note"><f:translate key="{lll}bulk.help"/></p>
+                <p class="arp-editor-note"><f:translate key="{lll}bulk.draftVsSource"/></p>
 
                 <f:if condition="{bulk.requestError}">
                     <p class="typo3-message message-error">
@@ -188,7 +189,7 @@
                 <form action="{bulk.formAction}" method="post" class="arp-editor-bulk-form">
                     <input type="hidden" name="id" value="{bulk.pid}"/>
                     <input type="hidden" name="menu" value="{bulk.menuUid}"/>
-                    <input type="hidden" name="formToken" value="{bulk.formToken}"/>
+                    <input type="hidden" name="formToken" value="{bulk.previewToken}"/>
                     <label for="arp-bulk-paste" class="arp-editor-bulk-label"><f:translate key="{lll}bulk.pasteLabel"/></label>
                     <textarea id="arp-bulk-paste" name="bulkPaste" rows="10" cols="80" maxlength="{bulk.maxBytes}" class="arp-editor-bulk-paste">{bulk.rawInput}</textarea>
                     <p>
@@ -198,20 +199,40 @@
                     </p>
                 </form>
 
-                <f:if condition="{bulk.result}">
-                    <f:if condition="{bulk.result.globalError}">
+                <f:if condition="{bulk.parseGlobalError}">
+                    <p class="typo3-message message-error">
+                        <f:switch expression="{bulk.parseGlobalError}">
+                            <f:case value="emptyPaste"><f:translate key="{lll}bulk.error.emptyPaste"/></f:case>
+                            <f:case value="inputTooLarge"><f:translate key="{lll}bulk.error.inputTooLarge"/></f:case>
+                            <f:case value="tooManyRows"><f:translate key="{lll}bulk.error.tooManyRows"/></f:case>
+                        </f:switch>
+                    </p>
+                </f:if>
+
+                <f:if condition="{bulk.draft}">
+                    <f:if condition="{bulk.draft.hasGlobalError}">
                         <f:then>
                             <p class="typo3-message message-error">
-                                <f:switch expression="{bulk.result.globalError}">
-                                    <f:case value="emptyPaste"><f:translate key="{lll}bulk.error.emptyPaste"/></f:case>
+                                <f:switch expression="{bulk.draft.globalError}">
+                                    <f:case value="malformedDraft"><f:translate key="{lll}bulk.error.malformedDraft"/></f:case>
+                                    <f:case value="emptyDraft"><f:translate key="{lll}bulk.error.emptyDraft"/></f:case>
+                                    <f:case value="duplicateDraftKey"><f:translate key="{lll}bulk.error.duplicateDraftKey"/></f:case>
+                                    <f:case value="invalidOriginalOrder"><f:translate key="{lll}bulk.error.invalidOriginalOrder"/></f:case>
                                     <f:case value="inputTooLarge"><f:translate key="{lll}bulk.error.inputTooLarge"/></f:case>
                                     <f:case value="tooManyRows"><f:translate key="{lll}bulk.error.tooManyRows"/></f:case>
                                 </f:switch>
                             </p>
                         </f:then>
                         <f:else>
+                            <f:if condition="{bulk.draft.draftValid}">
+                                <f:then>
+                                    <p class="typo3-message message-notice">
+                                        <f:translate key="{lll}bulk.draftValid"/>
+                                    </p>
+                                </f:then>
+                            </f:if>
                             <p class="arp-editor-note">
-                                <f:translate key="{lll}bulk.summary" arguments="{0: bulk.result.validCount, 1: bulk.result.invalidCount}"/>
+                                <f:translate key="{lll}bulk.summary" arguments="{0: bulk.draft.validCount, 1: bulk.draft.invalidCount}"/>
                             </p>
                             <div
                                 class="arp-editor-grid arp-editor-block"
@@ -233,106 +254,156 @@
                                         <f:translate key="{lll}table.resetOrder"/>
                                     </button>
                                 </div>
-                                <div class="arp-editor-table-wrap">
-                                    <table class="arp-editor-table arp-editor-table--preview" data-arp-editor-table="1">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col" class="arp-editor-table__index">
-                                                    <f:translate key="{lll}column.rowIndex"/>
-                                                    <span class="arp-editor-sr"><f:translate key="{lll}table.rowIndexHint"/></span>
-                                                </th>
-                                                <th scope="col" aria-sort="none">
-                                                    <button type="button" class="arp-editor-sort" data-arp-sort="category" data-arp-sort-type="text">
-                                                        <f:translate key="{lll}column.category"/>
-                                                        <span class="arp-editor-sort-state" data-arp-sort-state></span>
-                                                    </button>
-                                                </th>
-                                                <th scope="col" aria-sort="none">
-                                                    <button type="button" class="arp-editor-sort" data-arp-sort="item" data-arp-sort-type="text">
-                                                        <f:translate key="{lll}column.item"/>
-                                                        <span class="arp-editor-sort-state" data-arp-sort-state></span>
-                                                    </button>
-                                                </th>
-                                                <th scope="col" aria-sort="none">
-                                                    <button type="button" class="arp-editor-sort" data-arp-sort="variant" data-arp-sort-type="text">
-                                                        <f:translate key="{lll}column.variant"/>
-                                                        <span class="arp-editor-sort-state" data-arp-sort-state></span>
-                                                    </button>
-                                                </th>
-                                                <th scope="col" class="arp-editor-table__price" aria-sort="none">
-                                                    <button type="button" class="arp-editor-sort arp-editor-sort--end" data-arp-sort="price" data-arp-sort-type="number">
-                                                        <f:translate key="{lll}column.price"/>
-                                                        <span class="arp-editor-sort-state" data-arp-sort-state></span>
-                                                    </button>
-                                                </th>
-                                                <th scope="col" class="arp-editor-table__line" aria-sort="none">
-                                                    <button type="button" class="arp-editor-sort arp-editor-sort--end" data-arp-sort="line" data-arp-sort-type="number">
-                                                        <f:translate key="{lll}bulk.column.line"/>
-                                                        <span class="arp-editor-sort-state" data-arp-sort-state></span>
-                                                    </button>
-                                                </th>
-                                                <th scope="col" aria-sort="none">
-                                                    <button type="button" class="arp-editor-sort" data-arp-sort="status" data-arp-sort-type="text">
-                                                        <f:translate key="{lll}column.status"/>
-                                                        <span class="arp-editor-sort-state" data-arp-sort-state></span>
-                                                    </button>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <f:for each="{bulk.result.rows}" as="row">
-                                                <f:variable name="categoryErrorClass" value=""/>
-                                                <f:variable name="itemErrorClass" value=""/>
-                                                <f:variable name="priceErrorClass" value=""/>
-                                                <f:for each="{row.errors}" as="errorCode">
-                                                    <f:if condition="{errorCode} == 'missingCategory'">
-                                                        <f:variable name="categoryErrorClass" value="arp-editor-cell--error"/>
-                                                    </f:if>
-                                                    <f:if condition="{errorCode} == 'missingItem'">
-                                                        <f:variable name="itemErrorClass" value="arp-editor-cell--error"/>
-                                                    </f:if>
-                                                    <f:if condition="{errorCode} == 'missingPrice' || {errorCode} == 'invalidPrice' || {errorCode} == 'negativePrice' || {errorCode} == 'tooManyDecimals'">
-                                                        <f:variable name="priceErrorClass" value=" arp-editor-cell--error"/>
-                                                    </f:if>
-                                                </f:for>
-                                                <tr data-arp-price="{row.amountMinor}" data-arp-line="{row.sourceLine}">
-                                                    <td class="arp-editor-table__index" data-arp-row-index></td>
-                                                    <td data-arp-col="category" class="{categoryErrorClass}">{row.category}</td>
-                                                    <td data-arp-col="item" class="{itemErrorClass}">
-                                                        <span class="arp-editor-item">{row.item}</span>
-                                                    </td>
-                                                    <td data-arp-col="variant">{row.variantDisplay}</td>
-                                                    <td class="arp-editor-table__price{priceErrorClass}" data-arp-col="price">
-                                                        <f:if condition="{row.valid}">
-                                                            <f:then>{row.formattedAmount}</f:then>
-                                                            <f:else>{row.priceRaw}</f:else>
-                                                        </f:if>
-                                                    </td>
-                                                    <td class="arp-editor-table__line" data-arp-col="line">{row.sourceLine}</td>
-                                                    <td data-arp-col="status">
-                                                        <f:if condition="{row.valid}">
-                                                            <f:then><f:translate key="{lll}bulk.row.valid"/></f:then>
-                                                            <f:else>
-                                                                <f:for each="{row.errors}" as="errorCode">
-                                                                    <span class="arp-editor-validation">
-                                                                        <f:switch expression="{errorCode}">
-                                                                            <f:case value="missingCategory"><f:translate key="{lll}bulk.error.missingCategory"/></f:case>
-                                                                            <f:case value="missingItem"><f:translate key="{lll}bulk.error.missingItem"/></f:case>
-                                                                            <f:case value="missingPrice"><f:translate key="{lll}bulk.error.missingPrice"/></f:case>
-                                                                            <f:case value="invalidPrice"><f:translate key="{lll}bulk.error.invalidPrice"/></f:case>
-                                                                            <f:case value="negativePrice"><f:translate key="{lll}bulk.error.negativePrice"/></f:case>
-                                                                            <f:case value="tooManyDecimals"><f:translate key="{lll}bulk.error.tooManyDecimals"/></f:case>
-                                                                        </f:switch>
-                                                                    </span>
-                                                                </f:for>
-                                                            </f:else>
-                                                        </f:if>
-                                                    </td>
+                                <form action="{bulk.formAction}" method="post" class="arp-editor-draft-form">
+                                    <input type="hidden" name="id" value="{bulk.pid}"/>
+                                    <input type="hidden" name="menu" value="{bulk.menuUid}"/>
+                                    <input type="hidden" name="formToken" value="{bulk.revalidateToken}"/>
+                                    <textarea name="bulkSource" hidden="hidden">{bulk.rawInput}</textarea>
+                                    <div class="arp-editor-table-wrap">
+                                        <table class="arp-editor-table arp-editor-table--preview" data-arp-editor-table="1" data-arp-draft="1">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" class="arp-editor-table__index">
+                                                        <f:translate key="{lll}column.rowIndex"/>
+                                                        <span class="arp-editor-sr"><f:translate key="{lll}table.rowIndexHint"/></span>
+                                                    </th>
+                                                    <th scope="col" aria-sort="none">
+                                                        <button type="button" class="arp-editor-sort" data-arp-sort="category" data-arp-sort-type="text">
+                                                            <f:translate key="{lll}column.category"/>
+                                                            <span class="arp-editor-sort-state" data-arp-sort-state></span>
+                                                        </button>
+                                                    </th>
+                                                    <th scope="col" aria-sort="none">
+                                                        <button type="button" class="arp-editor-sort" data-arp-sort="item" data-arp-sort-type="text">
+                                                            <f:translate key="{lll}column.item"/>
+                                                            <span class="arp-editor-sort-state" data-arp-sort-state></span>
+                                                        </button>
+                                                    </th>
+                                                    <th scope="col" aria-sort="none">
+                                                        <button type="button" class="arp-editor-sort" data-arp-sort="variant" data-arp-sort-type="text">
+                                                            <f:translate key="{lll}column.variant"/>
+                                                            <span class="arp-editor-sort-state" data-arp-sort-state></span>
+                                                        </button>
+                                                    </th>
+                                                    <th scope="col" class="arp-editor-table__price" aria-sort="none">
+                                                        <button type="button" class="arp-editor-sort arp-editor-sort--end" data-arp-sort="price" data-arp-sort-type="number">
+                                                            <f:translate key="{lll}column.price"/>
+                                                            <span class="arp-editor-sort-state" data-arp-sort-state></span>
+                                                        </button>
+                                                    </th>
+                                                    <th scope="col" class="arp-editor-table__line" aria-sort="none">
+                                                        <button type="button" class="arp-editor-sort arp-editor-sort--end" data-arp-sort="line" data-arp-sort-type="number">
+                                                            <f:translate key="{lll}bulk.column.line"/>
+                                                            <span class="arp-editor-sort-state" data-arp-sort-state></span>
+                                                        </button>
+                                                    </th>
+                                                    <th scope="col" aria-sort="none">
+                                                        <button type="button" class="arp-editor-sort" data-arp-sort="status" data-arp-sort-type="text">
+                                                            <f:translate key="{lll}column.status"/>
+                                                            <span class="arp-editor-sort-state" data-arp-sort-state></span>
+                                                        </button>
+                                                    </th>
                                                 </tr>
-                                            </f:for>
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                <f:for each="{bulk.draft.rows}" as="row">
+                                                    <f:variable name="categoryErrorClass" value=""/>
+                                                    <f:variable name="itemErrorClass" value=""/>
+                                                    <f:variable name="variantErrorClass" value=""/>
+                                                    <f:variable name="priceErrorClass" value=""/>
+                                                    <f:for each="{row.errors}" as="errorCode">
+                                                        <f:if condition="{errorCode} == 'missingCategory'">
+                                                            <f:variable name="categoryErrorClass" value="arp-editor-cell--error"/>
+                                                        </f:if>
+                                                        <f:if condition="{errorCode} == 'missingItem'">
+                                                            <f:variable name="itemErrorClass" value="arp-editor-cell--error"/>
+                                                        </f:if>
+                                                        <f:if condition="{errorCode} == 'mixedVariantRun'">
+                                                            <f:variable name="variantErrorClass" value="arp-editor-cell--error"/>
+                                                        </f:if>
+                                                        <f:if condition="{errorCode} == 'missingPrice' || {errorCode} == 'invalidPrice' || {errorCode} == 'negativePrice' || {errorCode} == 'tooManyDecimals'">
+                                                            <f:variable name="priceErrorClass" value=" arp-editor-cell--error"/>
+                                                        </f:if>
+                                                    </f:for>
+                                                    <tr data-arp-order="{row.originalOrder}" data-arp-price="{row.amountMinor}" data-arp-line="{row.sourceLine}">
+                                                        <td class="arp-editor-table__index">
+                                                            <span data-arp-row-index></span>
+                                                            <input type="hidden" name="rows[{row.draftKey}][originalOrder]" value="{row.originalOrder}"/>
+                                                            <input type="hidden" name="rows[{row.draftKey}][sourceLine]" value="{row.sourceLine}"/>
+                                                        </td>
+                                                        <td data-arp-col="category" class="{categoryErrorClass}">
+                                                            <input
+                                                                class="arp-editor-draft-input"
+                                                                type="text"
+                                                                name="rows[{row.draftKey}][category]"
+                                                                value="{row.category}"
+                                                                maxlength="255"
+                                                                autocomplete="off"
+                                                            />
+                                                        </td>
+                                                        <td data-arp-col="item" class="{itemErrorClass}">
+                                                            <input
+                                                                class="arp-editor-draft-input arp-editor-draft-input--item"
+                                                                type="text"
+                                                                name="rows[{row.draftKey}][item]"
+                                                                value="{row.item}"
+                                                                maxlength="255"
+                                                                autocomplete="off"
+                                                            />
+                                                        </td>
+                                                        <td data-arp-col="variant" class="{variantErrorClass}">
+                                                            <input
+                                                                class="arp-editor-draft-input"
+                                                                type="text"
+                                                                name="rows[{row.draftKey}][variant]"
+                                                                value="{row.variant}"
+                                                                maxlength="255"
+                                                                autocomplete="off"
+                                                            />
+                                                        </td>
+                                                        <td class="arp-editor-table__price{priceErrorClass}" data-arp-col="price">
+                                                            <input
+                                                                class="arp-editor-draft-input arp-editor-draft-input--price"
+                                                                type="text"
+                                                                name="rows[{row.draftKey}][price]"
+                                                                value="{row.priceRaw}"
+                                                                maxlength="32"
+                                                                autocomplete="off"
+                                                                inputmode="decimal"
+                                                            />
+                                                        </td>
+                                                        <td class="arp-editor-table__line" data-arp-col="line">{row.sourceLine}</td>
+                                                        <td data-arp-col="status">
+                                                            <f:if condition="{row.valid}">
+                                                                <f:then><f:translate key="{lll}bulk.row.valid"/></f:then>
+                                                                <f:else>
+                                                                    <f:for each="{row.errors}" as="errorCode">
+                                                                        <span class="arp-editor-validation">
+                                                                            <f:switch expression="{errorCode}">
+                                                                                <f:case value="missingCategory"><f:translate key="{lll}bulk.error.missingCategory"/></f:case>
+                                                                                <f:case value="missingItem"><f:translate key="{lll}bulk.error.missingItem"/></f:case>
+                                                                                <f:case value="missingPrice"><f:translate key="{lll}bulk.error.missingPrice"/></f:case>
+                                                                                <f:case value="invalidPrice"><f:translate key="{lll}bulk.error.invalidPrice"/></f:case>
+                                                                                <f:case value="negativePrice"><f:translate key="{lll}bulk.error.negativePrice"/></f:case>
+                                                                                <f:case value="tooManyDecimals"><f:translate key="{lll}bulk.error.tooManyDecimals"/></f:case>
+                                                                                <f:case value="mixedVariantRun"><f:translate key="{lll}bulk.error.mixedVariantRun"/></f:case>
+                                                                            </f:switch>
+                                                                        </span>
+                                                                    </f:for>
+                                                                </f:else>
+                                                            </f:if>
+                                                        </td>
+                                                    </tr>
+                                                </f:for>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p class="arp-editor-draft-actions">
+                                        <button type="submit" name="bulkDraftRevalidate" value="1" class="btn btn-default">
+                                            <f:translate key="{lll}bulk.revalidate"/>
+                                        </button>
+                                    </p>
+                                </form>
                                 <p class="arp-editor-empty" hidden="hidden" data-arp-editor-empty="1"><f:translate key="{lll}table.emptyFilter"/></p>
                             </div>
                         </f:else>

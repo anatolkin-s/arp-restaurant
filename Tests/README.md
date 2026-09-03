@@ -1,4 +1,4 @@
-Automated tests currently cover copy/translation UUID alignment, the compact editor read/view-model, and the bulk-paste parser (preview only, no TYPO3 runtime).
+Automated tests currently cover copy/translation UUID alignment, the compact editor read/view-model, the bulk-paste parser, and server-side bulk draft revalidation (no TYPO3 runtime, no identity lookup, no writes).
 
 Client-side search, sorting, sticky headers, and visible row numbering have no JS test harness in this repository. Those behaviors require TYPO3 backend browser runtime acceptance and are not claimed here.
 

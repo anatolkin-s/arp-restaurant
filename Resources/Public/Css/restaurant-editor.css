@@ -249,3 +249,35 @@
     white-space: pre;
     tab-size: 4;
 }
+
+.arp-editor-draft-form {
+    margin: 0;
+}
+
+.arp-editor-draft-actions {
+    margin: 0.55rem 0 0;
+}
+
+.arp-editor-draft-input {
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 8ch;
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.1rem 0.28rem;
+    font: inherit;
+    line-height: 1.3;
+    field-sizing: content;
+}
+
+.arp-editor-draft-input--item {
+    font-weight: 600;
+    min-width: 12ch;
+}
+
+.arp-editor-draft-input--price {
+    min-width: 6ch;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}

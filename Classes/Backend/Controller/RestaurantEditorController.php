@@ -6,6 +6,7 @@ namespace Anatolkin\ArpRestaurant\Backend\Controller;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendAccessGuard;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendRecordEditUrlBuilder;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidator;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkPreviewView;
 use Anatolkin\ArpRestaurant\Backend\Editor\MenuGraphReader;
@@ -30,7 +31,8 @@ final class RestaurantEditorController
 {
     private const LLL = 'LLL:EXT:arp_restaurant/Resources/Private/Language/locallang_mod_editor.xlf:';
     private const BULK_FORM = 'web_arp_restaurant_editor';
-    private const BULK_ACTION = 'bulkPreview';
+    private const BULK_PREVIEW_ACTION = 'bulkPreview';
+    private const BULK_REVALIDATE_ACTION = 'bulkDraftRevalidate';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -41,6 +43,7 @@ final class RestaurantEditorController
         private readonly ModuleLinkButtonFactory $linkButtonFactory,
         private readonly FormProtectionFactory $formProtectionFactory,
         private readonly BulkMenuParser $bulkMenuParser,
+        private readonly BulkDraftValidator $bulkDraftValidator,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -107,33 +110,51 @@ final class RestaurantEditorController
         int $menuUid,
     ): BulkPreviewView {
         $formProtection = $this->formProtectionFactory->createFromRequest($request);
-        $formToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_ACTION);
+        $previewToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_PREVIEW_ACTION);
+        $revalidateToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_REVALIDATE_ACTION);
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
         );
 
         $rawInput = '';
-        $result = null;
+        $parseGlobalError = '';
+        $draft = null;
         $requestError = '';
 
         $body = $request->getParsedBody();
         $isPreviewPost = is_array($body) && isset($body['bulkPreview']);
+        $isRevalidatePost = is_array($body) && isset($body['bulkDraftRevalidate']);
         if ($isPreviewPost) {
             $rawInput = (string)($body['bulkPaste'] ?? '');
             $submittedToken = (string)($body['formToken'] ?? '');
-            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_ACTION)) {
+            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_PREVIEW_ACTION)) {
                 $requestError = 'invalidCsrf';
             } else {
-                $result = $this->bulkMenuParser->parse($rawInput);
+                $parsed = $this->bulkMenuParser->parse($rawInput);
+                if ($parsed->hasGlobalError()) {
+                    $parseGlobalError = $parsed->globalError;
+                } else {
+                    $draft = $this->bulkDraftValidator->fromParsedRows($parsed->rows);
+                }
+            }
+        } elseif ($isRevalidatePost) {
+            $rawInput = (string)($body['bulkSource'] ?? '');
+            $submittedToken = (string)($body['formToken'] ?? '');
+            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_REVALIDATE_ACTION)) {
+                $requestError = 'invalidCsrf';
+            } else {
+                $draft = $this->bulkDraftValidator->validatePosted($body['rows'] ?? null);
             }
         }
 
         return new BulkPreviewView(
             formAction: $formAction,
-            formToken: $formToken,
+            previewToken: $previewToken,
+            revalidateToken: $revalidateToken,
             rawInput: $rawInput,
-            result: $result,
+            parseGlobalError: $parseGlobalError,
+            draft: $draft,
             requestError: $requestError,
             pid: $pid,
             menuUid: $menuUid,
