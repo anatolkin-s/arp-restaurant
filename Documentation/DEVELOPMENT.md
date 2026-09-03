@@ -38,7 +38,7 @@ Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner a
 
 `web_arp_restaurant_editor` is a Core (non-Extbase) backend module. It reads Menu → Category → Placement → Item / PriceOption for the selected page-tree pid and renders a compact table. Native List/FormEngine/IRRE remain available.
 
-The selected context is a storage pid/page, not necessarily a sysfolder. Duplicate Placements for the same Category+Item are rendered separately. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
+The selected context is a storage pid/page, not necessarily a sysfolder. That pid is the read boundary for every restaurant table, including Item. Duplicate Placements for the same Category+Item are rendered separately. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
 
 ## Copy UUID lifecycle
 

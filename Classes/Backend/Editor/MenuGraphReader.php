@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Loads default-language restaurant rows for one storage pid.
  * Hidden and scheduled records are included; deleted rows are not.
+ * Item rows are limited to the same selected pid as the rest of the graph.
  */
 final class MenuGraphReader
 {
@@ -73,6 +74,7 @@ final class MenuGraphReader
 
         $items = $itemUids === [] ? [] : $this->fetchByUids(
             MenuGraphAssembler::TABLE_ITEM,
+            $pid,
             $backendUser,
             ['uid', 'title', 'hidden'],
             array_values($itemUids),
@@ -158,7 +160,8 @@ final class MenuGraphReader
     }
 
     /**
-     * Items are loaded by uid so a reused Item on another page still resolves.
+     * Items are loaded only from the selected pid. Cross-pid reuse is out of
+     * scope until a later task can check the Item's source-page ACL.
      *
      * @param list<string> $fields
      * @param list<int> $uids
@@ -166,6 +169,7 @@ final class MenuGraphReader
      */
     private function fetchByUids(
         string $table,
+        int $pid,
         BackendUserAuthentication $backendUser,
         array $fields,
         array $uids,
@@ -175,6 +179,7 @@ final class MenuGraphReader
             ->select(...$fields)
             ->from($table)
             ->where(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)),
                 $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
                 $queryBuilder->expr()->in(
                     'uid',

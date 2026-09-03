@@ -130,8 +130,10 @@ final class MenuGraphAssembler
                     }
 
                     $itemUid = (int)($placement['item'] ?? 0);
-                    $item = $itemsByUid[$itemUid] ?? [];
-                    $itemTitle = $this->title((string)($item['title'] ?? ''), 'Untitled item');
+                    $item = $itemsByUid[$itemUid] ?? null;
+                    $itemTitle = $item === null
+                        ? 'Unavailable item'
+                        : $this->title((string)($item['title'] ?? ''), 'Untitled item');
 
                     $optionRows = [];
                     foreach ($priceOptionsByPlacement[$placementUid] ?? [] as $priceOption) {
@@ -155,9 +157,13 @@ final class MenuGraphAssembler
                     $placementGroups[] = new PlacementGroup(
                         uid: $placementUid,
                         itemTitle: $itemTitle,
-                        itemEditUrl: $itemUid > 0 ? $this->editUrl($editUrlBuilder, self::TABLE_ITEM, $itemUid) : null,
+                        itemEditUrl: $item !== null ? $this->editUrl($editUrlBuilder, self::TABLE_ITEM, $itemUid) : null,
                         editUrl: $this->editUrl($editUrlBuilder, self::TABLE_PLACEMENT, $placementUid),
-                        statusKeys: $this->recordStatusKeys($placement, $now, (int)($item['hidden'] ?? 0) === 1),
+                        statusKeys: $this->recordStatusKeys(
+                            $placement,
+                            $now,
+                            $item !== null && (int)($item['hidden'] ?? 0) === 1
+                        ),
                         priceOptions: $optionRows,
                     );
                 }

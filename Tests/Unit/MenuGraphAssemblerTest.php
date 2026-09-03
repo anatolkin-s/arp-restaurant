@@ -244,6 +244,24 @@ assertTrue(
     'hidden and scheduled records remain in the DTO instead of disappearing'
 );
 
+$crossPidItemAbsent = $assembler->assemble(
+    10,
+    'Storage A',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 99, 'sorting' => 10, 'hidden' => 0, 'starttime' => 0, 'endtime' => 0]],
+    [],
+    [['uid' => 8, 'placement' => 4, 'label' => '', 'amount' => 2300, 'sorting' => 10, 'hidden' => 0]],
+    2,
+    $now,
+    null,
+    $editUrls,
+);
+$absentPlacement = $crossPidItemAbsent->selectedMenu->categories[0]->placements[0];
+assertTrue($absentPlacement->itemTitle === 'Unavailable item', 'cross-pid Item row is not shown when the reader omitted it');
+assertTrue($absentPlacement->itemEditUrl === null, 'missing Item does not get a record_edit link');
+assertTrue(!str_contains($absentPlacement->itemTitle, 'Secret'), 'external Item title cannot leak through an absent row');
+
 if ($failures > 0) {
     echo "\n{$failures} failing assertion(s)\n";
     exit(1);
