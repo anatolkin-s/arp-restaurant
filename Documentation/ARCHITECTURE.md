@@ -121,6 +121,8 @@ Bulk preview rows are an editable in-request draft. `BulkDraftValidator` is the 
 
 Not in this milestone: identity resolution, Apply, DataHandler, QueryBuilder writes, `Item.sku`, `Placement.menu_code`. Search/sort remain view-only and must not change semantic draft order. Hidden search rows still POST. Preview from the TSV box rebuilds/resets the draft; edited cells do not rewrite the textarea.
 
-### EDITOR-2B1.1 — REPO IMPLEMENTED / NO WRITES
+### EDITOR-2B1.1 — PASS / TYPO3 13 + TYPO3 14 LIVE ACCEPTED
 
-Draft `input` events mark dirty and must not call DOM row reparenting (`sortRows` / `appendChild`). Search, sort, Restore order, and blur/`change` may refresh the view. Restore order keeps edited values. Reset draft is a dedicated CSRF POST that re-parses `bulkSource`. Placement-run warnings (`singleNamedVariant`) are distinct from blocking errors (`mixedVariantRun`, `duplicateVariant`). No global Variant table.
+Accepted on TYPO3 13.4.34 and TYPO3 14.3.6 at extension SHA `bd53dbe9acd08ac1df96113747027f0ed59502ae`.
+
+Editable temporary draft, server revalidation, Restore order vs Reset draft, Variant-run warnings/errors, and Fluid accessor collision fixes are live-accepted. No restaurant-record writes, no DataHandler, DB unchanged. Identity resolution and Apply remain later work: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md).

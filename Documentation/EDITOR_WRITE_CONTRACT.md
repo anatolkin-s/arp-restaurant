@@ -28,7 +28,16 @@ Transitions that **must not** write still include: parse, preview render, cell e
 
 ## EDITOR-2B1.1
 
-Corrective runtime: draft cell `input` must not reparent rows. Client dirty state is “Draft changed — revalidate.” until the next server round-trip. **Restore order** is view-only (keeps edits). **Reset draft** is POST `bulkDraftReset` and rebuilds from preserved `bulkSource` via `BulkMenuParser` + `fromParsedRows()`. Variant stays `PriceOption.label` scoped to a Placement run. `singleNamedVariant` is a warning; `duplicateVariant` is blocking. `errors` and `warnings` are separate lists. Warnings do not clear `DraftValid`.
+Corrective runtime: draft cell `input` must not reparent rows. Client dirty state is “Draft changed — revalidate.” until the next server round-trip. **Restore order** is view-only (keeps edits). **Reset draft** is POST `bulkDraftReset` and rebuilds from preserved `bulkSource` via `BulkMenuParser` + `fromParsedRows()`. Variant stays `PriceOption.label` scoped to a Placement run. `singleNamedVariant` is a warning; `duplicateVariant` is blocking. `errors` and `warnings` are separate lists. Warnings do not clear `DraftValid`. Fluid ObjectAccess collisions on `BulkDraftRow::$warnings` / `hasWarnings()` and `BulkDraftValidationResult::$globalError` / `hasGlobalError()` were removed.
+
+### EDITOR-2B1.1 — PASS / TYPO3 13 + TYPO3 14 LIVE ACCEPTED
+
+Accepted on both supported lines at extension SHA `bd53dbe9acd08ac1df96113747027f0ed59502ae`:
+
+- TYPO3 13.4.34
+- TYPO3 14.3.6
+
+Accepted: editable temporary bulk draft, server-authoritative validation, continuous typing / focus stable, search / sort / Restore order, Reset draft, mixedVariantRun / duplicateVariant blocking, singleNamedVariant warning, Fluid warnings/globalError accessor fixes. No restaurant-record writes, no DataHandler, DB unchanged.
 
 Canonical identity remains [DOMAIN_MODEL.md](DOMAIN_MODEL.md) section E. This contract consumes that identity; it does not add `Item.sku`, `Placement.menu_code`, or provider-specific IDs.
 

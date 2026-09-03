@@ -46,7 +46,7 @@ EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104c
 
 EDITOR-2A.2 is **REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING**. The saved Menu table remains a flat read projection. Search/sort/row numbers are client-side view state only. Sticky headers, search, and sort still need TYPO3 browser runtime acceptance. `Item.sku` and `Placement.menu_code` are not in this milestone.
 
-EDITOR-2B1.1 keeps the editable temporary draft, adds Restore order vs Reset draft, and Variant-run warnings. Identity resolution and DataHandler Apply remain later work: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md).
+EDITOR-2B1.1 is **PASS / TYPO3 13 + TYPO3 14 LIVE ACCEPTED** at extension SHA `bd53dbe9acd08ac1df96113747027f0ed59502ae` on TYPO3 13.4.34 and TYPO3 14.3.6. That gate covers the editable temporary draft, Restore order vs Reset draft, Variant-run warnings, and Fluid `warnings` / `globalError` accessor fixes. Identity resolution and DataHandler Apply remain later work: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md).
 
 ## Copy UUID lifecycle
 
