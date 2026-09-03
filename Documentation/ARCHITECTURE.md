@@ -110,3 +110,7 @@ The compact editor now projects DOMAIN-1A as one flat saved-menu table (`# | Cat
 Client-side search and sorting do not query TYPO3, do not write records, and do not change DataHandler/TCA sorting. Original domain render order is the default and can be restored. Inline editing and bulk import/write remain deferred. Bulk paste is still preview-only.
 
 This milestone is repository implementation only. Cursor has no VPS access; TYPO3 browser runtime acceptance for search, sort, sticky headers, and visible row numbering is pending.
+
+### EDITOR-2B0 — DESIGN ONLY / NO WRITES
+
+The first write-capable import is specified in [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md). Current runtime stays read-only. Do not implement DataHandler Apply, SKU, or `menu_code` from this status note.

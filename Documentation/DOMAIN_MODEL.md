@@ -286,6 +286,9 @@ TYPO3 `uid` never crosses the integration boundary.
 
 Restaurant SKU/`menu_code` values and provider-specific external IDs are additional identifiers attached to that identity; they do not replace it.
 
+The first compact-editor write/import pipeline is specified separately in [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md). That document does not change these identity layers and does not implement Apply.
+
+
 The compact backend editor is an additional UI over these records. Native List/FormEngine/IRRE remain available. Multiple Placement records for one Category+Item are legal. The compact editor's flat table is a read projection of this graph; it does not change ownership. Bulk paste in that editor is currently preview-only.
 
 Orders and OrderItems are out of scope for 0.1. When ordering is designed later, an OrderItem snapshot should be able to reference/copy:

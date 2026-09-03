@@ -46,6 +46,8 @@ EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104c
 
 EDITOR-2A.2 is **REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING**. The saved Menu and bulk preview are flat read projections. Search/sort/row numbers are client-side view state only. Sticky headers, search, and sort still need TYPO3 browser runtime acceptance. Inline editing, import/write, `Item.sku`, and `Placement.menu_code` are not in this milestone.
 
+The first DataHandler Apply path is design-only: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md). Preview remains non-writing until a later implementation task owns that contract.
+
 ## Copy UUID lifecycle
 
 Deep copy of connected translations is corrected after DataHandler `process_cmdmap()` finishes.
