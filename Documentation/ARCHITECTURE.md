@@ -78,3 +78,21 @@ The compact restaurant editor is an **additional** backend UI over the same DOMA
 - EDITOR-1 is read-only. Price display uses an isolated minor-unit formatter; currency and scale authority stay deferred to Site Settings.
 - Bulk paste is parse, validate, and preview only. It does not write records, does not merge against stored TYPO3 data, and does not change DOMAIN-1A schema or TCA.
 - The selected pid is the read boundary for Menu, Category, Placement, PriceOption, **and Item**. A Placement that points at an Item on another page does not reveal that Item's title. Cross-pid Item reuse needs explicit source-page ACL and is not implemented.
+
+## Editor milestone status
+
+### EDITOR-2A.1 — PASS / TYPO3 14 LIVE ACCEPTED
+
+Runtime recorded for this gate:
+
+- TYPO3 14.3.6
+- accepted extension SHA: `0afa5ca60104cc24166a3bd60fdde8b4d452758f`
+- visual acceptance: PASS
+- unified saved/preview grid visible in backend
+- vertical + horizontal cell rules visible
+- invalid preview values highlighted at cell level
+- DB unchanged
+- no schema/TCA/DataHandler changes
+- production not touched
+
+TYPO3 13 remains on the previously accepted editor line at the time of this runtime gate and is not part of this runtime acceptance.

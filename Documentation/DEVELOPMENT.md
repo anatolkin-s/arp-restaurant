@@ -42,6 +42,8 @@ The selected context is a storage pid/page, not necessarily a sysfolder. That pi
 
 Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMenuParser`, and renders a preview in the same module. That path is preview-only: no DataHandler writes and no lookup of existing records to merge or deduplicate.
 
+EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104cc24166a3bd60fdde8b4d452758f` on TYPO3 14.3.6. That gate covers the unified saved/preview grid, cell rules, and cell-level invalid preview highlighting. TYPO3 13 is not part of that runtime acceptance. Production was not touched.
+
 ## Copy UUID lifecycle
 
 Deep copy of connected translations is corrected after DataHandler `process_cmdmap()` finishes.
