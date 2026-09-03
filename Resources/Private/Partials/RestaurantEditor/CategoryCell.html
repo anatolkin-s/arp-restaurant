@@ -1,0 +1,14 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+<td data-arp-col="category" data-arp-sort-value="{category.title}">
+    <span class="arp-editor-category-title">{category.title}</span>
+    <f:if condition="{category.editUrl}">
+        <a class="arp-editor-inline-link" href="{category.editUrl}"><f:translate key="{lll}button.openRecord"/></a>
+    </f:if>
+    <f:for each="{category.statusKeys}" as="statusKey">
+        <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 1}"/>
+    </f:for>
+</td>
+</html>

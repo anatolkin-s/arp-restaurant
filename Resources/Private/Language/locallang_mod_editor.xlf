@@ -27,6 +27,36 @@
       <trans-unit id="column.item">
         <source>Item</source>
       </trans-unit>
+      <trans-unit id="column.category">
+        <source>Category</source>
+      </trans-unit>
+      <trans-unit id="column.rowIndex">
+        <source>#</source>
+      </trans-unit>
+      <trans-unit id="table.search">
+        <source>Search</source>
+      </trans-unit>
+      <trans-unit id="table.searchSaved">
+        <source>Search this menu</source>
+      </trans-unit>
+      <trans-unit id="table.searchPreview">
+        <source>Search preview</source>
+      </trans-unit>
+      <trans-unit id="table.resetOrder">
+        <source>Original order</source>
+      </trans-unit>
+      <trans-unit id="table.emptyFilter">
+        <source>No rows match this search.</source>
+      </trans-unit>
+      <trans-unit id="table.sortAscending">
+        <source>ascending</source>
+      </trans-unit>
+      <trans-unit id="table.sortDescending">
+        <source>descending</source>
+      </trans-unit>
+      <trans-unit id="table.rowIndexHint">
+        <source>Visible row number only. Not a restaurant item code.</source>
+      </trans-unit>
       <trans-unit id="column.variant">
         <source>Variant</source>
       </trans-unit>

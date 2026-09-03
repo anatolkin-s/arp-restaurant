@@ -73,7 +73,7 @@ The compact restaurant editor is an **additional** backend UI over the same DOMA
 
 - Module: `web_arp_restaurant_editor` (parent `web`, page tree).
 - The selected page-tree node is the storage pid/page. It does not have to be a sysfolder.
-- Multiple Placement records for the same Category+Item are legal and are shown as separate groups.
+- Multiple Placement records for the same Category+Item are legal and are shown as separate rows.
 - Native List, FormEngine, and IRRE remain valid editing surfaces.
 - EDITOR-1 is read-only. Price display uses an isolated minor-unit formatter; currency and scale authority stay deferred to Site Settings.
 - Bulk paste is parse, validate, and preview only. It does not write records, does not merge against stored TYPO3 data, and does not change DOMAIN-1A schema or TCA.
@@ -96,3 +96,13 @@ Runtime recorded for this gate:
 - production not touched
 
 TYPO3 13 remains on the previously accepted editor line at the time of this runtime gate and is not part of this runtime acceptance.
+
+### EDITOR-2A.2 — REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING
+
+The compact editor now projects DOMAIN-1A as one flat saved-menu table (`# | Category | Item | Variant | Price | Status`) and one flat bulk-preview table (`# | Category | Item | Variant | Price | Line | Status`). That projection does not change Menu → Category → Placement → Item / PriceOption ownership.
+
+`#` is a transient visible-row index. It is not an Item UUID, TYPO3 uid, restaurant item code, or ordering identity. A future persistent restaurant code (for example L12 vs D8) would belong to Placement, not Item, and is not implemented here.
+
+Client-side search and sorting do not query TYPO3, do not write records, and do not change DataHandler/TCA sorting. Original domain render order is the default and can be restored. Inline editing and bulk import/write remain deferred. Bulk paste is still preview-only.
+
+This milestone is repository implementation only. Cursor has no VPS access; TYPO3 browser runtime acceptance for search, sort, sticky headers, and visible row numbering is pending.

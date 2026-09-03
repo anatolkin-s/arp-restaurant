@@ -38,11 +38,13 @@ Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner a
 
 `web_arp_restaurant_editor` is a Core (non-Extbase) backend module. It reads Menu → Category → Placement → Item / PriceOption for the selected page-tree pid and renders a compact table. Native List/FormEngine/IRRE remain available.
 
-The selected context is a storage pid/page, not necessarily a sysfolder. That pid is the read boundary for every restaurant table, including Item. Duplicate Placements for the same Category+Item are rendered separately. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
+The selected context is a storage pid/page, not necessarily a sysfolder. That pid is the read boundary for every restaurant table, including Item. Duplicate Placements for the same Category+Item are rendered as separate rows in one flat table. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
 
 Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMenuParser`, and renders a preview in the same module. That path is preview-only: no DataHandler writes and no lookup of existing records to merge or deduplicate.
 
 EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104cc24166a3bd60fdde8b4d452758f` on TYPO3 14.3.6. That gate covers the unified saved/preview grid, cell rules, and cell-level invalid preview highlighting. TYPO3 13 is not part of that runtime acceptance. Production was not touched.
+
+EDITOR-2A.2 is **REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING**. The saved Menu and bulk preview are flat read projections. Search/sort/row numbers are client-side view state only. Sticky headers, search, and sort still need TYPO3 browser runtime acceptance. Inline editing, import/write, and persistent restaurant item codes are not in this milestone.
 
 ## Copy UUID lifecycle
 

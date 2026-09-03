@@ -200,7 +200,8 @@ Copy semantics:
 - `t3_origuid` may retain TYPO3 copy provenance.
 - `public_uuid` represents business identity, not copy provenance.
 
-The compact backend editor is an additional UI over these records. Native List/FormEngine/IRRE remain available. Multiple Placement records for one Category+Item are legal. Bulk paste in that editor is currently preview-only.
+The compact backend editor is an additional UI over these records. Native List/FormEngine/IRRE remain available. Multiple Placement records for one Category+Item are legal. The compact editor's flat table is a read projection of this graph; it does not change ownership. Bulk paste in that editor is currently preview-only. Transient table row numbers are not restaurant item codes. A future persistent menu code, if added, would likely belong to Placement because the same reusable Item can carry a different code on Lunch and Dinner.
+
 
 Orders and OrderItems are out of scope for 0.1. When ordering is designed later, an OrderItem snapshot should be able to reference/copy:
 
