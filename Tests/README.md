@@ -1,4 +1,4 @@
-Automated tests currently cover copy/translation UUID alignment and the compact editor read/view-model.
+Automated tests currently cover copy/translation UUID alignment, the compact editor read/view-model, and the bulk-paste parser (preview only, no TYPO3 runtime).
 
 From the extension root:
 

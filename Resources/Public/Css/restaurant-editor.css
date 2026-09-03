@@ -99,6 +99,50 @@
     font-weight: 600;
 }
 
+.arp-editor-bulk {
+    margin: 1.5rem 0 0;
+    border: 1px solid var(--typo3-border-color, #ddd);
+    border-radius: 0.25rem;
+    padding: 0.4rem 0.75rem 0.75rem;
+}
+
+.arp-editor-bulk > summary {
+    cursor: pointer;
+    font-weight: 700;
+    padding: 0.35rem 0;
+}
+
+.arp-editor-bulk-label {
+    display: block;
+    margin: 0 0 0.35rem;
+    font-weight: 600;
+}
+
+.arp-editor-bulk-paste {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 8rem;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    white-space: pre;
+    tab-size: 4;
+}
+
+.arp-editor-bulk-section {
+    margin: 0 0 1rem;
+}
+
+.arp-editor-bulk-section h3 {
+    margin: 0.75rem 0 0.35rem;
+    font-size: 1rem;
+}
+
+.arp-editor-row--invalid td {
+    background: var(--typo3-state-danger-bg, #f8d7da);
+}
+
 @media (max-width: 700px) {
     .arp-editor-table th:nth-child(4),
     .arp-editor-table td:nth-child(4) {

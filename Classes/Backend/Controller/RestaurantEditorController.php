@@ -6,6 +6,8 @@ namespace Anatolkin\ArpRestaurant\Backend\Controller;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendAccessGuard;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendRecordEditUrlBuilder;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuParser;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkPreviewView;
 use Anatolkin\ArpRestaurant\Backend\Editor\MenuGraphReader;
 use Anatolkin\ArpRestaurant\Backend\Editor\ModuleLinkButtonFactory;
 use Anatolkin\ArpRestaurant\Backend\Editor\ViewModel\EditorScreen;
@@ -17,6 +19,7 @@ use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -26,6 +29,8 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 final class RestaurantEditorController
 {
     private const LLL = 'LLL:EXT:arp_restaurant/Resources/Private/Language/locallang_mod_editor.xlf:';
+    private const BULK_FORM = 'web_arp_restaurant_editor';
+    private const BULK_ACTION = 'bulkPreview';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -34,6 +39,8 @@ final class RestaurantEditorController
         private readonly BackendAccessGuard $accessGuard,
         private readonly MenuGraphReader $menuGraphReader,
         private readonly ModuleLinkButtonFactory $linkButtonFactory,
+        private readonly FormProtectionFactory $formProtectionFactory,
+        private readonly BulkMenuParser $bulkMenuParser,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -43,6 +50,7 @@ final class RestaurantEditorController
         $moduleTemplate->setTitle($languageService->sL(self::LLL . 'mlang_tabs_tab'));
 
         $moduleTemplate->assign('lll', self::LLL);
+        $moduleTemplate->assign('bulk', null);
 
         $pid = $this->resolvePid($request);
         $backendUser = $this->getBackendUser();
@@ -68,7 +76,7 @@ final class RestaurantEditorController
             return $moduleTemplate->renderResponse('RestaurantEditor/Index');
         }
 
-        $requestedMenuUid = (int)($request->getQueryParams()['menu'] ?? 0);
+        $requestedMenuUid = (int)($request->getQueryParams()['menu'] ?? ($request->getParsedBody()['menu'] ?? 0));
         $editUrlBuilder = new BackendRecordEditUrlBuilder($this->uriBuilder, $request);
         $uriBuilder = $this->uriBuilder;
         $screen = $this->menuGraphReader->load(
@@ -86,14 +94,58 @@ final class RestaurantEditorController
             $editUrlBuilder,
         );
 
+        $activeMenuUid = $screen->selectedMenu->uid ?? $requestedMenuUid;
         $moduleTemplate->assign('screen', $screen);
+        $moduleTemplate->assign('bulk', $this->buildBulkPreview($request, $pid, $activeMenuUid));
 
         return $moduleTemplate->renderResponse('RestaurantEditor/Index');
     }
 
+    private function buildBulkPreview(
+        ServerRequestInterface $request,
+        int $pid,
+        int $menuUid,
+    ): BulkPreviewView {
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $formToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_ACTION);
+        $formAction = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $menuUid]
+        );
+
+        $rawInput = '';
+        $result = null;
+        $requestError = '';
+
+        $body = $request->getParsedBody();
+        $isPreviewPost = is_array($body) && isset($body['bulkPreview']);
+        if ($isPreviewPost) {
+            $rawInput = (string)($body['bulkPaste'] ?? '');
+            $submittedToken = (string)($body['formToken'] ?? '');
+            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_ACTION)) {
+                $requestError = 'invalidCsrf';
+            } else {
+                $result = $this->bulkMenuParser->parse($rawInput);
+            }
+        }
+
+        return new BulkPreviewView(
+            formAction: $formAction,
+            formToken: $formToken,
+            rawInput: $rawInput,
+            result: $result,
+            requestError: $requestError,
+            pid: $pid,
+            menuUid: $menuUid,
+            maxBytes: BulkMenuParser::DEFAULT_MAX_BYTES,
+            maxRows: BulkMenuParser::DEFAULT_MAX_ROWS,
+        );
+    }
+
     private function resolvePid(ServerRequestInterface $request): int
     {
-        $raw = $request->getQueryParams()['id'] ?? $request->getParsedBody()['id'] ?? 0;
+        $raw = $request->getQueryParams()['id']
+            ?? (is_array($request->getParsedBody()) ? ($request->getParsedBody()['id'] ?? 0) : 0);
         if (!MathUtility::canBeInterpretedAsInteger($raw)) {
             return 0;
         }

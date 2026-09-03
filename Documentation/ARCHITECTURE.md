@@ -76,4 +76,5 @@ The compact restaurant editor is an **additional** backend UI over the same DOMA
 - Multiple Placement records for the same Category+Item are legal and are shown as separate groups.
 - Native List, FormEngine, and IRRE remain valid editing surfaces.
 - EDITOR-1 is read-only. Price display uses an isolated minor-unit formatter; currency and scale authority stay deferred to Site Settings.
+- Bulk paste is parse, validate, and preview only. It does not write records, does not merge against stored TYPO3 data, and does not change DOMAIN-1A schema or TCA.
 - The selected pid is the read boundary for Menu, Category, Placement, PriceOption, **and Item**. A Placement that points at an Item on another page does not reveal that Item's title. Cross-pid Item reuse needs explicit source-page ACL and is not implemented.

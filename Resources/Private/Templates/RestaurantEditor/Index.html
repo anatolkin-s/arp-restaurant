@@ -14,31 +14,24 @@
         <p class="arp-editor-page">{screen.pageTitle}</p>
     </f:if>
 
-    <f:if condition="{screen.emptyState}">
+    <f:if condition="{bulk}">
         <f:then>
-            <p class="typo3-message message-notice">
-                <f:switch expression="{screen.emptyState}">
-                    <f:case value="selectPage"><f:translate key="{lll}empty.selectPage"/></f:case>
-                    <f:case value="noPageAccess"><f:translate key="{lll}empty.noPageAccess"/></f:case>
-                    <f:case value="noTableAccess"><f:translate key="{lll}empty.noTableAccess"/></f:case>
-                    <f:case value="noMenus"><f:translate key="{lll}empty.noMenus"/></f:case>
-                    <f:defaultCase><f:translate key="{lll}empty.selectPage"/></f:defaultCase>
-                </f:switch>
-            </p>
-        </f:then>
-        <f:else>
-            <nav class="arp-editor-tabs" aria-label="Menus">
-                <f:for each="{screen.menus}" as="menuTab">
-                    <span class="arp-editor-tab{f:if(condition: menuTab.active, then: ' arp-editor-tab--active')}">
-                        <a href="{menuTab.url}">{menuTab.title}</a>
-                        <f:if condition="{menuTab.editUrl}">
-                            <a class="arp-editor-inline-link" href="{menuTab.editUrl}"><f:translate key="{lll}button.openRecord"/></a>
-                        </f:if>
-                    </span>
-                </f:for>
-            </nav>
+            <f:if condition="{screen.emptyState}">
+                <p class="typo3-message message-notice"><f:translate key="{lll}empty.noMenus"/></p>
+            </f:if>
 
             <f:if condition="{screen.selectedMenu}">
+                <nav class="arp-editor-tabs" aria-label="Menus">
+                    <f:for each="{screen.menus}" as="menuTab">
+                        <span class="arp-editor-tab{f:if(condition: menuTab.active, then: ' arp-editor-tab--active')}">
+                            <a href="{menuTab.url}">{menuTab.title}</a>
+                            <f:if condition="{menuTab.editUrl}">
+                                <a class="arp-editor-inline-link" href="{menuTab.editUrl}"><f:translate key="{lll}button.openRecord"/></a>
+                            </f:if>
+                        </span>
+                    </f:for>
+                </nav>
+
                 <f:if condition="{screen.selectedMenu.categories}">
                     <f:then>
                         <f:for each="{screen.selectedMenu.categories}" as="category">
@@ -126,6 +119,119 @@
                     </f:else>
                 </f:if>
             </f:if>
+
+            <details class="arp-editor-bulk" open>
+                <summary><f:translate key="{lll}bulk.heading"/></summary>
+                <p class="arp-editor-note"><f:translate key="{lll}bulk.previewOnly"/></p>
+                <p class="arp-editor-note"><f:translate key="{lll}bulk.help"/></p>
+
+                <f:if condition="{bulk.requestError}">
+                    <p class="typo3-message message-error">
+                        <f:switch expression="{bulk.requestError}">
+                            <f:case value="invalidCsrf"><f:translate key="{lll}bulk.error.invalidCsrf"/></f:case>
+                        </f:switch>
+                    </p>
+                </f:if>
+
+                <form action="{bulk.formAction}" method="post" class="arp-editor-bulk-form">
+                    <input type="hidden" name="id" value="{bulk.pid}"/>
+                    <input type="hidden" name="menu" value="{bulk.menuUid}"/>
+                    <input type="hidden" name="formToken" value="{bulk.formToken}"/>
+                    <label for="arp-bulk-paste" class="arp-editor-bulk-label"><f:translate key="{lll}bulk.pasteLabel"/></label>
+                    <textarea id="arp-bulk-paste" name="bulkPaste" rows="10" cols="80" maxlength="{bulk.maxBytes}" class="arp-editor-bulk-paste">{bulk.rawInput}</textarea>
+                    <p>
+                        <button type="submit" name="bulkPreview" value="1" class="btn btn-default">
+                            <f:translate key="{lll}bulk.preview"/>
+                        </button>
+                    </p>
+                </form>
+
+                <f:if condition="{bulk.result}">
+                    <f:if condition="{bulk.result.globalError}">
+                        <f:then>
+                            <p class="typo3-message message-error">
+                                <f:switch expression="{bulk.result.globalError}">
+                                    <f:case value="emptyPaste"><f:translate key="{lll}bulk.error.emptyPaste"/></f:case>
+                                    <f:case value="inputTooLarge"><f:translate key="{lll}bulk.error.inputTooLarge"/></f:case>
+                                    <f:case value="tooManyRows"><f:translate key="{lll}bulk.error.tooManyRows"/></f:case>
+                                </f:switch>
+                            </p>
+                        </f:then>
+                        <f:else>
+                            <p class="arp-editor-note">
+                                <f:translate key="{lll}bulk.summary" arguments="{0: bulk.result.validCount, 1: bulk.result.invalidCount}"/>
+                            </p>
+                            <f:for each="{bulk.result.sections}" as="section">
+                                <section class="arp-editor-bulk-section">
+                                    <h3>
+                                        <f:if condition="{section.category}">
+                                            <f:then>{section.category}</f:then>
+                                            <f:else><f:translate key="{lll}bulk.uncategorized"/></f:else>
+                                        </f:if>
+                                    </h3>
+                                    <div class="arp-editor-table-wrap">
+                                        <table class="arp-editor-table">
+                                            <thead>
+                                                <tr>
+                                                    <th><f:translate key="{lll}column.item"/></th>
+                                                    <th><f:translate key="{lll}column.variant"/></th>
+                                                    <th class="arp-editor-table__price"><f:translate key="{lll}column.price"/></th>
+                                                    <th><f:translate key="{lll}bulk.column.line"/></th>
+                                                    <th><f:translate key="{lll}column.status"/></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <f:for each="{section.rows}" as="row">
+                                                    <tr class="{f:if(condition: row.valid, then: '', else: 'arp-editor-row--invalid')}">
+                                                        <td><span class="arp-editor-item">{row.item}</span></td>
+                                                        <td>{row.variantDisplay}</td>
+                                                        <td class="arp-editor-table__price">
+                                                            <f:if condition="{row.valid}">
+                                                                <f:then>{row.formattedAmount}</f:then>
+                                                                <f:else>{row.priceRaw}</f:else>
+                                                            </f:if>
+                                                        </td>
+                                                        <td>{row.sourceLine}</td>
+                                                        <td>
+                                                            <f:if condition="{row.valid}">
+                                                                <f:then><f:translate key="{lll}bulk.row.valid"/></f:then>
+                                                                <f:else>
+                                                                    <f:for each="{row.errors}" as="errorCode">
+                                                                        <span class="arp-editor-status arp-editor-status--hidden">
+                                                                            <f:switch expression="{errorCode}">
+                                                                                <f:case value="missingCategory"><f:translate key="{lll}bulk.error.missingCategory"/></f:case>
+                                                                                <f:case value="missingItem"><f:translate key="{lll}bulk.error.missingItem"/></f:case>
+                                                                                <f:case value="missingPrice"><f:translate key="{lll}bulk.error.missingPrice"/></f:case>
+                                                                                <f:case value="invalidPrice"><f:translate key="{lll}bulk.error.invalidPrice"/></f:case>
+                                                                                <f:case value="negativePrice"><f:translate key="{lll}bulk.error.negativePrice"/></f:case>
+                                                                                <f:case value="tooManyDecimals"><f:translate key="{lll}bulk.error.tooManyDecimals"/></f:case>
+                                                                            </f:switch>
+                                                                        </span>
+                                                                    </f:for>
+                                                                </f:else>
+                                                            </f:if>
+                                                        </td>
+                                                    </tr>
+                                                </f:for>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+                            </f:for>
+                        </f:else>
+                    </f:if>
+                </f:if>
+            </details>
+        </f:then>
+        <f:else>
+            <p class="typo3-message message-notice">
+                <f:switch expression="{screen.emptyState}">
+                    <f:case value="selectPage"><f:translate key="{lll}empty.selectPage"/></f:case>
+                    <f:case value="noPageAccess"><f:translate key="{lll}empty.noPageAccess"/></f:case>
+                    <f:case value="noTableAccess"><f:translate key="{lll}empty.noTableAccess"/></f:case>
+                    <f:defaultCase><f:translate key="{lll}empty.selectPage"/></f:defaultCase>
+                </f:switch>
+            </p>
         </f:else>
     </f:if>
 </f:section>

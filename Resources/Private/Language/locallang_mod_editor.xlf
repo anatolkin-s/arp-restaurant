@@ -72,6 +72,63 @@
       <trans-unit id="readonly.notice">
         <source>Read-only compact view of the same DOMAIN-1A records. Native List, FormEngine, and IRRE remain available.</source>
       </trans-unit>
+      <trans-unit id="bulk.heading">
+        <source>Bulk paste</source>
+      </trans-unit>
+      <trans-unit id="bulk.previewOnly">
+        <source>Preview only. Pasted rows are parsed and validated here; nothing is written to the database.</source>
+      </trans-unit>
+      <trans-unit id="bulk.help">
+        <source>Paste tab-separated columns in this order: Category, Item, Variant, Price. A header row with those names is optional. Variant may be blank. At most 200 data rows and 64 KiB.</source>
+      </trans-unit>
+      <trans-unit id="bulk.pasteLabel">
+        <source>Spreadsheet paste (TSV)</source>
+      </trans-unit>
+      <trans-unit id="bulk.preview">
+        <source>Preview</source>
+      </trans-unit>
+      <trans-unit id="bulk.summary">
+        <source>%1$d valid row(s), %2$d invalid row(s). Nothing was saved.</source>
+      </trans-unit>
+      <trans-unit id="bulk.uncategorized">
+        <source>(missing category)</source>
+      </trans-unit>
+      <trans-unit id="bulk.column.line">
+        <source>Line</source>
+      </trans-unit>
+      <trans-unit id="bulk.row.valid">
+        <source>valid</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.invalidCsrf">
+        <source>The preview request could not be verified. Paste again and use Preview.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.emptyPaste">
+        <source>Paste at least one data row.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.inputTooLarge">
+        <source>The paste is larger than the allowed 64 KiB limit.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.tooManyRows">
+        <source>The paste has more than 200 data rows.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.missingCategory">
+        <source>Category is required.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.missingItem">
+        <source>Item is required.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.missingPrice">
+        <source>Price is required.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.invalidPrice">
+        <source>Price must be a non-negative decimal with a dot, such as 23, 23.00, or 4.50.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.negativePrice">
+        <source>Negative prices are not allowed.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.tooManyDecimals">
+        <source>Price may have at most 2 decimal digits.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
