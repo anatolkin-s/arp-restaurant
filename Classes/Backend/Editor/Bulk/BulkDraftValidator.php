@@ -162,7 +162,8 @@ final class BulkDraftValidator
     private function applyRunValidation(array $rows): array
     {
         $count = count($rows);
-        $runErrors = array_fill(0, $count, false);
+        $extraErrors = array_fill(0, $count, []);
+        $extraWarnings = array_fill(0, $count, []);
         $start = 0;
         while ($start < $count) {
             $end = $start;
@@ -176,28 +177,23 @@ final class BulkDraftValidator
                 ++$end;
             }
 
-            $empty = 0;
-            $named = 0;
-            for ($i = $start; $i <= $end; ++$i) {
-                if ($rows[$i]->variant === '') {
-                    ++$empty;
-                } else {
-                    ++$named;
-                }
-            }
-            if ($empty > 0 && $named > 0) {
-                for ($i = $start; $i <= $end; ++$i) {
-                    $runErrors[$i] = true;
-                }
-            }
+            $this->annotateRun($rows, $start, $end, $extraErrors, $extraWarnings);
             $start = $end + 1;
         }
 
         $out = [];
         foreach ($rows as $index => $row) {
             $errors = $row->errors;
-            if ($runErrors[$index] && !in_array('mixedVariantRun', $errors, true)) {
-                $errors[] = 'mixedVariantRun';
+            foreach ($extraErrors[$index] as $code) {
+                if (!in_array($code, $errors, true)) {
+                    $errors[] = $code;
+                }
+            }
+            $warnings = $row->warnings;
+            foreach ($extraWarnings[$index] as $code) {
+                if (!in_array($code, $warnings, true)) {
+                    $warnings[] = $code;
+                }
             }
             $out[] = new BulkDraftRow(
                 draftKey: $row->draftKey,
@@ -210,10 +206,60 @@ final class BulkDraftValidator
                 amountMinor: $row->amountMinor,
                 formattedAmount: $row->formattedAmount,
                 errors: $errors,
+                warnings: $warnings,
             );
         }
 
         return $out;
+    }
+
+    /**
+     * @param list<BulkDraftRow> $rows
+     * @param list<list<string>> $extraErrors
+     * @param list<list<string>> $extraWarnings
+     */
+    private function annotateRun(
+        array $rows,
+        int $start,
+        int $end,
+        array &$extraErrors,
+        array &$extraWarnings,
+    ): void {
+        $empty = 0;
+        $named = 0;
+        for ($i = $start; $i <= $end; ++$i) {
+            if ($rows[$i]->variant === '') {
+                ++$empty;
+            } else {
+                ++$named;
+            }
+        }
+
+        if ($empty > 0 && $named > 0) {
+            for ($i = $start; $i <= $end; ++$i) {
+                $extraErrors[$i][] = 'mixedVariantRun';
+            }
+            return;
+        }
+
+        $length = $end - $start + 1;
+        if ($empty === 0 && $named >= 2) {
+            $tally = [];
+            for ($i = $start; $i <= $end; ++$i) {
+                $label = $rows[$i]->variant;
+                $tally[$label] = ($tally[$label] ?? 0) + 1;
+            }
+            for ($i = $start; $i <= $end; ++$i) {
+                if ($tally[$rows[$i]->variant] > 1) {
+                    $extraErrors[$i][] = 'duplicateVariant';
+                }
+            }
+            return;
+        }
+
+        if ($length === 1 && $rows[$start]->variant !== '') {
+            $extraWarnings[$start][] = 'singleNamedVariant';
+        }
     }
 
     private function normalizeRow(

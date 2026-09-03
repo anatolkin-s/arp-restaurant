@@ -10,6 +10,7 @@ final readonly class BulkPreviewView
         public string $formAction,
         public string $previewToken,
         public string $revalidateToken,
+        public string $resetToken,
         public string $rawInput,
         public string $parseGlobalError,
         public ?BulkDraftValidationResult $draft,

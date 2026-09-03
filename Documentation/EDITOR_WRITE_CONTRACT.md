@@ -24,7 +24,11 @@ Semantic draft order is `originalOrder` (parsed order). The server restores that
 
 The existing **65536-byte** bound is reused as the maximum concatenated length of editable Category + Item + Variant + Price strings on revalidate. Nested form metadata is not an extra unbounded payload. Maximum **200** rows remains.
 
-Transitions that **must not** write still include: parse, preview render, cell edit of draft values, search, sort, filter, reset original order, numbering, and `bulkDraftRevalidate`.
+Transitions that **must not** write still include: parse, preview render, cell edit of draft values, search, sort, filter, restore order, reset draft, numbering, `bulkDraftRevalidate`, and `bulkDraftReset`.
+
+## EDITOR-2B1.1
+
+Corrective runtime: draft cell `input` must not reparent rows. Client dirty state is “Draft changed — revalidate.” until the next server round-trip. **Restore order** is view-only (keeps edits). **Reset draft** is POST `bulkDraftReset` and rebuilds from preserved `bulkSource` via `BulkMenuParser` + `fromParsedRows()`. Variant stays `PriceOption.label` scoped to a Placement run. `singleNamedVariant` is a warning; `duplicateVariant` is blocking. `errors` and `warnings` are separate lists. Warnings do not clear `DraftValid`.
 
 Canonical identity remains [DOMAIN_MODEL.md](DOMAIN_MODEL.md) section E. This contract consumes that identity; it does not add `Item.sku`, `Placement.menu_code`, or provider-specific IDs.
 
@@ -39,7 +43,7 @@ Inspected in-repo sources, not a live DataHandler run:
 - TCA: Menu → IRRE Category → IRRE Placement → reusable Item + IRRE PriceOption. `public_uuid` is TCA `type=uuid` v4, required, `l10n_mode=exclude`. All five tables have `tstamp`, `deleted`, `versioningWS`, localization fields. No title UNIQUE. No `UNIQUE(category,item)`. No `sku` / `menu_code` columns.
 - `BulkMenuParser` / `BulkMenuRow`: TSV parse + validate only. No database. One pasted row is one preview row, not an Item.
 - `BulkDraftValidator` / `BulkDraftRow`: POST `bulkDraftRevalidate` rebuilds normalized draft state (trim, `DecimalMinorUnitParser`, consecutive Category+Item run rules). No QueryBuilder identity lookup. No writes.
-- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` is CSRF-protected parse; POST `bulkDraftRevalidate` is a separate CSRF-protected draft check. No DataHandler. Module `workspaces: live`.
+- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` is CSRF-protected parse; POST `bulkDraftRevalidate` is a separate CSRF-protected draft check; POST `bulkDraftReset` rebuilds the draft from preserved TSV. No DataHandler. Module `workspaces: live`.
 - `MenuGraphReader`: default language (`sys_language_uid=0`), selected pid only, deleted excluded, hidden/scheduled included. Item reads are pid-bounded.
 - `BackendAccessGuard`: page show + `tables_select` on all five restaurant tables. Fail closed.
 - Fluid table: read projection. `#` is transient view state.

@@ -216,13 +216,48 @@
             updateSortUi();
         }
 
+        function isDraftBusinessInput(target) {
+            if (!target || target.tagName !== 'INPUT' || target.type === 'hidden') {
+                return false;
+            }
+            const cell = target.closest('[data-arp-col]');
+            if (!cell) {
+                return false;
+            }
+            const column = cell.getAttribute('data-arp-col');
+            return column === 'category' || column === 'item' || column === 'variant' || column === 'price';
+        }
+
+        function markDraftDirty() {
+            root.classList.add('arp-editor-draft--stale');
+            const dirty = root.querySelector('[data-arp-draft-dirty]');
+            const serverStatus = root.querySelectorAll('[data-arp-server-status]');
+            if (dirty) {
+                dirty.hidden = false;
+            }
+            serverStatus.forEach((node) => {
+                node.hidden = true;
+            });
+        }
+
         if (search) {
             search.addEventListener('input', refresh);
         }
 
         if (table.getAttribute('data-arp-draft') === '1') {
-            tbody.addEventListener('input', refresh);
-            tbody.addEventListener('change', refresh);
+            tbody.addEventListener('input', (event) => {
+                if (!isDraftBusinessInput(event.target)) {
+                    return;
+                }
+                markDraftDirty();
+            });
+            tbody.addEventListener('change', (event) => {
+                if (!isDraftBusinessInput(event.target)) {
+                    return;
+                }
+                markDraftDirty();
+                refresh();
+            });
         }
 
         table.querySelectorAll('[data-arp-sort]').forEach((button) => {

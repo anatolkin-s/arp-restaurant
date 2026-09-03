@@ -33,6 +33,7 @@ final class RestaurantEditorController
     private const BULK_FORM = 'web_arp_restaurant_editor';
     private const BULK_PREVIEW_ACTION = 'bulkPreview';
     private const BULK_REVALIDATE_ACTION = 'bulkDraftRevalidate';
+    private const BULK_RESET_ACTION = 'bulkDraftReset';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -112,6 +113,7 @@ final class RestaurantEditorController
         $formProtection = $this->formProtectionFactory->createFromRequest($request);
         $previewToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_PREVIEW_ACTION);
         $revalidateToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_REVALIDATE_ACTION);
+        $resetToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESET_ACTION);
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
@@ -124,11 +126,25 @@ final class RestaurantEditorController
 
         $body = $request->getParsedBody();
         $isPreviewPost = is_array($body) && isset($body['bulkPreview']);
+        $isResetPost = is_array($body) && isset($body['bulkDraftReset']);
         $isRevalidatePost = is_array($body) && isset($body['bulkDraftRevalidate']);
         if ($isPreviewPost) {
             $rawInput = (string)($body['bulkPaste'] ?? '');
             $submittedToken = (string)($body['formToken'] ?? '');
             if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_PREVIEW_ACTION)) {
+                $requestError = 'invalidCsrf';
+            } else {
+                $parsed = $this->bulkMenuParser->parse($rawInput);
+                if ($parsed->hasGlobalError()) {
+                    $parseGlobalError = $parsed->globalError;
+                } else {
+                    $draft = $this->bulkDraftValidator->fromParsedRows($parsed->rows);
+                }
+            }
+        } elseif ($isResetPost) {
+            $rawInput = (string)($body['bulkSource'] ?? '');
+            $submittedToken = (string)($body['resetToken'] ?? '');
+            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_RESET_ACTION)) {
                 $requestError = 'invalidCsrf';
             } else {
                 $parsed = $this->bulkMenuParser->parse($rawInput);
@@ -152,6 +168,7 @@ final class RestaurantEditorController
             formAction: $formAction,
             previewToken: $previewToken,
             revalidateToken: $revalidateToken,
+            resetToken: $resetToken,
             rawInput: $rawInput,
             parseGlobalError: $parseGlobalError,
             draft: $draft,

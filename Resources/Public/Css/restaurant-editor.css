@@ -210,12 +210,31 @@
     box-shadow: inset 0.18rem 0 0 var(--typo3-state-danger-border, #c45656);
 }
 
+.arp-editor-cell--warning {
+    background: var(--typo3-state-warning-bg, #fbf6e5);
+    box-shadow: inset 0.18rem 0 0 var(--typo3-state-warning-border, #c8a44e);
+}
+
 .arp-editor-validation {
     display: block;
     font-size: 0.75rem;
     font-weight: 500;
     line-height: 1.3;
     color: var(--typo3-text-color-danger, #8a3030);
+}
+
+.arp-editor-validation--warning {
+    color: var(--typo3-text-color-warning, #8a6d1d);
+}
+
+.arp-editor-draft--stale .arp-editor-cell--error,
+.arp-editor-draft--stale .arp-editor-cell--warning {
+    background: transparent;
+    box-shadow: none;
+}
+
+.arp-editor-draft--stale [data-arp-col="status"] > * {
+    display: none;
 }
 
 .arp-editor-bulk {
@@ -256,6 +275,9 @@
 
 .arp-editor-draft-actions {
     margin: 0.55rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
 }
 
 .arp-editor-draft-input {

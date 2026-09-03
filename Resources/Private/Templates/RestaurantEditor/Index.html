@@ -224,20 +224,23 @@
                             </p>
                         </f:then>
                         <f:else>
-                            <f:if condition="{bulk.draft.draftValid}">
-                                <f:then>
-                                    <p class="typo3-message message-notice">
-                                        <f:translate key="{lll}bulk.draftValid"/>
-                                    </p>
-                                </f:then>
-                            </f:if>
-                            <p class="arp-editor-note">
-                                <f:translate key="{lll}bulk.summary" arguments="{0: bulk.draft.validCount, 1: bulk.draft.invalidCount}"/>
-                            </p>
                             <div
                                 class="arp-editor-grid arp-editor-block"
                                 data-arp-editor-grid="1"
                             >
+                                <f:if condition="{bulk.draft.draftValid}">
+                                    <f:then>
+                                        <p class="typo3-message message-notice" data-arp-server-status="1">
+                                            <f:translate key="{lll}bulk.draftValid"/>
+                                        </p>
+                                    </f:then>
+                                </f:if>
+                                <p class="typo3-message message-notice" data-arp-draft-dirty="1" hidden="hidden">
+                                    <f:translate key="{lll}bulk.draftChanged"/>
+                                </p>
+                                <p class="arp-editor-note" data-arp-server-status="1">
+                                    <f:translate key="{lll}bulk.summary" arguments="{0: bulk.draft.validCount, 1: bulk.draft.invalidCount}"/>
+                                </p>
                                 <span class="arp-editor-sr" data-arp-label-asc><f:translate key="{lll}table.sortAscending"/></span>
                                 <span class="arp-editor-sr" data-arp-label-desc><f:translate key="{lll}table.sortDescending"/></span>
                                 <div class="arp-editor-toolbar">
@@ -258,6 +261,7 @@
                                     <input type="hidden" name="id" value="{bulk.pid}"/>
                                     <input type="hidden" name="menu" value="{bulk.menuUid}"/>
                                     <input type="hidden" name="formToken" value="{bulk.revalidateToken}"/>
+                                    <input type="hidden" name="resetToken" value="{bulk.resetToken}"/>
                                     <textarea name="bulkSource" hidden="hidden">{bulk.rawInput}</textarea>
                                     <div class="arp-editor-table-wrap">
                                         <table class="arp-editor-table arp-editor-table--preview" data-arp-editor-table="1" data-arp-draft="1">
@@ -311,6 +315,7 @@
                                                     <f:variable name="itemErrorClass" value=""/>
                                                     <f:variable name="variantErrorClass" value=""/>
                                                     <f:variable name="priceErrorClass" value=""/>
+                                                    <f:variable name="variantWarningClass" value=""/>
                                                     <f:for each="{row.errors}" as="errorCode">
                                                         <f:if condition="{errorCode} == 'missingCategory'">
                                                             <f:variable name="categoryErrorClass" value="arp-editor-cell--error"/>
@@ -318,11 +323,16 @@
                                                         <f:if condition="{errorCode} == 'missingItem'">
                                                             <f:variable name="itemErrorClass" value="arp-editor-cell--error"/>
                                                         </f:if>
-                                                        <f:if condition="{errorCode} == 'mixedVariantRun'">
+                                                        <f:if condition="{errorCode} == 'mixedVariantRun' || {errorCode} == 'duplicateVariant'">
                                                             <f:variable name="variantErrorClass" value="arp-editor-cell--error"/>
                                                         </f:if>
                                                         <f:if condition="{errorCode} == 'missingPrice' || {errorCode} == 'invalidPrice' || {errorCode} == 'negativePrice' || {errorCode} == 'tooManyDecimals'">
                                                             <f:variable name="priceErrorClass" value=" arp-editor-cell--error"/>
+                                                        </f:if>
+                                                    </f:for>
+                                                    <f:for each="{row.warnings}" as="warningCode">
+                                                        <f:if condition="{warningCode} == 'singleNamedVariant'">
+                                                            <f:variable name="variantWarningClass" value="arp-editor-cell--warning"/>
                                                         </f:if>
                                                     </f:for>
                                                     <tr data-arp-order="{row.originalOrder}" data-arp-price="{row.amountMinor}" data-arp-line="{row.sourceLine}">
@@ -351,7 +361,7 @@
                                                                 autocomplete="off"
                                                             />
                                                         </td>
-                                                        <td data-arp-col="variant" class="{variantErrorClass}">
+                                                        <td data-arp-col="variant" class="{variantErrorClass} {variantWarningClass}">
                                                             <input
                                                                 class="arp-editor-draft-input"
                                                                 type="text"
@@ -375,7 +385,22 @@
                                                         <td class="arp-editor-table__line" data-arp-col="line">{row.sourceLine}</td>
                                                         <td data-arp-col="status">
                                                             <f:if condition="{row.valid}">
-                                                                <f:then><f:translate key="{lll}bulk.row.valid"/></f:then>
+                                                                <f:then>
+                                                                    <f:if condition="{row.hasWarnings}">
+                                                                        <f:then>
+                                                                            <f:for each="{row.warnings}" as="warningCode">
+                                                                                <span class="arp-editor-validation arp-editor-validation--warning">
+                                                                                    <f:switch expression="{warningCode}">
+                                                                                        <f:case value="singleNamedVariant"><f:translate key="{lll}bulk.warning.singleNamedVariant"/></f:case>
+                                                                                    </f:switch>
+                                                                                </span>
+                                                                            </f:for>
+                                                                        </f:then>
+                                                                        <f:else>
+                                                                            <f:translate key="{lll}bulk.row.valid"/>
+                                                                        </f:else>
+                                                                    </f:if>
+                                                                </f:then>
                                                                 <f:else>
                                                                     <f:for each="{row.errors}" as="errorCode">
                                                                         <span class="arp-editor-validation">
@@ -387,6 +412,14 @@
                                                                                 <f:case value="negativePrice"><f:translate key="{lll}bulk.error.negativePrice"/></f:case>
                                                                                 <f:case value="tooManyDecimals"><f:translate key="{lll}bulk.error.tooManyDecimals"/></f:case>
                                                                                 <f:case value="mixedVariantRun"><f:translate key="{lll}bulk.error.mixedVariantRun"/></f:case>
+                                                                                <f:case value="duplicateVariant"><f:translate key="{lll}bulk.error.duplicateVariant"/></f:case>
+                                                                            </f:switch>
+                                                                        </span>
+                                                                    </f:for>
+                                                                    <f:for each="{row.warnings}" as="warningCode">
+                                                                        <span class="arp-editor-validation arp-editor-validation--warning">
+                                                                            <f:switch expression="{warningCode}">
+                                                                                <f:case value="singleNamedVariant"><f:translate key="{lll}bulk.warning.singleNamedVariant"/></f:case>
                                                                             </f:switch>
                                                                         </span>
                                                                     </f:for>
@@ -401,6 +434,9 @@
                                     <p class="arp-editor-draft-actions">
                                         <button type="submit" name="bulkDraftRevalidate" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.revalidate"/>
+                                        </button>
+                                        <button type="submit" name="bulkDraftReset" value="1" class="btn btn-default">
+                                            <f:translate key="{lll}bulk.resetDraft"/>
                                         </button>
                                     </p>
                                 </form>

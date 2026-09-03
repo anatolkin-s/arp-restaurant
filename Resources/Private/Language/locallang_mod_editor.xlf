@@ -43,7 +43,7 @@
         <source>Search draft</source>
       </trans-unit>
       <trans-unit id="table.resetOrder">
-        <source>Original order</source>
+        <source>Restore order</source>
       </trans-unit>
       <trans-unit id="table.emptyFilter">
         <source>No rows match this search.</source>
@@ -112,7 +112,7 @@
         <source>Paste tab-separated columns in this order: Category, Item, Variant, Price. A header row with those names is optional. Variant may be blank. At most 200 data rows and 64 KiB.</source>
       </trans-unit>
       <trans-unit id="bulk.draftVsSource">
-        <source>Preview rebuilds the draft from the TSV box. Editing draft cells does not change that TSV. Revalidate draft checks the complete table, including rows hidden by search.</source>
+        <source>Preview rebuilds the draft from the TSV box. Editing draft cells does not change that TSV. Restore order only changes the on-screen row order. Reset draft discards cell edits and rebuilds from the last Preview source. Revalidate draft checks the complete table, including rows hidden by search.</source>
       </trans-unit>
       <trans-unit id="bulk.pasteLabel">
         <source>Spreadsheet paste (TSV)</source>
@@ -123,8 +123,14 @@
       <trans-unit id="bulk.revalidate">
         <source>Revalidate draft</source>
       </trans-unit>
+      <trans-unit id="bulk.resetDraft">
+        <source>Reset draft</source>
+      </trans-unit>
       <trans-unit id="bulk.draftValid">
         <source>Draft is valid. Identity resolution has not been performed yet.</source>
+      </trans-unit>
+      <trans-unit id="bulk.draftChanged">
+        <source>Draft changed — revalidate.</source>
       </trans-unit>
       <trans-unit id="bulk.summary">
         <source>%1$d valid row(s), %2$d invalid row(s). Nothing was saved.</source>
@@ -139,7 +145,7 @@
         <source>valid</source>
       </trans-unit>
       <trans-unit id="bulk.error.invalidCsrf">
-        <source>The request could not be verified. Use Preview or Revalidate draft again.</source>
+        <source>The request could not be verified. Use Preview, Revalidate draft, or Reset draft again.</source>
       </trans-unit>
       <trans-unit id="bulk.error.emptyPaste">
         <source>Paste at least one data row.</source>
@@ -170,6 +176,12 @@
       </trans-unit>
       <trans-unit id="bulk.error.mixedVariantRun">
         <source>This Category+Item run mixes blank and named variants.</source>
+      </trans-unit>
+      <trans-unit id="bulk.error.duplicateVariant">
+        <source>Duplicate variant.</source>
+      </trans-unit>
+      <trans-unit id="bulk.warning.singleNamedVariant">
+        <source>Single named variant.</source>
       </trans-unit>
       <trans-unit id="bulk.error.malformedDraft">
         <source>The draft payload is malformed and was rejected.</source>

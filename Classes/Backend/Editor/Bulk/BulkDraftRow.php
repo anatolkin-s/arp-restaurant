@@ -7,7 +7,8 @@ namespace Anatolkin\ArpRestaurant\Backend\Editor\Bulk;
 final readonly class BulkDraftRow
 {
     /**
-     * @param list<string> $errors
+     * @param list<string> $errors Blocking codes only
+     * @param list<string> $warnings Non-blocking advisories
      */
     public function __construct(
         public string $draftKey,
@@ -20,10 +21,16 @@ final readonly class BulkDraftRow
         public ?int $amountMinor,
         public string $formattedAmount,
         public array $errors,
+        public array $warnings = [],
     ) {}
 
     public function isValid(): bool
     {
         return $this->errors === [];
+    }
+
+    public function hasWarnings(): bool
+    {
+        return $this->warnings !== [];
     }
 }

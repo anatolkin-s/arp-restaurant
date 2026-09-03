@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidator;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkMenuRow;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\DecimalMinorUnitParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\MinorUnitMoneyFormatter;
@@ -10,6 +11,9 @@ use Anatolkin\ArpRestaurant\Backend\Editor\MinorUnitMoneyFormatter;
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/MinorUnitMoneyFormatter.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/DecimalMinorUnitParser.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuRow.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuPreviewSection.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuParseResult.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuParser.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftRow.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidationResult.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidator.php';
@@ -81,6 +85,59 @@ $namedVariants = $validator->validatePosted([
     'r1' => postedRow(1, 2, 'Drinks', 'Tea', 'Large', '4.50'),
 ]);
 assertTrue($namedVariants->isDraftValid(), 'all-named Variant run valid');
+assertTrue(
+    $namedVariants->rows[0]->warnings === [] && $namedVariants->rows[1]->warnings === [],
+    'two named variants have no singleNamedVariant warning'
+);
+
+$singleNamed = $validator->validatePosted(['r0' => postedRow(0, 1, 'Drinks', 'Tea2', 'Large', '4.50')]);
+assertTrue($singleNamed->isDraftValid(), 'single named Variant run remains valid');
+assertTrue($singleNamed->rows[0]->warnings === ['singleNamedVariant'], 'single named Variant run has warning');
+assertTrue($singleNamed->invalidCount === 0, 'warnings do not increase invalidCount');
+
+$itemSplit = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'Tea2', 'Large', '4.50'),
+]);
+assertTrue($itemSplit->isDraftValid(), 'Item rename split remains DraftValid');
+assertTrue($itemSplit->rows[0]->isValid() && $itemSplit->rows[1]->isValid(), 'Item rename split rows remain valid');
+assertTrue(
+    $itemSplit->rows[0]->warnings === ['singleNamedVariant']
+    && $itemSplit->rows[1]->warnings === ['singleNamedVariant'],
+    'Item rename splits a two-variant run into singleNamedVariant advisories'
+);
+
+$categorySplit = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Bar', 'Tea', 'Large', '4.50'),
+]);
+assertTrue(
+    $categorySplit->isDraftValid()
+    && $categorySplit->rows[0]->warnings === ['singleNamedVariant']
+    && $categorySplit->rows[1]->warnings === ['singleNamedVariant'],
+    'Category rename equivalently splits named Variant runs'
+);
+
+$duplicateNamed = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'Tea', 'Small', '4.50'),
+]);
+assertTrue(!$duplicateNamed->isDraftValid(), 'duplicate named Variant in same run is blocking');
+assertTrue(
+    in_array('duplicateVariant', $duplicateNamed->rows[0]->errors, true)
+    && in_array('duplicateVariant', $duplicateNamed->rows[1]->errors, true),
+    'duplicateVariant is on both duplicate rows'
+);
+
+$duplicateTrim = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', '  Small  ', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'Tea', 'Small', '4.50'),
+]);
+assertTrue(
+    in_array('duplicateVariant', $duplicateTrim->rows[0]->errors, true)
+    && $duplicateTrim->rows[0]->variant === 'Small',
+    'duplicate Variant comparison uses trimmed values'
+);
 
 $mixed = $validator->validatePosted([
     'r0' => postedRow(0, 1, 'Drinks', 'Tea', '', '3.00'),
@@ -146,6 +203,25 @@ $parsed = $validator->fromParsedRows([
     new BulkMenuRow(3, 'Drinks', 'Tea', 'Large', '4.50', 450, '4.50', []),
 ]);
 assertTrue(!$parsed->isDraftValid() && in_array('mixedVariantRun', $parsed->rows[0]->errors, true), 'fromParsedRows applies mixed Variant runs');
+
+$parser = new BulkMenuParser(new DecimalMinorUnitParser(2), new MinorUnitMoneyFormatter(2));
+$source = "Category\tItem\tVariant\tPrice\nDrinks\tTea\tSmall\t3.00\nDrinks\tTea\tLarge\t4.50\n";
+$fromTsv = $parser->parse($source);
+assertTrue(!$fromTsv->hasGlobalError() && count($fromTsv->rows) === 2, 'reset source TSV parses');
+$editedAway = $validator->validatePosted([
+    'r0' => postedRow(0, 2, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 3, 'Drinks', 'Tea2', 'Large', '4.50'),
+]);
+assertTrue($editedAway->rows[1]->item === 'Tea2', 'edited Item differs from source');
+$reset = $validator->fromParsedRows($fromTsv->rows);
+assertTrue(
+    $reset->rows[0]->item === 'Tea'
+    && $reset->rows[0]->variant === 'Small'
+    && $reset->rows[1]->item === 'Tea'
+    && $reset->rows[1]->variant === 'Large'
+    && $reset->isDraftValid(),
+    'Reset-from-parsed source reconstructs original values'
+);
 
 if ($failures > 0) {
     echo "\n{$failures} failing assertion(s)\n";

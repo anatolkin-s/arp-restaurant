@@ -120,3 +120,7 @@ The first write-capable import is specified in [EDITOR_WRITE_CONTRACT.md](EDITOR
 Bulk preview rows are an editable in-request draft. `BulkDraftValidator` is the server authority: it trims Category/Item/Variant, re-parses Price via `DecimalMinorUnitParser`, restores canonical `originalOrder`, and blocks mixed empty/named Variant runs. POST `bulkDraftRevalidate` is a dedicated CSRF action. Successful validation is `DraftValid`, not `ApplyReady`.
 
 Not in this milestone: identity resolution, Apply, DataHandler, QueryBuilder writes, `Item.sku`, `Placement.menu_code`. Search/sort remain view-only and must not change semantic draft order. Hidden search rows still POST. Preview from the TSV box rebuilds/resets the draft; edited cells do not rewrite the textarea.
+
+### EDITOR-2B1.1 — REPO IMPLEMENTED / NO WRITES
+
+Draft `input` events mark dirty and must not call DOM row reparenting (`sortRows` / `appendChild`). Search, sort, Restore order, and blur/`change` may refresh the view. Restore order keeps edited values. Reset draft is a dedicated CSRF POST that re-parses `bulkSource`. Placement-run warnings (`singleNamedVariant`) are distinct from blocking errors (`mixedVariantRun`, `duplicateVariant`). No global Variant table.

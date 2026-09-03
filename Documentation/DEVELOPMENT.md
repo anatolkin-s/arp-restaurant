@@ -40,13 +40,13 @@ Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner a
 
 The selected context is a storage pid/page, not necessarily a sysfolder. That pid is the read boundary for every restaurant table, including Item. Duplicate Placements for the same Category+Item are rendered as separate rows in one flat table. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
 
-Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMenuParser`, and renders an editable in-request draft. `BulkDraftValidator` revalidates posted cell strings on `bulkDraftRevalidate`. That path is still non-writing: no DataHandler, no identity lookup against stored Item/Category rows, and no Apply. Preview from the TSV box rebuilds the draft; editing cells does not sync back into the textarea.
+Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMenuParser`, and renders an editable in-request draft. `BulkDraftValidator` revalidates posted cell strings on `bulkDraftRevalidate`. `bulkDraftReset` rebuilds that draft from the last Preview TSV. Restore order is view-only. After a cell edit, the UI shows that server validation is stale until Revalidate. That path is still non-writing: no DataHandler, no identity lookup against stored Item/Category rows, and no Apply.
 
 EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104cc24166a3bd60fdde8b4d452758f` on TYPO3 14.3.6. That gate covers the unified saved/preview grid, cell rules, and cell-level invalid preview highlighting. TYPO3 13 is not part of that runtime acceptance. Production was not touched.
 
 EDITOR-2A.2 is **REPO IMPLEMENTED / RUNTIME ACCEPTANCE PENDING**. The saved Menu table remains a flat read projection. Search/sort/row numbers are client-side view state only. Sticky headers, search, and sort still need TYPO3 browser runtime acceptance. `Item.sku` and `Placement.menu_code` are not in this milestone.
 
-EDITOR-2B1 is the editable temporary draft plus server revalidation. Identity resolution and DataHandler Apply remain later work: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md).
+EDITOR-2B1.1 keeps the editable temporary draft, adds Restore order vs Reset draft, and Variant-run warnings. Identity resolution and DataHandler Apply remain later work: [EDITOR_WRITE_CONTRACT.md](EDITOR_WRITE_CONTRACT.md).
 
 ## Copy UUID lifecycle
 
