@@ -305,6 +305,111 @@ assertTrue(
     '36. sort/POST input ordering cannot change semantic placement summary'
 );
 
+$numericItemCreate = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, 'Starters', '42', '', '8.00')]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue($numericItemCreate->outcome === 'identityResolved', 'numeric 1. Item title "42" -> CREATE without TypeError');
+assertTrue($numericItemCreate->itemResolutions[0]->status === 'create', 'numeric 1b. Item "42" CREATE status');
+assertTrue(
+    $numericItemCreate->itemResolutions[0]->normalizedTitle === '42'
+    && is_string($numericItemCreate->itemResolutions[0]->normalizedTitle),
+    'numeric 5. numeric Item title remains string in normalizedTitle'
+);
+
+$numericItemReuse = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, 'Starters', '42', '', '8.00')]),
+    menuSnapshot(),
+    [candidate(42, '42', 5, $uuidA)],
+    [],
+);
+assertTrue($numericItemReuse->itemResolutions[0]->status === 'reuse', 'numeric 2. Item title "42" + exact candidate -> REUSE');
+assertTrue($numericItemReuse->itemResolutions[0]->uid === 42, 'numeric 2b. REUSE keeps candidate uid');
+
+$numericCategoryCreate = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, '101', 'Hummus', '', '8.00')]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue($numericCategoryCreate->categoryResolutions[0]->status === 'create', 'numeric 3. Category title "101" -> CREATE');
+assertTrue(
+    $numericCategoryCreate->categoryResolutions[0]->normalizedTitle === '101'
+    && is_string($numericCategoryCreate->categoryResolutions[0]->normalizedTitle),
+    'numeric 3b. Category "101" remains string'
+);
+
+$numericCategoryReuse = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, '101', 'Hummus', '', '8.00')]),
+    menuSnapshot(),
+    [],
+    [candidate(7, '101', 5, $uuidB)],
+);
+assertTrue($numericCategoryReuse->categoryResolutions[0]->status === 'reuse', 'numeric 4. Category title "101" + exact candidate -> REUSE');
+
+$repeatedNumericItem = $resolver->resolve(
+    draftFrom($validator, [
+        'r0' => postedRow(0, 1, 'Lunch', '42', '', '3.00'),
+        'r1' => postedRow(1, 2, 'Dinner', '42', '', '3.50'),
+    ]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue(count($repeatedNumericItem->itemResolutions) === 1, 'numeric 6. repeated numeric Item title resolves once');
+assertTrue($repeatedNumericItem->summary->createItems === 1, 'numeric 6b. CREATE count once for repeated "42"');
+assertTrue($repeatedNumericItem->summary->createCategories === 2, 'numeric 10. existing summary counts unchanged for distinct categories');
+
+$fortyTwoVsZeroFourTwo = $resolver->resolve(
+    draftFrom($validator, [
+        'r0' => postedRow(0, 1, 'Starters', '42', '', '8.00'),
+        'r1' => postedRow(1, 2, 'Starters', '042', '', '9.00'),
+    ]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue(count($fortyTwoVsZeroFourTwo->itemResolutions) === 2, 'numeric 7. "42" and "042" remain distinct titles');
+assertTrue(
+    $fortyTwoVsZeroFourTwo->itemResolutions[0]->normalizedTitle === '42'
+    && $fortyTwoVsZeroFourTwo->itemResolutions[1]->normalizedTitle === '042',
+    'numeric 7b. both numeric-looking forms preserved as distinct strings'
+);
+
+$fortyTwoVsDecimal = $resolver->resolve(
+    draftFrom($validator, [
+        'r0' => postedRow(0, 1, 'Starters', '42', '', '8.00'),
+        'r1' => postedRow(1, 2, 'Starters', '42.0', '', '9.00'),
+    ]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue(count($fortyTwoVsDecimal->itemResolutions) === 2, 'numeric 8. "42" and "42.0" remain distinct titles');
+
+$caseStill = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, 'Drinks', 'Tea', '', '3.00')]),
+    menuSnapshot(),
+    [candidate(1, 'tea', 5, $uuidA), candidate(2, 'TEA', 5, $uuidB)],
+    [],
+);
+assertTrue($caseStill->itemResolutions[0]->status === 'create', 'numeric 9. existing case-sensitive tests still pass');
+
+$zeroTitle = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, '0', '0', '', '1.00')]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue(
+    $zeroTitle->outcome === 'identityResolved'
+    && $zeroTitle->itemResolutions[0]->normalizedTitle === '0'
+    && $zeroTitle->categoryResolutions[0]->normalizedTitle === '0',
+    'numeric extra. title "0" CREATE without TypeError and stays string'
+);
+
 $fluidClasses = [
     IdentityResolution::class,
     IdentityBoundRow::class,

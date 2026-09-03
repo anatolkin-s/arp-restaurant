@@ -254,8 +254,10 @@ final class RestaurantEditorController
         $itemTitles = [];
         $categoryTitles = [];
         foreach ($draft->rows as $row) {
-            $itemTitles[$row->item] = $row->item;
-            $categoryTitles[$row->category] = $row->category;
+            // Prefixed keys keep numeric-looking titles as strings (PHP would
+            // cast array key "42" to int 42). Values remain the exact titles.
+            $itemTitles['i:' . $row->item] = $row->item;
+            $categoryTitles['c:' . $row->category] = $row->category;
         }
 
         $itemCandidates = $this->identityReader->findItemCandidates(

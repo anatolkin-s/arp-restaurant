@@ -12,6 +12,9 @@ use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
  * already-loaded candidates. No QueryBuilder / DataHandler / DB writes.
  *
  * Title matching uses PHP strict equality after the draft's established trim.
+ * Distinct draft titles are indexed by draft-local prefixed keys (c:<title> /
+ * i:<title>), never by the raw title string, so numeric-looking titles such as
+ * "42" remain strings under PHP array-key casting and strict_types.
  * Candidates that survive a case-insensitive DB over-fetch are rejected here
  * when $candidate->title !== $normalizedDraftTitle.
  *
@@ -73,11 +76,13 @@ final class BulkIdentityResolver
         $categoryTitles = [];
         $itemTitles = [];
         foreach ($draft->rows as $row) {
-            if (!isset($categoryTitles[$row->category])) {
-                $categoryTitles[$row->category] = $this->categoryKey($row->category);
+            $categoryKey = $this->categoryKey($row->category);
+            $itemKey = $this->itemKey($row->item);
+            if (!isset($categoryTitles[$categoryKey])) {
+                $categoryTitles[$categoryKey] = $row->category;
             }
-            if (!isset($itemTitles[$row->item])) {
-                $itemTitles[$row->item] = $this->itemKey($row->item);
+            if (!isset($itemTitles[$itemKey])) {
+                $itemTitles[$itemKey] = $row->item;
             }
         }
 
@@ -85,7 +90,7 @@ final class BulkIdentityResolver
         $itemResolutions = [];
         $blockers = [];
 
-        foreach ($categoryTitles as $title => $draftIdentityKey) {
+        foreach ($categoryTitles as $draftIdentityKey => $title) {
             $resolution = $this->resolveTitle(
                 $draftIdentityKey,
                 $title,
@@ -98,7 +103,7 @@ final class BulkIdentityResolver
             }
         }
 
-        foreach ($itemTitles as $title => $draftIdentityKey) {
+        foreach ($itemTitles as $draftIdentityKey => $title) {
             $resolution = $this->resolveTitle(
                 $draftIdentityKey,
                 $title,
