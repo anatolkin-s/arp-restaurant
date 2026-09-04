@@ -28,8 +28,14 @@ $badgeBlockPattern = '/\.arp-editor-identity-badge--ambiguous,\s*\n\.arp-editor-
 assertTrue(preg_match($badgeBlockPattern, (string)$css, $matches) === 1, 'danger badge rule block is present');
 
 $block = $matches[1] ?? '';
-assertTrue(!str_contains($block, '--typo3-state-danger-bg'), 'danger badge no longer uses --typo3-state-danger-bg');
-assertTrue(str_contains($block, '--typo3-surface') || str_contains($block, 'background: #fff'), 'danger badge uses neutral/backend surface background');
+assertTrue(
+    preg_match('/background\s*:\s*[^;]*--typo3-state-danger-bg/', $block) !== 1,
+    'danger badge background declaration does not use state-danger-bg'
+);
+assertTrue(
+    preg_match('/background\s*:\s*var\(--typo3-surface/', $block) === 1,
+    'danger badge uses neutral/backend surface background'
+);
 assertTrue(str_contains($block, '--typo3-state-danger-text-color'), 'danger badge keeps danger text color');
 assertTrue(str_contains($block, '--typo3-state-danger-border-color'), 'danger badge keeps danger border color');
 

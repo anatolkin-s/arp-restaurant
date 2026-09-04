@@ -400,7 +400,7 @@
 
 .arp-editor-identity-badge--ambiguous,
 .arp-editor-identity-badge--inaccessible {
-    /* Outline-style danger: avoid --typo3-state-danger-bg fill (TYPO3 14 can make text unreadable). */
+    /* Outline-style danger: neutral fill + danger text/border (readable on TYPO3 13/14). */
     color: var(--typo3-state-danger-text-color, #922b21);
     background: var(--typo3-surface, #fff);
     border-color: var(--typo3-state-danger-border-color, #c45656);
