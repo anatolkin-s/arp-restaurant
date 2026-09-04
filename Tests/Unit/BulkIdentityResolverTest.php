@@ -15,6 +15,7 @@ use Anatolkin\ArpRestaurant\Backend\Editor\Identity\TargetMenuSnapshot;
 use Anatolkin\ArpRestaurant\Backend\Editor\MinorUnitMoneyFormatter;
 
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/MinorUnitMoneyFormatter.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/RestaurantTitleNormalizer.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/DecimalMinorUnitParser.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftRow.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidationResult.php';
@@ -135,15 +136,31 @@ $caseCandidates = [
     candidate(1, 'tea', 5, $uuidA),
     candidate(2, 'TEA', 5, $uuidB),
 ];
-assertTrue(count($resolver->strictMatches($caseCandidates, 'Tea')) === 0, '5. Tea does not strictly match tea');
-assertTrue(count($resolver->strictMatches($caseCandidates, 'Tea')) === 0, '6. Tea does not strictly match TEA');
-$caseResolve = $resolver->resolve(
+$normalizer = new \Anatolkin\ArpRestaurant\Backend\Editor\RestaurantTitleNormalizer();
+assertTrue(
+    count($resolver->matchesByMatchKey($caseCandidates, $normalizer->matchKey('Tea'))) === 2,
+    '5/6. Tea matchKey matches both tea and TEA candidates'
+);
+$caseAmbiguous = $resolver->resolve(
     draftFrom($validator, ['r0' => postedRow(0, 1, 'Drinks', 'Tea', '', '3.00')]),
     menuSnapshot(),
     $caseCandidates,
     [],
 );
-assertTrue($caseResolve->itemResolutions[0]->status === 'create', '34. PHP strict matching defeats case-insensitive over-fetch');
+assertTrue($caseAmbiguous->itemResolutions[0]->status === 'ambiguous', '10. two case variants persisted => AMBIGUOUS');
+assertTrue($caseAmbiguous->itemResolutions[0]->matchCount === 2, '10b. case-variant ambiguity count is 2');
+
+$caseReuse = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, 'Mains', 'Atlantic Salmon', '', '23.00')]),
+    menuSnapshot(),
+    [candidate(42, 'Atlantic salmon', 5, $uuidA)],
+    [],
+);
+assertTrue($caseReuse->itemResolutions[0]->status === 'reuse', '9. one differently-cased persisted candidate => REUSE');
+assertTrue(
+    $caseReuse->itemResolutions[0]->canonicalTitle === 'Atlantic salmon',
+    '14. existing canonical persisted title exposed for REUSE'
+);
 
 $trimmedDraft = draftFrom($validator, [
     'r0' => postedRow(0, 1, '  Starters  ', '  Hummus  ', '', '8.00'),
@@ -160,12 +177,13 @@ assertTrue(
     '7. surrounding draft whitespace is already normalized and matches'
 );
 
-$crossPidIgnored = $resolver->strictMatches(
+$crossPidIgnored = $resolver->matchesByMatchKey(
     [candidate(9, 'Hummus', 99, $uuidA)],
-    'Hummus'
+    $normalizer->matchKey('Hummus')
 );
 // Reader filters cross-pid; resolver still requires caller to pass only in-scope candidates.
 // Simulate reader contract: cross-pid candidates are not supplied.
+assertTrue(count($crossPidIgnored) === 1, 'cross-pid candidate would match by title if supplied');
 $crossPidResolve = $resolver->resolve($simple, menuSnapshot(), [], [candidate(7, 'Starters', 5, $uuidB)]);
 assertTrue($crossPidResolve->itemResolutions[0]->status === 'create', '8. cross-pid Item candidate is ignored/rejected');
 
@@ -392,10 +410,48 @@ assertTrue(count($fortyTwoVsDecimal->itemResolutions) === 2, 'numeric 8. "42" an
 $caseStill = $resolver->resolve(
     draftFrom($validator, ['r0' => postedRow(0, 1, 'Drinks', 'Tea', '', '3.00')]),
     menuSnapshot(),
-    [candidate(1, 'tea', 5, $uuidA), candidate(2, 'TEA', 5, $uuidB)],
+    [candidate(1, 'tea', 5, $uuidA)],
     [],
 );
-assertTrue($caseStill->itemResolutions[0]->status === 'create', 'numeric 9. existing case-sensitive tests still pass');
+assertTrue($caseStill->itemResolutions[0]->status === 'reuse', 'numeric 9. case-folded match still reuses single candidate');
+
+$draftCaseVariants = $resolver->resolve(
+    draftFrom($validator, [
+        'r0' => postedRow(0, 1, 'Drinks', 'Tea', '', '3.00'),
+        'r1' => postedRow(1, 2, 'Sides', 'tea', '', '3.50'),
+        'r2' => postedRow(2, 3, 'Mains', ' TEA ', '', '4.00'),
+    ]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue(count($draftCaseVariants->itemResolutions) === 1, '11. repeated draft case variants => one CREATE Item');
+assertTrue($draftCaseVariants->summary->createItems === 1, '11b. CREATE Items count is 1');
+assertTrue(
+    $draftCaseVariants->itemResolutions[0]->normalizedTitle === 'Tea',
+    '13. first cleaned draft spelling becomes proposed CREATE display title'
+);
+
+$draftCategoryCase = $resolver->resolve(
+    draftFrom($validator, [
+        'r0' => postedRow(0, 1, 'Starters', 'A', '', '1.00'),
+        'r1' => postedRow(1, 2, 'starters', 'B', '', '2.00'),
+        'r2' => postedRow(2, 3, ' STARTERS ', 'C', '', '3.00'),
+    ]),
+    menuSnapshot(),
+    [],
+    [],
+);
+assertTrue(count($draftCategoryCase->categoryResolutions) === 1, '12. repeated Category case variants => one CREATE Category');
+assertTrue($draftCategoryCase->categoryResolutions[0]->normalizedTitle === 'Starters', '12b. first Category display title wins');
+
+$salmonBang = $resolver->resolve(
+    draftFrom($validator, ['r0' => postedRow(0, 1, 'Mains', 'Salmon!', '', '12.00')]),
+    menuSnapshot(),
+    [candidate(9, 'Salmon', 5, $uuidA)],
+    [],
+);
+assertTrue($salmonBang->itemResolutions[0]->status === 'create', '8-resolve. Salmon! does not reuse Salmon');
 
 $zeroTitle = $resolver->resolve(
     draftFrom($validator, ['r0' => postedRow(0, 1, '0', '0', '', '1.00')]),

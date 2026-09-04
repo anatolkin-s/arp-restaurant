@@ -6,17 +6,16 @@ namespace Anatolkin\ArpRestaurant\Backend\Editor\Identity;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftRow;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
+use Anatolkin\ArpRestaurant\Backend\Editor\RestaurantTitleNormalizer;
 
 /**
  * Pure CREATE / REUSE / AMBIGUOUS decisions over a DraftValid draft and
  * already-loaded candidates. No QueryBuilder / DataHandler / DB writes.
  *
- * Title matching uses PHP strict equality after the draft's established trim.
- * Distinct draft titles are indexed by draft-local prefixed keys (c:<title> /
- * i:<title>), never by the raw title string, so numeric-looking titles such as
- * "42" remain strings under PHP array-key casting and strict_types.
- * Candidates that survive a case-insensitive DB over-fetch are rejected here
- * when $candidate->title !== $normalizedDraftTitle.
+ * Identity comparison uses RestaurantTitleNormalizer::matchKey (whitespace
+ * normalized + Unicode case-folded). Distinct draft identities are indexed by
+ * draft-local prefixed keys (c:<matchKey> / i:<matchKey>) so numeric-looking
+ * titles remain safe under PHP array-key casting.
  *
  * Missing/unusable public_uuid on a sole REUSE candidate fails closed
  * (status inaccessible + blocker missingPublicUuid). No repair / minting.
@@ -24,6 +23,10 @@ use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
 final class BulkIdentityResolver
 {
     private const UUID_PATTERN = '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/';
+
+    public function __construct(
+        private readonly RestaurantTitleNormalizer $titleNormalizer = new RestaurantTitleNormalizer(),
+    ) {}
 
     /**
      * @param list<PersistedIdentityCandidate> $itemCandidates
@@ -78,6 +81,7 @@ final class BulkIdentityResolver
         foreach ($draft->rows as $row) {
             $categoryKey = $this->categoryKey($row->category);
             $itemKey = $this->itemKey($row->item);
+            // First cleanDisplayTitle in originalOrder becomes the CREATE proposal.
             if (!isset($categoryTitles[$categoryKey])) {
                 $categoryTitles[$categoryKey] = $row->category;
             }
@@ -90,11 +94,11 @@ final class BulkIdentityResolver
         $itemResolutions = [];
         $blockers = [];
 
-        foreach ($categoryTitles as $draftIdentityKey => $title) {
+        foreach ($categoryTitles as $draftIdentityKey => $displayTitle) {
             $resolution = $this->resolveTitle(
                 $draftIdentityKey,
-                $title,
-                $this->strictMatches($categoryCandidates, $title),
+                $displayTitle,
+                $this->matchesByMatchKey($categoryCandidates, $this->titleNormalizer->matchKey($displayTitle)),
             );
             $categoryResolutions[] = $resolution;
             $blocker = $this->blockerForResolution($resolution, 'category');
@@ -103,11 +107,11 @@ final class BulkIdentityResolver
             }
         }
 
-        foreach ($itemTitles as $draftIdentityKey => $title) {
+        foreach ($itemTitles as $draftIdentityKey => $displayTitle) {
             $resolution = $this->resolveTitle(
                 $draftIdentityKey,
-                $title,
-                $this->strictMatches($itemCandidates, $title),
+                $displayTitle,
+                $this->matchesByMatchKey($itemCandidates, $this->titleNormalizer->matchKey($displayTitle)),
             );
             $itemResolutions[] = $resolution;
             $blocker = $this->blockerForResolution($resolution, 'item');
@@ -153,11 +157,11 @@ final class BulkIdentityResolver
      * @param list<PersistedIdentityCandidate> $candidates
      * @return list<PersistedIdentityCandidate>
      */
-    public function strictMatches(array $candidates, string $normalizedTitle): array
+    public function matchesByMatchKey(array $candidates, string $matchKey): array
     {
         $matches = [];
         foreach ($candidates as $candidate) {
-            if ($candidate->title === $normalizedTitle) {
+            if ($this->titleNormalizer->matchKey($candidate->title) === $matchKey) {
                 $matches[] = $candidate;
             }
         }
@@ -167,6 +171,7 @@ final class BulkIdentityResolver
 
     /**
      * Draft-run Placement count (append semantics). Requires DraftValid rows.
+     * Runs use cleaned display Category+Item strings (case-preserving).
      *
      * @param list<BulkDraftRow> $rows
      */
@@ -214,7 +219,7 @@ final class BulkIdentityResolver
      */
     private function resolveTitle(
         string $draftIdentityKey,
-        string $normalizedTitle,
+        string $displayTitle,
         array $matches,
     ): IdentityResolution {
         $matchCount = count($matches);
@@ -222,7 +227,7 @@ final class BulkIdentityResolver
             return new IdentityResolution(
                 status: 'create',
                 draftIdentityKey: $draftIdentityKey,
-                normalizedTitle: $normalizedTitle,
+                normalizedTitle: $displayTitle,
                 matchCount: 0,
             );
         }
@@ -231,7 +236,7 @@ final class BulkIdentityResolver
             return new IdentityResolution(
                 status: 'ambiguous',
                 draftIdentityKey: $draftIdentityKey,
-                normalizedTitle: $normalizedTitle,
+                normalizedTitle: $displayTitle,
                 matchCount: $matchCount,
             );
         }
@@ -241,24 +246,26 @@ final class BulkIdentityResolver
             return new IdentityResolution(
                 status: 'inaccessible',
                 draftIdentityKey: $draftIdentityKey,
-                normalizedTitle: $normalizedTitle,
+                normalizedTitle: $displayTitle,
                 matchCount: 1,
                 uid: $candidate->uid,
                 publicUuid: null,
                 tstamp: $candidate->tstamp,
                 pid: $candidate->pid,
+                canonicalTitle: $candidate->title,
             );
         }
 
         return new IdentityResolution(
             status: 'reuse',
             draftIdentityKey: $draftIdentityKey,
-            normalizedTitle: $normalizedTitle,
+            normalizedTitle: $displayTitle,
             matchCount: 1,
             uid: $candidate->uid,
             publicUuid: $candidate->publicUuid,
             tstamp: $candidate->tstamp,
             pid: $candidate->pid,
+            canonicalTitle: $candidate->title,
         );
     }
 
@@ -284,14 +291,14 @@ final class BulkIdentityResolver
         return null;
     }
 
-    private function categoryKey(string $normalizedTitle): string
+    private function categoryKey(string $displayTitle): string
     {
-        return 'c:' . $normalizedTitle;
+        return 'c:' . $this->titleNormalizer->matchKey($displayTitle);
     }
 
-    private function itemKey(string $normalizedTitle): string
+    private function itemKey(string $displayTitle): string
     {
-        return 'i:' . $normalizedTitle;
+        return 'i:' . $this->titleNormalizer->matchKey($displayTitle);
     }
 
     /**

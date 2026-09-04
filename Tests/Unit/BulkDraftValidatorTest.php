@@ -11,6 +11,7 @@ use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\DecimalMinorUnitParser;
 use Anatolkin\ArpRestaurant\Backend\Editor\MinorUnitMoneyFormatter;
 
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/MinorUnitMoneyFormatter.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/RestaurantTitleNormalizer.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/DecimalMinorUnitParser.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuRow.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuPreviewSection.php';
@@ -53,6 +54,13 @@ assertTrue($trimmed->isDraftValid(), 'trimmed row is draft-valid');
 assertTrue($trimmed->rows[0]->category === 'Starters', 'edited Category is trimmed');
 assertTrue($trimmed->rows[0]->item === 'Hummus', 'edited Item is trimmed');
 assertTrue($trimmed->rows[0]->variant === '', 'blank Variant remains valid');
+
+$collapsed = $validator->validatePosted([
+    'r0' => postedRow(0, 2, '  Atlantic   salmon  ', "Tea\xC2\xA0Cup", '', '8.00'),
+]);
+assertTrue($collapsed->rows[0]->category === 'Atlantic salmon', 'Category collapses internal whitespace');
+assertTrue($collapsed->rows[0]->item === 'Tea Cup', 'Item collapses NBSP to ordinary space');
+assertTrue($collapsed->rows[0]->category !== 'atlantic salmon', 'Category capitalization is preserved');
 
 $twentyThree = $validator->validatePosted(['r0' => postedRow(0, 1, 'Mains', 'Salmon', '', '23')]);
 assertTrue($twentyThree->rows[0]->amountMinor === 2300, 'edited 23 -> 2300');

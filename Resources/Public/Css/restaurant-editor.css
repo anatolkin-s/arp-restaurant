@@ -304,25 +304,108 @@
     font-variant-numeric: tabular-nums;
 }
 
-.arp-editor-identity {
-    margin: 0 0 0.65rem;
+.arp-editor-bulk__heading {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
 }
 
-.arp-editor-identity-summary {
-    margin: 0.35rem 0 0;
+.arp-editor-bulk-source {
+    margin: 0 0 0.75rem;
+    border: 1px solid var(--typo3-border-color, #d4d4d4);
+    border-radius: 0.2rem;
+    padding: 0.35rem 0.55rem 0.55rem;
+    background: var(--typo3-surface-container-low, #f7f7f7);
 }
 
-.arp-editor-identity-summary__title {
-    margin: 0 0 0.25rem;
+.arp-editor-bulk-source > summary {
+    cursor: pointer;
     font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.arp-editor-identity-card {
+    margin: 0 0 0.75rem;
+    border: 1px solid var(--typo3-border-color, #c5c5c5);
+    border-left: 4px solid var(--typo3-state-info-border-color, #3c78b5);
+    border-radius: 0.2rem;
+    background: var(--typo3-surface-container, #f3f6f9);
+    padding: 0.55rem 0.7rem;
+}
+
+.arp-editor-identity-card__heading {
+    margin: 0 0 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.arp-editor-identity-card__blocker,
+.arp-editor-identity-card__target {
+    margin: 0 0 0.35rem;
+    font-size: 0.875rem;
+}
+
+.arp-editor-identity-card__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+}
+
+.arp-editor-identity-card__group {
+    min-width: 8rem;
+}
+
+.arp-editor-identity-card__group ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.arp-editor-identity-card__label {
+    margin: 0 0 0.15rem;
+    font-weight: 700;
+    font-size: 0.8125rem;
+}
+
+.arp-editor-identity-card__group--danger .arp-editor-identity-card__label {
+    color: var(--typo3-state-danger-text-color, #a30000);
 }
 
 .arp-editor-identity-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     margin-left: 0.35rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--typo3-text-color-variant, #555);
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.4;
     white-space: nowrap;
-    vertical-align: baseline;
+    vertical-align: middle;
+}
+
+.arp-editor-identity-badge--create {
+    color: var(--typo3-state-info-text-color, #1a5276);
+    background: var(--typo3-state-info-bg, #d6eaf8);
+    border-color: var(--typo3-state-info-border-color, #85c1e9);
+}
+
+.arp-editor-identity-badge--reuse {
+    color: var(--typo3-state-success-text-color, #1e6b35);
+    background: var(--typo3-state-success-bg, #d5f5e3);
+    border-color: var(--typo3-state-success-border-color, #82e0aa);
+}
+
+.arp-editor-identity-badge--ambiguous,
+.arp-editor-identity-badge--inaccessible {
+    color: var(--typo3-state-danger-text-color, #922b21);
+    background: var(--typo3-state-danger-bg, #fadbd8);
+    border-color: var(--typo3-state-danger-border-color, #f1948a);
+}
+
+.arp-editor-identity-badge__canonical {
+    font-weight: 600;
+    opacity: 0.9;
 }

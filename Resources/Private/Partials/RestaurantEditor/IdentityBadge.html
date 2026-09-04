@@ -1,0 +1,21 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+<span
+    class="arp-editor-identity-badge arp-editor-identity-badge--{resolution.status}"
+    data-arp-identity-badge="1"
+>
+    <f:switch expression="{resolution.status}">
+        <f:case value="create"><f:translate key="{lll}bulk.identity.badge.create"/></f:case>
+        <f:case value="reuse">
+            <f:translate key="{lll}bulk.identity.badge.reuse"/>
+            <f:if condition="{resolution.canonicalTitle}">
+                <span class="arp-editor-identity-badge__canonical">→ {resolution.canonicalTitle}</span>
+            </f:if>
+        </f:case>
+        <f:case value="ambiguous"><f:translate key="{lll}bulk.identity.badge.ambiguous" arguments="{0: resolution.matchCount}"/></f:case>
+        <f:case value="inaccessible"><f:translate key="{lll}bulk.identity.badge.inaccessible"/></f:case>
+    </f:switch>
+</span>
+</html>

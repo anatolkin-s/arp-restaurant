@@ -22,13 +22,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * - sys_language_uid = 0 for match sets
  * - selected pid only
  * - hidden/scheduled included (no HiddenRestriction / endtime filter)
- * - Item candidates: pid-wide
- * - Category candidates: target Menu only
+ * - Item candidates: all default-language Items on pid (bounded by storage page)
+ * - Category candidates: all default-language Categories on pid for target Menu
  *
  * SELECT / executeQuery only. No insert/update/delete.
  *
- * Title IN(...) may over-fetch under case-insensitive collations; callers must
- * confirm matches with PHP strict equality before CREATE/REUSE/AMBIGUOUS.
+ * Title matching is intentionally NOT done in SQL. Callers normalize and match
+ * in PHP via RestaurantTitleNormalizer::matchKey so collation / whitespace
+ * cannot redefine identity.
  */
 final class RestaurantIdentityReader
 {
@@ -89,72 +90,51 @@ final class RestaurantIdentityReader
     }
 
     /**
-     * @param list<string> $normalizedTitles Distinct trimmed draft Item titles
      * @return list<PersistedIdentityCandidate>
      */
     public function findItemCandidates(
         int $pid,
-        array $normalizedTitles,
         BackendUserAuthentication $backendUser,
     ): array {
-        return $this->findCandidatesByTitles(
-            MenuGraphAssembler::TABLE_ITEM,
-            $pid,
-            $normalizedTitles,
-            $backendUser,
-            null,
-        );
+        return $this->findCandidates(MenuGraphAssembler::TABLE_ITEM, $pid, $backendUser, null);
     }
 
     /**
-     * @param list<string> $normalizedTitles Distinct trimmed draft Category titles
      * @return list<PersistedIdentityCandidate>
      */
     public function findCategoryCandidates(
         int $pid,
         int $targetMenuUid,
-        array $normalizedTitles,
         BackendUserAuthentication $backendUser,
     ): array {
-        return $this->findCandidatesByTitles(
+        return $this->findCandidates(
             MenuGraphAssembler::TABLE_CATEGORY,
             $pid,
-            $normalizedTitles,
             $backendUser,
             $targetMenuUid,
         );
     }
 
     /**
-     * @param list<string> $normalizedTitles
      * @return list<PersistedIdentityCandidate>
      */
-    private function findCandidatesByTitles(
+    private function findCandidates(
         string $table,
         int $pid,
-        array $normalizedTitles,
         BackendUserAuthentication $backendUser,
         ?int $targetMenuUid,
     ): array {
-        $titles = [];
-        foreach ($normalizedTitles as $title) {
-            if (is_string($title) && $title !== '') {
-                $titles[$title] = $title;
-            }
+        if ($pid <= 0) {
+            return [];
         }
-        if ($titles === [] || $pid <= 0) {
+        if ($targetMenuUid !== null && $targetMenuUid <= 0) {
             return [];
         }
 
-        $titleList = array_values($titles);
         $queryBuilder = $this->createQueryBuilder($table, $backendUser);
         $predicates = [
             $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)),
             $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-            $queryBuilder->expr()->in(
-                'title',
-                $queryBuilder->createNamedParameter($titleList, Connection::PARAM_STR_ARRAY)
-            ),
         ];
         if ($targetMenuUid !== null) {
             $predicates[] = $queryBuilder->expr()->eq(

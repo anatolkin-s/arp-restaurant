@@ -52,7 +52,7 @@ EDITOR-2B2 adds **read-only** identity resolution after DraftValid:
 | Explicit POST `bulkIdentityResolve` (dedicated CSRF) | Apply / Import / Save / `ApplyReady` |
 | Revalidate posted draft before any identity read | DataHandler, QueryBuilder writes, Extbase writes |
 | Target Menu re-resolved by uid+pid+default language | Menu creation |
-| Item CREATE / REUSE / AMBIGUOUS (pid-wide, case-sensitive PHP) | `Item.sku`, `Placement.menu_code` |
+| Item CREATE / REUSE / AMBIGUOUS (pid-wide; matchKey = whitespace-normalized + Unicode case-folded) | `Item.sku`, `Placement.menu_code` |
 | Category CREATE / REUSE / AMBIGUOUS (target Menu only) | `public_uuid` minting or repair |
 | Last-seen `uid` / `public_uuid` / `tstamp` / `pid` snapshots on REUSE | POS / ARP.top integrations |
 | Future create/reuse/ambiguous summary + Placement/PriceOption counts | Automatic resolution on Preview/load/typing |
@@ -71,8 +71,9 @@ Inspected in-repo sources, not a live DataHandler run:
 - TCA: Menu → IRRE Category → IRRE Placement → reusable Item + IRRE PriceOption. `public_uuid` is TCA `type=uuid` v4, required, `l10n_mode=exclude`. All five tables have `tstamp`, `deleted`, `versioningWS`, localization fields. No title UNIQUE. No `UNIQUE(category,item)`. No `sku` / `menu_code` columns.
 - `BulkMenuParser` / `BulkMenuRow`: TSV parse + validate only. No database. One pasted row is one preview row, not an Item.
 - `BulkDraftValidator` / `BulkDraftRow`: POST `bulkDraftRevalidate` rebuilds normalized draft state (trim, `DecimalMinorUnitParser`, consecutive Category+Item run rules). No QueryBuilder identity lookup. No writes.
-- `RestaurantIdentityReader`: QueryBuilder **SELECT only** for target Menu + Item/Category title candidates (DeletedRestriction, WorkspaceRestriction, `sys_language_uid=0`, selected pid; Categories constrained to target Menu). Hidden/scheduled included. Final title equality is PHP `===` after trim.
-- `BulkIdentityResolver`: pure CREATE/REUSE/AMBIGUOUS decisions + summary counts; unit-tested without DB.
+- `RestaurantIdentityReader`: QueryBuilder **SELECT only** loads bounded default-language Item candidates for the selected pid and Category candidates for the selected pid + target Menu (DeletedRestriction, WorkspaceRestriction, `sys_language_uid=0`; hidden/scheduled included). Title matching is **not** done in SQL.
+- `RestaurantTitleNormalizer` / `BulkIdentityResolver`: identity comparison uses `matchKey` = Unicode whitespace-normalized + Unicode case-folded title. Display titles stay case-preserving (`cleanDisplayTitle`). No fuzzy matching. Unit-tested without DB.
+- `BulkDraftValidator` applies `cleanDisplayTitle` to Category/Item so spacing mistakes are cleaned in the draft without changing capitalization.
 - `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` / `bulkDraftRevalidate` / `bulkDraftReset` / `bulkIdentityResolve` are separate CSRF actions. No DataHandler. Module `workspaces: live`.
 - `MenuGraphReader`: default language (`sys_language_uid=0`), selected pid only, deleted excluded, hidden/scheduled included. Item reads are pid-bounded.
 - `BackendAccessGuard`: page show + `tables_select` for module open; identity resolution adds future-Apply preflight (`CONTENT_EDIT`, `tables_modify`, live workspace). Fail closed. DataHandler remains final write authority later.
@@ -196,31 +197,42 @@ Never merge two existing Items because titles match.
 
 ### Item
 
-Match set: default-language Items on the **selected pid** whose `title` equals the normalized draft Item **exactly after trim** (case-sensitive). Pid-wide, not menu-wide (Item is reusable). Cross-pid Items are out of scope; do not match or attach them.
+Match set: default-language Items on the **selected pid**. Cross-pid Items are out of scope.
+
+**Identity comparison** uses a restaurant title **match key**, not raw display equality:
+
+1. `cleanDisplayTitle` — Unicode-safe trim; collapse consecutive whitespace / Unicode separators (`\p{Z}` and ASCII whitespace) to one ordinary space; preserve capitalization, punctuation, accents, and script.
+2. `matchKey` — `cleanDisplayTitle` then Unicode case fold (`mb_convert_case(..., MB_CASE_FOLD, 'UTF-8')`).
+
+Display titles remain case-preserving. Editors must not accidentally create duplicate logical Items from capitalization or spacing differences (`Atlantic salmon` / `Atlantic Salmon` / `  Atlantic   salmon  ` share one key). Punctuation and wording still distinguish titles (`Salmon` ≠ `Salmon!` ≠ `Salmon Roll`).
+
+No transliteration, accent stripping, fuzzy spelling, or Levenshtein merge. Pre-existing same-key duplicates remain **AMBIGUOUS** (fail closed); this task does not merge DB rows.
+
+Pid-wide, not menu-wide (Item is reusable).
 
 | Situation | Status | Apply |
 |---|---|---|
-| No matching Item | `create` | DataHandler creates a new default-language Item. Core TCA uuid assigns `public_uuid`. |
-| Exactly one matching Item | `reuse` | New Placement points at that Item. Do not rewrite Item title/uuid. Capture `uid`, `public_uuid`, `tstamp`. |
-| Multiple matching Items | `ambiguous` | **Fail closed.** Do not pick, merge, or create a third. User must disambiguate later (out of first UI) or rename in List/FormEngine. |
+| No matching Item by matchKey | `create` | DataHandler creates a new default-language Item. Core TCA uuid assigns `public_uuid`. Proposed title = first `cleanDisplayTitle` in draft originalOrder. |
+| Exactly one matching Item by matchKey | `reuse` | New Placement points at that Item. Do not rewrite Item title/uuid. Capture `uid`, `public_uuid`, `tstamp`, and expose the persisted title as the canonical REUSE reference. |
+| Multiple matching Items by matchKey | `ambiguous` | **Fail closed.** Do not pick, merge, or create a third. User must disambiguate later (out of first UI) or rename in List/FormEngine. |
 | Same Item already used in another Menu on this pid | `reuse` (still one Item) | Allowed. New Placement in the target Menu. |
 | Same Item with multiple variants in one grouped run | `reuse` or `create` once | One Item; one Placement; several PriceOptions. |
 | Duplicate Placement (same Category+Item already on the Menu) | n/a | **Create another Placement.** Do not update the existing Placement’s PriceOptions. |
 | Match exists but page/table modify denied | `inaccessible` | Block. |
 | Reused Item vanished, moved pid, or `public_uuid`/`tstamp` mismatch at Apply | stale | Block; reload. |
 
-Consequences of title equality: two catalog dishes both named “Tea” cannot be distinguished from TSV. Hidden “Tea” counts as a match (avoids creating a duplicate visible Tea). Changing an Item title after preview invalidates reuse via `tstamp` (section H).
+Consequences: two catalog dishes that share a match key (for example both stored as differently cased “Tea”) cannot be distinguished from TSV and resolve as `ambiguous`. Hidden “Tea” counts as a match (avoids creating a duplicate visible Tea). Changing an Item title after preview invalidates reuse via `tstamp` (section H).
 
 ### Category
 
-Match set: default-language Categories on the selected pid whose `menu` is the **target Menu** and whose `title` equals the normalized draft Category exactly after trim (case-sensitive).
+Match set: default-language Categories on the selected pid whose `menu` is the **target Menu**, compared with the same `matchKey` contract as Item (whitespace-normalized + Unicode case-folded). Display titles remain case-preserving. Case / spacing differences must not create duplicate Categories in the target Menu.
 
 | Situation | Status | Apply |
 |---|---|---|
-| No matching Category in the target Menu | `create` | One Category on that Menu; Core uuid. All draft rows with that title share the same create-once draft identity. |
-| Exactly one matching Category in the target Menu | `reuse` | Capture uid, public_uuid, tstamp. |
-| Repeated Category text in the draft | same resolution | Create at most one Category per distinct title in this Apply. |
-| Multiple Categories with the same title in the target Menu | `ambiguous` | **Fail closed.** |
+| No matching Category in the target Menu | `create` | One Category on that Menu; Core uuid. All draft rows sharing the Category matchKey share the same create-once draft identity. Proposed title = first `cleanDisplayTitle` in draft originalOrder. |
+| Exactly one matching Category in the target Menu | `reuse` | Capture uid, public_uuid, tstamp; expose persisted title. |
+| Repeated Category text / case variants in the draft | same resolution | Create at most one Category per distinct matchKey in this Apply. |
+| Multiple Categories with the same matchKey in the target Menu | `ambiguous` | **Fail closed.** |
 | Same title on a Category of a **different** Menu | not a match | Do not reuse across menus. Categories belong to one Menu. |
 | Duplicate Category+Item Placement already stored | n/a | New Placement appended. |
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Anatolkin\ArpRestaurant\Backend\Editor\Bulk;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\MinorUnitMoneyFormatter;
+use Anatolkin\ArpRestaurant\Backend\Editor\RestaurantTitleNormalizer;
 
 /**
  * Server-authoritative bulk draft validation. No TYPO3 record reads or writes.
@@ -24,6 +25,7 @@ final class BulkDraftValidator
     public function __construct(
         private readonly DecimalMinorUnitParser $priceParser,
         private readonly MinorUnitMoneyFormatter $moneyFormatter,
+        private readonly RestaurantTitleNormalizer $titleNormalizer = new RestaurantTitleNormalizer(),
     ) {}
 
     /**
@@ -37,8 +39,8 @@ final class BulkDraftValidator
                 draftKey: 'r' . $index,
                 originalOrder: $index,
                 sourceLine: $parsed->sourceLine,
-                category: $parsed->category,
-                item: $parsed->item,
+                category: $this->titleNormalizer->cleanDisplayTitle($parsed->category),
+                item: $this->titleNormalizer->cleanDisplayTitle($parsed->item),
                 variant: $parsed->variant,
                 priceRaw: $parsed->priceRaw,
                 amountMinor: $parsed->amountMinor,
@@ -271,8 +273,8 @@ final class BulkDraftValidator
         string $variant,
         string $priceRaw,
     ): BulkDraftRow {
-        $category = trim($category);
-        $item = trim($item);
+        $category = $this->titleNormalizer->cleanDisplayTitle($category);
+        $item = $this->titleNormalizer->cleanDisplayTitle($item);
         $variant = trim($variant);
         $priceRaw = trim($priceRaw);
 

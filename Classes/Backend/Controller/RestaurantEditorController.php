@@ -133,7 +133,7 @@ final class RestaurantEditorController
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
-        );
+        ) . '#arp-restaurant-bulk-workbench';
 
         $rawInput = '';
         $parseGlobalError = '';
@@ -251,24 +251,10 @@ final class RestaurantEditorController
             );
         }
 
-        $itemTitles = [];
-        $categoryTitles = [];
-        foreach ($draft->rows as $row) {
-            // Prefixed keys keep numeric-looking titles as strings (PHP would
-            // cast array key "42" to int 42). Values remain the exact titles.
-            $itemTitles['i:' . $row->item] = $row->item;
-            $categoryTitles['c:' . $row->category] = $row->category;
-        }
-
-        $itemCandidates = $this->identityReader->findItemCandidates(
-            $pid,
-            array_values($itemTitles),
-            $backendUser,
-        );
+        $itemCandidates = $this->identityReader->findItemCandidates($pid, $backendUser);
         $categoryCandidates = $this->identityReader->findCategoryCandidates(
             $pid,
             $menuLookup->snapshot->uid,
-            array_values($categoryTitles),
             $backendUser,
         );
 

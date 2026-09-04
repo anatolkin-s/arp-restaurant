@@ -126,6 +126,9 @@
       <trans-unit id="bulk.resetDraft">
         <source>Reset draft</source>
       </trans-unit>
+      <trans-unit id="bulk.sourceHeading">
+        <source>Source TSV</source>
+      </trans-unit>
       <trans-unit id="bulk.resolveIdentities">
         <source>Resolve identities</source>
       </trans-unit>
@@ -133,7 +136,7 @@
         <source>Draft is valid. Identity resolution has not been performed yet.</source>
       </trans-unit>
       <trans-unit id="bulk.draftChanged">
-        <source>Draft changed — revalidate.</source>
+        <source>Draft changed — revalidate / resolve again.</source>
       </trans-unit>
       <trans-unit id="bulk.identity.resolved">
         <source>Identity resolution complete. Nothing was written.</source>
@@ -141,11 +144,38 @@
       <trans-unit id="bulk.identity.blocked">
         <source>Identity resolution blocked.</source>
       </trans-unit>
+      <trans-unit id="bulk.identity.cardReady">
+        <source>Identity resolution · Ready</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.cardBlocked">
+        <source>Identity resolution · Blocked</source>
+      </trans-unit>
       <trans-unit id="bulk.identity.target">
         <source>Target: %s</source>
       </trans-unit>
       <trans-unit id="bulk.identity.summaryHeading">
         <source>Identity resolution</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.labelCreate">
+        <source>Create</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.labelReuse">
+        <source>Reuse</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.labelAmbiguous">
+        <source>Ambiguous</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.countCategories">
+        <source>%s Categories</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.countItems">
+        <source>%s Items</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.countPlacements">
+        <source>%s Placements</source>
+      </trans-unit>
+      <trans-unit id="bulk.identity.countPriceOptions">
+        <source>%s Price options</source>
       </trans-unit>
       <trans-unit id="bulk.identity.summaryCreate">
         <source>Create: %1$d Categories, %2$d Items, %3$d Placements, %4$d Price options</source>
@@ -163,7 +193,7 @@
         <source>Reuse</source>
       </trans-unit>
       <trans-unit id="bulk.identity.badge.ambiguous">
-        <source>Ambiguous (%s)</source>
+        <source>Ambiguous · %s matches</source>
       </trans-unit>
       <trans-unit id="bulk.identity.badge.inaccessible">
         <source>Blocked</source>
