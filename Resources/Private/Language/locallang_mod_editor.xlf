@@ -444,6 +444,45 @@
       <trans-unit id="priceEdit.savingNotAvailable">
         <source>Saving is not available in this step.</source>
       </trans-unit>
+      <trans-unit id="priceEdit.savingWillUpdate">
+        <source>Saving will update this existing PriceOption in TYPO3.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.save">
+        <source>Save price</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.saveRefreshed">
+        <source>Save refreshed price</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.alreadyMatches">
+        <source>Price already matches these values. Nothing was written.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.confirmationStale.heading">
+        <source>PRICE CHANGED — NOTHING WAS WRITTEN</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.confirmationStale.body">
+        <source>The PriceOption changed since review. Review the refreshed change before saving again.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.writePreparationBlocked">
+        <source>Saving could not start. Nothing was written. Review the values and try again.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.flash.updatedTitle">
+        <source>Price updated</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.flash.updated">
+        <source>The variant and price were saved.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.flash.partialTitle">
+        <source>Price update may be incomplete</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.flash.partial">
+        <source>Review the current values before trying again.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.flash.failedTitle">
+        <source>Price update failed</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.flash.failed">
+        <source>Nothing could be confirmed as saved. Review the current values before trying again.</source>
+      </trans-unit>
       <trans-unit id="priceEdit.noVariant">
         <source>No variant</source>
       </trans-unit>

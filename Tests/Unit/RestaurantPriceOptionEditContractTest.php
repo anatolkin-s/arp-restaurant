@@ -73,7 +73,7 @@ assertTrue(
 assertTrue(
     !preg_match('/\b(DataHandler|process_datamap|process_cmdmap)\b/', $reviewMethod)
     && !preg_match('/\b(DataHandler|process_datamap|process_cmdmap|executeStatement)\b/', $priceEditBlob),
-    '24. no DataHandler in price-edit package/controller branch'
+    '24. no DataHandler in review path / non-Write price-edit package'
 );
 assertTrue(
     !str_contains($reviewMethod, 'RedirectResponse')
@@ -122,7 +122,7 @@ assertTrue(
 
 $reviewCard = '';
 if (preg_match(
-    '/data-arp-price-update-plan="1"[\s\S]*?priceEdit\.savingNotAvailable[\s\S]*?<\/div>/',
+    '/data-arp-price-update-plan="1"[\s\S]*?<\/div>\s*<\/f:if>/',
     $template,
     $cardMatch
 )) {
@@ -134,11 +134,12 @@ assertTrue(
     '27. review card says Nothing has been written yet'
 );
 assertTrue(
-    !str_contains($reviewCard, 'name="bulkApply"')
-    && !str_contains($reviewCard, 'name="priceOptionEditReview"')
-    && !preg_match('/<(button|input)[^>]*(Save|Update to menu|Apply to menu)/i', $reviewCard)
-    && str_contains($reviewCard, 'priceEdit.savingNotAvailable'),
-    '28. no Save/Apply write control in review card'
+    str_contains($reviewCard, 'name="priceOptionEditApply"')
+    && str_contains($reviewCard, 'priceEdit.save')
+    && str_contains($reviewCard, 'name="confirmedFingerprint"')
+    && str_contains($reviewCard, 'priceEdit.review.plan.fingerprint')
+    && str_contains($reviewCard, 'priceEdit.savingWillUpdate'),
+    '28. Save price present for updateReady plan with server fingerprint'
 );
 assertTrue(
     str_contains($template, 'data-arp-editor-search="1"')

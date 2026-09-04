@@ -206,6 +206,38 @@
                                     </p>
                                 </f:if>
 
+                                <f:if condition="{priceEdit.confirmationWarning} == 'confirmationStale'">
+                                    <div
+                                        class="arp-editor-stale-warning typo3-message message-warning"
+                                        role="alert"
+                                        aria-live="polite"
+                                        data-arp-server-status="1"
+                                        data-arp-price-confirmation-stale="1"
+                                    >
+                                        <span class="arp-editor-stale-warning__icon" aria-hidden="true">
+                                            <core:icon identifier="status-dialog-warning" size="small"/>
+                                        </span>
+                                        <div class="arp-editor-stale-warning__content">
+                                            <p class="arp-editor-stale-warning__heading">
+                                                <f:translate key="{lll}priceEdit.confirmationStale.heading"/>
+                                            </p>
+                                            <p class="arp-editor-stale-warning__body">
+                                                <f:translate key="{lll}priceEdit.confirmationStale.body"/>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </f:if>
+                                <f:if condition="{priceEdit.confirmationWarning} == 'writePreparationBlocked'">
+                                    <p class="typo3-message message-warning" data-arp-server-status="1" data-arp-price-write-preparation-blocked="1">
+                                        <f:translate key="{lll}priceEdit.writePreparationBlocked"/>
+                                    </p>
+                                </f:if>
+                                <f:if condition="{priceEdit.confirmationWarning} == 'alreadyMatches'">
+                                    <p class="typo3-message message-notice" data-arp-server-status="1" data-arp-price-already-matches="1">
+                                        <f:translate key="{lll}priceEdit.alreadyMatches"/>
+                                    </p>
+                                </f:if>
+
                                 <f:if condition="{priceEdit.blockers}">
                                     <f:for each="{priceEdit.blockers}" as="priceEditBlocker">
                                         <p class="typo3-message message-error">
@@ -277,12 +309,12 @@
                                 </f:if>
 
                                 <f:if condition="{priceEdit.review}">
-                                    <f:if condition="{priceEdit.review.outcome} == 'noChanges'">
+                                    <f:if condition="{priceEdit.review.outcome} == 'noChanges' && {priceEdit.confirmationWarning} != 'alreadyMatches'">
                                         <p class="typo3-message message-notice" data-arp-price-edit-no-changes="1">
                                             <f:translate key="{lll}priceEdit.noChanges"/>
                                         </p>
                                     </f:if>
-                                    <f:if condition="{priceEdit.review.outcome} == 'updateReady' && {priceEdit.review.plan}">
+                                    <f:if condition="{priceEdit.review.outcome} == 'updateReady' && {priceEdit.review.plan} && {priceEdit.review.plan.fingerprint}">
                                         <div class="arp-editor-price-update-card" data-arp-price-update-plan="1">
                                             <p class="arp-editor-price-update-card__heading"><f:translate key="{lll}priceEdit.reviewReady"/></p>
                                             <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceEdit.nothingWritten"/></p>
@@ -312,7 +344,30 @@
                                                     <f:translate key="{lll}priceEdit.diff.after"/> {priceEdit.review.plan.after.formattedAmount}
                                                 </p>
                                             </div>
-                                            <p class="arp-editor-price-update-card__footer"><f:translate key="{lll}priceEdit.savingNotAvailable"/></p>
+                                            <form action="{priceEdit.formAction}" method="post" class="arp-editor-price-update-card__save">
+                                                <input type="hidden" name="id" value="{priceEdit.pid}"/>
+                                                <input type="hidden" name="menu" value="{priceEdit.menuUid}"/>
+                                                <input type="hidden" name="priceOptionUid" value="{priceEdit.priceOptionUid}"/>
+                                                <input type="hidden" name="label" value="{priceEdit.submittedLabel}"/>
+                                                <input type="hidden" name="price" value="{priceEdit.submittedPrice}"/>
+                                                <input type="hidden" name="confirmedFingerprint" value="{priceEdit.review.plan.fingerprint}"/>
+                                                <input type="hidden" name="priceEditApplyToken" value="{priceEdit.priceEditApplyToken}"/>
+                                                <p class="arp-editor-price-update-card__footer"><f:translate key="{lll}priceEdit.savingWillUpdate"/></p>
+                                                <p class="arp-editor-draft-actions">
+                                                    <f:if condition="{priceEdit.confirmationWarning} == 'confirmationStale'">
+                                                        <f:then>
+                                                            <button type="submit" name="priceOptionEditApply" value="1" class="btn btn-primary" data-arp-price-save-refreshed="1">
+                                                                <f:translate key="{lll}priceEdit.saveRefreshed"/>
+                                                            </button>
+                                                        </f:then>
+                                                        <f:else>
+                                                            <button type="submit" name="priceOptionEditApply" value="1" class="btn btn-primary" data-arp-price-save="1">
+                                                                <f:translate key="{lll}priceEdit.save"/>
+                                                            </button>
+                                                        </f:else>
+                                                    </f:if>
+                                                </p>
+                                            </form>
                                         </div>
                                     </f:if>
                                 </f:if>

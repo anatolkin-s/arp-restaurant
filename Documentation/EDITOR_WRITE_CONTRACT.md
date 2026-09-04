@@ -4,28 +4,64 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review** (label + amount only, no write).
+Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only).
 
 ## EDITOR-2C1 — Existing PriceOption update review
 
 EDITOR-2C1 is a **separate mutation boundary** from Bulk Apply. Bulk Apply remains append-only CREATE / REUSE-to-new-Placement. Existing PriceOption edit does **not** reuse `BulkApplyPlan`, `ApplyDataMapBuilder`, or `RestaurantApplyWriter`.
 
-| Implemented | Not implemented (EDITOR-2C2+) |
+| Implemented | Deferred to EDITOR-2C2 |
 |---|---|
 | Saved-table **Edit price** GET `priceOption=<uid>` | Confirmed DataHandler update |
 | Server graph membership: pid → Menu → Category → Placement → PriceOption | Fingerprint / stale confirmation reject |
-| Review POST `priceOptionEditReview` + CSRF `priceEditToken` | Save / Apply / Update write control |
+| Review POST `priceOptionEditReview` + CSRF `priceEditToken` | Save write control |
 | Pure `PriceOptionUpdatePlan` before→after | Sorting / hidden / language / uuid changes |
 | `noChanges` when normalized values match | Category / Item / Placement edits |
 
 Contract:
 
-- Editable fields in this phase: **PriceOption.label**, **PriceOption.amount** only.
+- Editable fields: **PriceOption.label**, **PriceOption.amount** only.
 - Graph membership is server-authoritative. A PriceOption is not editable merely because `uid` exists or `pid` matches.
 - Review re-reads the persisted row; posted `public_uuid` / `tstamp` / relations / stored amounts are **not** authority.
-- Plan snapshot carries `uid`, `public_uuid`, `tstamp`, `pid`, `placementUid` for a future concurrency check.
-- Future write must re-read, compare snapshot/fingerprint, and DataHandler-update only label/amount.
-- No transaction/rollback claim. **No update write exists in EDITOR-2C1.**
+- Plan snapshot carries `uid`, `public_uuid`, `tstamp`, `pid`, `placementUid`, menu/category/item uids for confirmation continuity.
+- No transaction/rollback claim in review.
+
+## EDITOR-2C2 — Confirmed existing PriceOption update
+
+EDITOR-2C2 is the **first real write** for an existing PriceOption. It remains a separate boundary from Bulk Apply.
+
+| Implemented | Not implemented |
+|---|---|
+| Explicit POST `priceOptionEditApply` + CSRF `priceEditApplyToken` | Category / Item / Placement / Menu writes |
+| Fresh permission + graph re-read before write | Create / delete PriceOption |
+| Rebuild `PriceOptionUpdatePlan` + SHA-256 fingerprint `hash_equals` | `process_cmdmap`, QueryBuilder/SQL UPDATE |
+| `RestaurantPriceOptionUpdateWriter` sole DataHandler boundary | Transaction / rollback / retry |
+| Datamap fields **only** `label` + `amount` on existing uid | Schema/TCA / `Item.sku` / `Placement.menu_code` |
+| Read-back verification → outcomes `updated` \| `partialFailure` \| `failed` | Claiming atomic update |
+| HTTP 303 PRG after attempted write; stale / noChanges / prep blocked stay rendered | Custom JS |
+
+Pipeline:
+
+```
+Review (updateReady + fingerprint)
+  → explicit Save price
+  → CSRF priceEditApplyToken
+  → fresh permission preflight
+  → fresh RestaurantPriceOptionEditReader::load
+  → rebuild PriceOptionUpdatePlan from current DB + submitted intent
+  → compare confirmedFingerprint (hash_equals)
+  → DataHandler start + process_datamap (label/amount only)
+  → SELECT read-back verification
+  → flash + POST/Redirect/GET (id + menu + priceOption; no fragment)
+```
+
+Fingerprint payload (`price-option-update-v1`): uid, pid, public_uuid, tstamp, placementUid, menuUid, categoryUid, itemUid, before/after label + amountMinor. Display titles and formatted amounts are not authority.
+
+Stale confirmation (`confirmationStale`): fingerprint mismatch → **no DataHandler**, refreshed review card, prominent warning, **Save refreshed price** with the new server fingerprint.
+
+Concurrent exact match (`noChanges`): **no DataHandler**; informational “Price already matches these values. Nothing was written.”
+
+Semantics: one DataHandler datamap update is attempted; verification follows; no retry; no rollback guarantee; PRG only when `dataHandlerAttempted === true`.
 
 ## EDITOR-2B1 implementation status
 

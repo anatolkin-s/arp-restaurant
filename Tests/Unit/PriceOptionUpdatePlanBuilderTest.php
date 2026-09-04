@@ -14,6 +14,7 @@ require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/DecimalMinorUnitPars
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionEditBlocker.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionEditContext.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionUpdateValues.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionUpdateFingerprint.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionUpdatePlan.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionUpdatePreparationResult.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceEdit/PriceOptionUpdatePlanBuilder.php';
@@ -152,8 +153,13 @@ assertTrue(
     && $preserve->plan?->pid === 10
     && $preserve->plan?->publicUuid === 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
     && $preserve->plan?->tstamp === 1700000000
-    && $preserve->plan?->placementUid === 30,
-    '19. public_uuid/tstamp/pid carried into plan'
+    && $preserve->plan?->placementUid === 30
+    && $preserve->plan?->menuUid === 5
+    && $preserve->plan?->categoryUid === 20
+    && $preserve->plan?->itemUid === 50
+    && is_string($preserve->plan?->fingerprint)
+    && preg_match('/^[0-9a-f]{64}$/', $preserve->plan->fingerprint) === 1,
+    '19. public_uuid/tstamp/pid/graph uids + fingerprint carried into plan'
 );
 
 echo $failures === 0 ? "\nAll PriceOptionUpdatePlanBuilder tests passed.\n" : "\n{$failures} PriceOptionUpdatePlanBuilder test(s) failed.\n";
