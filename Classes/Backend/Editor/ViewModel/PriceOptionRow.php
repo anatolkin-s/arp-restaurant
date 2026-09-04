@@ -15,5 +15,8 @@ final readonly class PriceOptionRow
         public bool $hidden,
         public ?string $editUrl,
         public ?string $editPriceUrl = null,
+        public ?string $editVisibilityUrl = null,
+        /** @var list<string> */
+        public array $statusKeys = [],
     ) {}
 }

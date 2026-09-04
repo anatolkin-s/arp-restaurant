@@ -36,6 +36,7 @@ final class MenuGraphAssembler
      * @param list<array<string, mixed>> $priceOptions
      * @param callable(int): string|null $moduleUrlBuilder
      * @param callable(int, int): string|null $priceEditUrlBuilder optionUid, menuUid
+     * @param callable(int, int): string|null $priceVisibilityUrlBuilder optionUid, menuUid
      */
     public function assemble(
         int $pid,
@@ -50,6 +51,7 @@ final class MenuGraphAssembler
         ?callable $moduleUrlBuilder = null,
         ?RecordEditUrlBuilder $editUrlBuilder = null,
         ?callable $priceEditUrlBuilder = null,
+        ?callable $priceVisibilityUrlBuilder = null,
     ): EditorScreen {
         $menus = $this->sortRows($menus, 'title', true);
         $categories = $this->sortRows($categories, 'sorting');
@@ -137,6 +139,12 @@ final class MenuGraphAssembler
                         ? 'Unavailable item'
                         : $this->title((string)($item['title'] ?? ''), 'Untitled item');
 
+                    $placementStatusKeys = $this->recordStatusKeys(
+                        $placement,
+                        $now,
+                        $item !== null && (int)($item['hidden'] ?? 0) === 1
+                    );
+
                     $optionRows = [];
                     foreach ($priceOptionsByPlacement[$placementUid] ?? [] as $priceOption) {
                         $optionUid = (int)($priceOption['uid'] ?? 0);
@@ -145,6 +153,10 @@ final class MenuGraphAssembler
                         }
                         $label = trim((string)($priceOption['label'] ?? ''));
                         $amountMinor = (int)($priceOption['amount'] ?? 0);
+                        [$optionStatusKeys, $visibilityActionable] = $this->priceOptionVisibilityPresentation(
+                            $priceOption,
+                            $placementStatusKeys,
+                        );
                         $optionRows[] = new PriceOptionRow(
                             uid: $optionUid,
                             label: $label,
@@ -156,6 +168,10 @@ final class MenuGraphAssembler
                             editPriceUrl: $priceEditUrlBuilder !== null
                                 ? $priceEditUrlBuilder($optionUid, $menuUid)
                                 : null,
+                            editVisibilityUrl: $visibilityActionable && $priceVisibilityUrlBuilder !== null
+                                ? $priceVisibilityUrlBuilder($optionUid, $menuUid)
+                                : null,
+                            statusKeys: $optionStatusKeys,
                         );
                     }
 
@@ -164,11 +180,7 @@ final class MenuGraphAssembler
                         itemTitle: $itemTitle,
                         itemEditUrl: $item !== null ? $this->editUrl($editUrlBuilder, self::TABLE_ITEM, $itemUid) : null,
                         editUrl: $this->editUrl($editUrlBuilder, self::TABLE_PLACEMENT, $placementUid),
-                        statusKeys: $this->recordStatusKeys(
-                            $placement,
-                            $now,
-                            $item !== null && (int)($item['hidden'] ?? 0) === 1
-                        ),
+                        statusKeys: $placementStatusKeys,
                         priceOptions: $optionRows,
                     );
                 }
@@ -264,6 +276,38 @@ final class MenuGraphAssembler
         }
 
         return $keys;
+    }
+
+    /**
+     * PriceOption-row status and whether the visible/hidden icon may open
+     * the PriceOption.hidden review. Scheduled / item-hidden / parent-hidden
+     * (when the PriceOption itself is visible) stay non-action.
+     *
+     * @param array<string, mixed> $priceOption
+     * @param list<string> $placementStatusKeys
+     * @return array{0: list<string>, 1: bool}
+     */
+    private function priceOptionVisibilityPresentation(array $priceOption, array $placementStatusKeys): array
+    {
+        $optionHidden = (int)($priceOption['hidden'] ?? 0) === 1;
+        $ambiguous = in_array('scheduled', $placementStatusKeys, true)
+            || in_array('itemHidden', $placementStatusKeys, true);
+        $placementHidden = in_array('hidden', $placementStatusKeys, true);
+        $actionable = !$ambiguous && (!$placementHidden || $optionHidden);
+
+        if (!$actionable) {
+            return [$placementStatusKeys, false];
+        }
+
+        $keys = [];
+        foreach ($placementStatusKeys as $key) {
+            if ($key !== 'visible' && $key !== 'hidden') {
+                $keys[] = $key;
+            }
+        }
+        $keys[] = $optionHidden ? 'hidden' : 'visible';
+
+        return [$keys, true];
     }
 
     private function editUrl(?RecordEditUrlBuilder $editUrlBuilder, string $table, int $uid): ?string

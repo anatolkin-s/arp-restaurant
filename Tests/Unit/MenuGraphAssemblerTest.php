@@ -262,6 +262,121 @@ assertTrue($absentPlacement->itemTitle === 'Unavailable item', 'cross-pid Item r
 assertTrue($absentPlacement->itemEditUrl === null, 'missing Item does not get a record_edit link');
 assertTrue(!str_contains($absentPlacement->itemTitle, 'Secret'), 'external Item title cannot leak through an absent row');
 
+$visibilityUrl = static fn (int $optionUid, int $menuUid): string => '/vis/' . $menuUid . '/' . $optionUid;
+$priceEditUrl = static fn (int $optionUid, int $menuUid): string => '/price/' . $menuUid . '/' . $optionUid;
+
+$visibleOption = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 0, 'starttime' => 0, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [['uid' => 8, 'placement' => 4, 'label' => 'Small', 'amount' => 313, 'sorting' => 10, 'hidden' => 0]],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+);
+$visibleRow = $visibleOption->selectedMenu->categories[0]->placements[0]->priceOptions[0];
+assertTrue(
+    $visibleRow->editVisibilityUrl === '/vis/2/8'
+    && $visibleRow->statusKeys === ['visible']
+    && $visibleRow->editPriceUrl === '/price/2/8',
+    'unambiguous visible PriceOption gets a visibility review URL'
+);
+
+$hiddenOption = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 0, 'starttime' => 0, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [['uid' => 8, 'placement' => 4, 'label' => 'Small', 'amount' => 313, 'sorting' => 10, 'hidden' => 1]],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+);
+$hiddenRow = $hiddenOption->selectedMenu->categories[0]->placements[0]->priceOptions[0];
+assertTrue(
+    $hiddenRow->editVisibilityUrl === '/vis/2/8'
+    && $hiddenRow->statusKeys === ['hidden']
+    && $hiddenRow->hidden === true,
+    'hidden PriceOption on a visible Placement is actionable as hidden'
+);
+
+$scheduled = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 0, 'starttime' => $now + 100, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [['uid' => 8, 'placement' => 4, 'label' => 'Small', 'amount' => 313, 'sorting' => 10, 'hidden' => 0]],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+);
+$scheduledRow = $scheduled->selectedMenu->categories[0]->placements[0]->priceOptions[0];
+assertTrue(
+    $scheduledRow->editVisibilityUrl === null
+    && in_array('scheduled', $scheduledRow->statusKeys, true),
+    'scheduled Placement keeps non-action status (fail closed)'
+);
+
+$parentHiddenVisibleOption = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 1, 'starttime' => 0, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [['uid' => 8, 'placement' => 4, 'label' => 'Small', 'amount' => 313, 'sorting' => 10, 'hidden' => 0]],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+);
+$parentHiddenVisibleRow = $parentHiddenVisibleOption->selectedMenu->categories[0]->placements[0]->priceOptions[0];
+assertTrue(
+    $parentHiddenVisibleRow->editVisibilityUrl === null
+    && in_array('hidden', $parentHiddenVisibleRow->statusKeys, true),
+    'parent-hidden + visible PriceOption is not falsely actionable'
+);
+
+$parentHiddenHiddenOption = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 1, 'starttime' => 0, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [['uid' => 8, 'placement' => 4, 'label' => 'Small', 'amount' => 313, 'sorting' => 10, 'hidden' => 1]],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+);
+$parentHiddenHiddenRow = $parentHiddenHiddenOption->selectedMenu->categories[0]->placements[0]->priceOptions[0];
+assertTrue(
+    $parentHiddenHiddenRow->editVisibilityUrl === '/vis/2/8'
+    && $parentHiddenHiddenRow->statusKeys === ['hidden'],
+    'parent-hidden + hidden PriceOption remains unambiguously actionable'
+);
+
 if ($failures > 0) {
     echo "\n{$failures} failing assertion(s)\n";
     exit(1);

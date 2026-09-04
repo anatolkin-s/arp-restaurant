@@ -4,7 +4,7 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only).
+Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only). EDITOR-2C3 adds **existing PriceOption visibility review** (`PriceOption.hidden` only; no persistence).
 
 ## EDITOR-2C1 — Existing PriceOption update review
 
@@ -62,6 +62,32 @@ Stale confirmation (`confirmationStale`): fingerprint mismatch → **no DataHand
 Concurrent exact match (`noChanges`): **no DataHandler**; informational “Price already matches these values. Nothing was written.”
 
 Semantics: one DataHandler datamap update is attempted; verification follows; no retry; no rollback guarantee; PRG only when `dataHandlerAttempted === true`.
+
+## EDITOR-2C3 — Existing PriceOption visibility review
+
+EDITOR-2C3 is **review-only**. It does **not** persist. There is no DataHandler, no QueryBuilder mutation, and no Save control.
+
+It owns **only** `tx_arprestaurant_domain_model_priceoption.hidden`. It does **not** edit Item.hidden, Placement.hidden, Category.hidden, Menu.hidden, `starttime`, `endtime`, or any scheduling field.
+
+Changing `PriceOption.hidden` does **not** override effective frontend visibility when a parent entity is hidden or otherwise unavailable. Copy is scoped as “Price option visibility” / “this PriceOption only.”
+
+| Implemented | Not implemented |
+|---|---|
+| Saved-table GET `priceOptionVisibility=<uid>` | Confirmed DataHandler update of `hidden` |
+| Status icon entry (Core eye / hide) when PriceOption.hidden is unambiguous | Clickable scheduled / parent-hidden / item-hidden icons |
+| POST `priceOptionVisibilityReview` + CSRF `priceVisibilityToken` | Reuse of `priceOptionEditReview` / `priceEditToken` / Apply tokens |
+| Pure `PriceOptionVisibilityPlan` current→requested hidden | Fingerprint / Save visibility |
+| `noChanges` when requested state equals current `hidden` | Category / Item / Placement / Menu writes |
+| Permission preflight: live workspace, CONTENT_EDIT, `tables_modify` PriceOption, `hidden` not excluded | Schema/TCA |
+
+Contract:
+
+- Accepted submitted enum: `visible` → `hidden=0`, `hidden` → `hidden=1`. Reject anything else. No silent coercion.
+- Graph membership is server-authoritative: selected pid → Menu → Category → Placement → PriceOption. A uid alone is not authority.
+- Plan snapshot carries uid, pid, public_uuid, tstamp, placement uid, Menu/Category/Item uids, current hidden, requested hidden.
+- Outcomes: `visibilityUpdateReady` \| `noChanges` \| `preparationBlocked`.
+- Status search/sort still use visually-hidden localized Visible/Hidden/Scheduled text. Clickable icons do not replace that innerText.
+- EDITOR-2C2 label/amount write semantics are unchanged.
 
 ## EDITOR-2B1 implementation status
 

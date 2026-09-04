@@ -519,6 +519,96 @@
       <trans-unit id="priceEdit.error.labelTooLong">
         <source>Variant must be 255 characters or fewer.</source>
       </trans-unit>
+      <trans-unit id="priceVisibility.heading">
+        <source>Price option visibility</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.review">
+        <source>Review change</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.cancel">
+        <source>Cancel</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.openFullRecord">
+        <source>Open full record</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.field.visibility">
+        <source>Visibility</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.option.visible">
+        <source>Visible</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.option.hidden">
+        <source>Hidden</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.state.visible">
+        <source>Visible</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.state.hidden">
+        <source>Hidden</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.currentState">
+        <source>Current state:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.context.menu">
+        <source>Menu:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.context.category">
+        <source>Category:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.context.item">
+        <source>Item:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.context.variant">
+        <source>Variant:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.context.price">
+        <source>Price:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.noChanges">
+        <source>No visibility change to review.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.reviewReady">
+        <source>PRICE OPTION VISIBILITY · READY</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.nothingWritten">
+        <source>Nothing has been written yet.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.savingNotAvailable">
+        <source>Saving is not available in this step.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.scope">
+        <source>Changing this field affects this PriceOption only.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.diff.visibility">
+        <source>Visibility:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.diff.before">
+        <source>Before:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.diff.after">
+        <source>After:</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.entry.visible">
+        <source>Visible — review price option visibility</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.entry.hidden">
+        <source>Hidden — review price option visibility</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.error.invalidCsrf">
+        <source>The form token was invalid. Reload and try again.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.error.inaccessiblePriceOption">
+        <source>This price option cannot be reviewed in the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.error.wrongMenu">
+        <source>This price option does not belong to the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.error.fieldModifyDenied">
+        <source>You do not have permission to modify price option visibility.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.error.malformedVisibility">
+        <source>Choose Visible or Hidden.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

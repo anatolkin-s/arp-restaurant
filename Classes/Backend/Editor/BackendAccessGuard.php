@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Anatolkin\ArpRestaurant\Backend\Editor;
 
+use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityPermissionPreflight;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -135,6 +136,30 @@ final class BackendAccessGuard
         }
 
         return '';
+    }
+
+    /**
+     * Conservative PriceOption.hidden review preflight.
+     * Does not write. EDITOR-2C3 has no DataHandler path.
+     *
+     * @param array<string, mixed> $pageRow page row already readable via readPage()
+     * @return string empty when OK; otherwise a blocker code
+     */
+    public function priceOptionVisibilityPermissionBlocker(
+        array $pageRow,
+        BackendUserAuthentication $backendUser,
+    ): string {
+        return (new PriceOptionVisibilityPermissionPreflight())->blocker(
+            (int)$backendUser->workspace,
+            $backendUser->isAdmin(),
+            $backendUser->isAdmin() || $backendUser->doesUserHaveAccess($pageRow, Permission::CONTENT_EDIT),
+            $backendUser->check('tables_modify', MenuGraphAssembler::TABLE_PRICEOPTION),
+            $backendUser->isAdmin() || $this->canModifyField(
+                $backendUser,
+                MenuGraphAssembler::TABLE_PRICEOPTION,
+                'hidden'
+            ),
+        );
     }
 
     private function canModifyField(

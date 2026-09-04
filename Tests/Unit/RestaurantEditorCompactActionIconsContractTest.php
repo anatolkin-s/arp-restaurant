@@ -110,12 +110,26 @@ foreach (['visible', 'hidden', 'scheduled'] as $statusKey) {
         ) === 1,
         "{$statusKey} iconized status contains visually hidden localized text"
     );
+}
+assertTrue(
+    preg_match(
+        '/value="scheduled"[\s\S]*?title="\{statusLabel\}"[\s\S]*?aria-label="\{statusLabel\}"/s',
+        $statusPartial
+    ) === 1,
+    'scheduled status title/aria-label remain present'
+);
+foreach (['visible', 'hidden'] as $statusKey) {
+    $case = '';
+    if (preg_match('/value="' . $statusKey . '"[\s\S]*?<\/f:case>/', $statusPartial, $caseMatch)) {
+        $case = $caseMatch[0];
+    }
     assertTrue(
-        preg_match(
-            '/value="' . $statusKey . '"[\s\S]*?title="\{statusLabel\}"[\s\S]*?aria-label="\{statusLabel\}"/s',
-            $statusPartial
-        ) === 1,
-        "{$statusKey} status title/aria-label remain present"
+        $case !== ''
+        && str_contains($case, 'title="{statusLabel}"')
+        && str_contains($case, 'aria-label="{statusLabel}"')
+        && str_contains($case, 'title="{reviewLabel}"')
+        && str_contains($case, 'aria-label="{reviewLabel}"'),
+        "{$statusKey} keeps non-action title/aria-label and clickable review labels"
     );
 }
 
@@ -124,7 +138,7 @@ assertTrue(
         '/arp-editor-status--(?:visible|hidden|scheduled)"[^>]*>\s*\{statusLabel\}/',
         $statusPartial
     )
-    && preg_match_all('/arp-editor-status--icon/', $statusPartial) === 3,
+    && preg_match_all('/arp-editor-status--icon/', $statusPartial) >= 3,
     'visible textual label is NOT rendered as ordinary visible service text'
 );
 assertTrue(

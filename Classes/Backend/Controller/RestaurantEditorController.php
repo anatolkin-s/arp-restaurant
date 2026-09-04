@@ -28,6 +28,11 @@ use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\RestaurantPriceOptionEditRe
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\Write\PriceOptionUpdateExecutionResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\Write\RestaurantPriceOptionUpdateWriter;
 use Anatolkin\ArpRestaurant\Backend\Editor\ViewModel\EditorScreen;
+use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityBlocker;
+use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityPanelView;
+use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityPlanBuilder;
+use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityPreparationResult;
+use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\RestaurantPriceOptionVisibilityReader;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -59,6 +64,7 @@ final class RestaurantEditorController
     private const BULK_APPLY_ACTION = 'bulkApply';
     private const PRICE_EDIT_REVIEW_ACTION = 'priceOptionEditReview';
     private const PRICE_EDIT_APPLY_ACTION = 'priceOptionEditApply';
+    private const PRICE_VISIBILITY_REVIEW_ACTION = 'priceOptionVisibilityReview';
     private const FINGERPRINT_PATTERN = '/^[0-9a-f]{64}$/';
 
     public function __construct(
@@ -80,6 +86,8 @@ final class RestaurantEditorController
         private readonly RestaurantPriceOptionEditReader $priceOptionEditReader,
         private readonly PriceOptionUpdatePlanBuilder $priceOptionUpdatePlanBuilder,
         private readonly RestaurantPriceOptionUpdateWriter $priceOptionUpdateWriter,
+        private readonly RestaurantPriceOptionVisibilityReader $priceOptionVisibilityReader,
+        private readonly PriceOptionVisibilityPlanBuilder $priceOptionVisibilityPlanBuilder,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -91,6 +99,7 @@ final class RestaurantEditorController
         $moduleTemplate->assign('lll', self::LLL);
         $moduleTemplate->assign('bulk', null);
         $moduleTemplate->assign('priceEdit', null);
+        $moduleTemplate->assign('priceVisibility', null);
 
         $pid = $this->resolvePid($request);
         $backendUser = $this->getBackendUser();
@@ -120,6 +129,7 @@ final class RestaurantEditorController
 
         $applyRenderState = null;
         $priceEditReviewState = null;
+        $visibilityReviewState = null;
         $body = $request->getParsedBody();
         if (is_array($body) && isset($body['bulkApply'])) {
             $applyHandled = $this->processBulkApplyWrite($request, $pid, $page, $backendUser, $languageService);
@@ -141,6 +151,8 @@ final class RestaurantEditorController
             $priceEditReviewState = $priceEditHandled;
         } elseif (is_array($body) && isset($body['priceOptionEditReview'])) {
             $priceEditReviewState = $this->processPriceOptionEditReview($request, $pid, $page, $backendUser);
+        } elseif (is_array($body) && isset($body['priceOptionVisibilityReview'])) {
+            $visibilityReviewState = $this->processPriceOptionVisibilityReview($request, $pid, $page, $backendUser);
         }
 
         $editUrlBuilder = new BackendRecordEditUrlBuilder($this->uriBuilder, $request);
@@ -164,6 +176,12 @@ final class RestaurantEditorController
                     ['id' => $pid, 'menu' => $menuUid, 'priceOption' => $optionUid]
                 );
             },
+            static function (int $optionUid, int $menuUid) use ($uriBuilder, $pid): string {
+                return (string)$uriBuilder->buildUriFromRoute(
+                    'web_arp_restaurant_editor',
+                    ['id' => $pid, 'menu' => $menuUid, 'priceOptionVisibility' => $optionUid]
+                );
+            },
         );
 
         $activeMenuUid = $screen->selectedMenu->uid ?? $requestedMenuUid;
@@ -182,6 +200,18 @@ final class RestaurantEditorController
                 $backendUser,
                 $editUrlBuilder,
                 $priceEditReviewState,
+            )
+        );
+        $moduleTemplate->assign(
+            'priceVisibility',
+            $this->buildPriceOptionVisibilityPanel(
+                $request,
+                $pid,
+                $activeMenuUid,
+                $page,
+                $backendUser,
+                $editUrlBuilder,
+                $visibilityReviewState,
             )
         );
 
@@ -772,6 +802,222 @@ final class RestaurantEditorController
             review: null,
             submittedLabel: $submittedLabel,
             submittedPrice: $submittedPrice,
+            requestError: '',
+            blockers: $load->outcome === 'blocked' ? $load->blockers : [],
+            cancelUrl: $cancelUrl,
+        );
+    }
+
+    /**
+     * Review-only PriceOption.hidden preparation. No DataHandler / write / PRG.
+     *
+     * @param array<string, mixed> $page
+     * @return array{
+     *   priceOptionUid: int,
+     *   menuUid: int,
+     *   submittedVisibility: string,
+     *   requestError: string,
+     *   blockers: list<PriceOptionVisibilityBlocker>,
+     *   review: ?PriceOptionVisibilityPreparationResult,
+     *   context: ?\Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityContext
+     * }
+     */
+    private function processPriceOptionVisibilityReview(
+        ServerRequestInterface $request,
+        int $pid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+    ): array {
+        $empty = static function (
+            int $priceOptionUid,
+            int $menuUid,
+            string $submittedVisibility,
+            string $requestError = '',
+            array $blockers = [],
+            ?PriceOptionVisibilityPreparationResult $review = null,
+            $context = null,
+        ): array {
+            return [
+                'priceOptionUid' => $priceOptionUid,
+                'menuUid' => $menuUid,
+                'submittedVisibility' => $submittedVisibility,
+                'requestError' => $requestError,
+                'blockers' => $blockers,
+                'review' => $review,
+                'context' => $context,
+            ];
+        };
+
+        $body = $request->getParsedBody();
+        if (!is_array($body)) {
+            return $empty(0, 0, '', 'invalidCsrf');
+        }
+
+        $priceOptionUid = (int)($body['priceOptionUid'] ?? 0);
+        $menuUid = (int)($body['menu'] ?? 0);
+        $submittedVisibility = (string)($body['visibility'] ?? '');
+
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $submittedToken = (string)($body['priceVisibilityToken'] ?? '');
+        if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::PRICE_VISIBILITY_REVIEW_ACTION)) {
+            return $empty($priceOptionUid, $menuUid, $submittedVisibility, 'invalidCsrf');
+        }
+
+        $permissionBlocker = $this->accessGuard->priceOptionVisibilityPermissionBlocker($page, $backendUser);
+        if ($permissionBlocker !== '') {
+            $code = $permissionBlocker === 'fieldModifyDenied' ? 'fieldModifyDenied' : 'inaccessiblePriceOption';
+
+            return $empty(
+                $priceOptionUid,
+                $menuUid,
+                $submittedVisibility,
+                '',
+                [new PriceOptionVisibilityBlocker($code)],
+            );
+        }
+
+        $editUrlBuilder = new BackendRecordEditUrlBuilder($this->uriBuilder, $request);
+        $load = $this->priceOptionVisibilityReader->load(
+            $pid,
+            $menuUid,
+            $priceOptionUid,
+            $backendUser,
+            $editUrlBuilder,
+        );
+        if ($load->outcome !== 'loaded' || $load->context === null) {
+            return $empty(
+                $priceOptionUid,
+                $menuUid,
+                $submittedVisibility,
+                '',
+                $load->blockers !== []
+                    ? $load->blockers
+                    : [new PriceOptionVisibilityBlocker('inaccessiblePriceOption')],
+            );
+        }
+
+        $review = $this->priceOptionVisibilityPlanBuilder->prepare(
+            $load->context,
+            $submittedVisibility,
+        );
+
+        return [
+            'priceOptionUid' => $priceOptionUid,
+            'menuUid' => $menuUid,
+            'submittedVisibility' => $submittedVisibility,
+            'requestError' => '',
+            'blockers' => $review->outcome === 'preparationBlocked' ? $review->blockers : [],
+            'review' => $review,
+            'context' => $load->context,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     * @param array{
+     *   priceOptionUid: int,
+     *   menuUid: int,
+     *   submittedVisibility: string,
+     *   requestError: string,
+     *   blockers: list<PriceOptionVisibilityBlocker>,
+     *   review: ?PriceOptionVisibilityPreparationResult,
+     *   context: ?\Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityContext
+     * }|null $reviewState
+     */
+    private function buildPriceOptionVisibilityPanel(
+        ServerRequestInterface $request,
+        int $pid,
+        int $menuUid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+        BackendRecordEditUrlBuilder $editUrlBuilder,
+        ?array $reviewState = null,
+    ): PriceOptionVisibilityPanelView {
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $priceVisibilityToken = $formProtection->generateToken(self::BULK_FORM, self::PRICE_VISIBILITY_REVIEW_ACTION);
+        $formAction = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $menuUid]
+        );
+        $cancelUrl = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $menuUid]
+        );
+
+        if ($reviewState !== null) {
+            return new PriceOptionVisibilityPanelView(
+                formAction: $formAction,
+                priceVisibilityToken: $priceVisibilityToken,
+                pid: $pid,
+                menuUid: $menuUid > 0 ? $menuUid : $reviewState['menuUid'],
+                priceOptionUid: $reviewState['priceOptionUid'],
+                context: $reviewState['context'],
+                review: $reviewState['review'],
+                submittedVisibility: $reviewState['submittedVisibility'],
+                requestError: $reviewState['requestError'],
+                blockers: $reviewState['blockers'],
+                cancelUrl: $cancelUrl,
+            );
+        }
+
+        $priceOptionUid = (int)($request->getQueryParams()['priceOptionVisibility'] ?? 0);
+        if ($priceOptionUid <= 0 || $menuUid <= 0) {
+            return new PriceOptionVisibilityPanelView(
+                formAction: $formAction,
+                priceVisibilityToken: $priceVisibilityToken,
+                pid: $pid,
+                menuUid: $menuUid,
+                priceOptionUid: 0,
+                context: null,
+                review: null,
+                submittedVisibility: '',
+                requestError: '',
+                blockers: [],
+                cancelUrl: $cancelUrl,
+            );
+        }
+
+        $permissionBlocker = $this->accessGuard->priceOptionVisibilityPermissionBlocker($page, $backendUser);
+        if ($permissionBlocker !== '') {
+            $code = $permissionBlocker === 'fieldModifyDenied' ? 'fieldModifyDenied' : 'inaccessiblePriceOption';
+
+            return new PriceOptionVisibilityPanelView(
+                formAction: $formAction,
+                priceVisibilityToken: $priceVisibilityToken,
+                pid: $pid,
+                menuUid: $menuUid,
+                priceOptionUid: $priceOptionUid,
+                context: null,
+                review: null,
+                submittedVisibility: '',
+                requestError: '',
+                blockers: [new PriceOptionVisibilityBlocker($code)],
+                cancelUrl: $cancelUrl,
+            );
+        }
+
+        $load = $this->priceOptionVisibilityReader->load(
+            $pid,
+            $menuUid,
+            $priceOptionUid,
+            $backendUser,
+            $editUrlBuilder,
+        );
+
+        $context = $load->outcome === 'loaded' ? $load->context : null;
+        $submittedVisibility = $context !== null
+            ? ($context->hidden ? 'hidden' : 'visible')
+            : '';
+
+        return new PriceOptionVisibilityPanelView(
+            formAction: $formAction,
+            priceVisibilityToken: $priceVisibilityToken,
+            pid: $pid,
+            menuUid: $menuUid,
+            priceOptionUid: $priceOptionUid,
+            context: $context,
+            review: null,
+            submittedVisibility: $submittedVisibility,
             requestError: '',
             blockers: $load->outcome === 'blocked' ? $load->blockers : [],
             cancelUrl: $cancelUrl,

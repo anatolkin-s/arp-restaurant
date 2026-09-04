@@ -9,27 +9,61 @@
         <f:switch expression="{statusKey}">
             <f:case value="visible">
                 <f:variable name="statusLabel"><f:translate key="{lll}status.visible"/></f:variable>
-                <span
-                    class="arp-editor-status arp-editor-status--icon arp-editor-status--visible"
-                    title="{statusLabel}"
-                    aria-label="{statusLabel}"
-                    role="img"
-                >
-                    <core:icon identifier="actions-eye" size="small"/>
-                    <span class="arp-editor-sr">{statusLabel}</span>
-                </span>
+                <f:variable name="reviewLabel"><f:translate key="{lll}priceVisibility.entry.visible"/></f:variable>
+                <f:if condition="{reviewUrl}">
+                    <f:then>
+                        <a
+                            class="arp-editor-icon-action arp-editor-status arp-editor-status--icon arp-editor-status--visible"
+                            href="{reviewUrl}"
+                            title="{reviewLabel}"
+                            aria-label="{reviewLabel}"
+                            data-arp-edit-visibility="1"
+                        >
+                            <core:icon identifier="actions-eye" size="small"/>
+                            <span class="arp-editor-sr">{statusLabel}</span>
+                        </a>
+                    </f:then>
+                    <f:else>
+                        <span
+                            class="arp-editor-status arp-editor-status--icon arp-editor-status--visible"
+                            title="{statusLabel}"
+                            aria-label="{statusLabel}"
+                            role="img"
+                        >
+                            <core:icon identifier="actions-eye" size="small"/>
+                            <span class="arp-editor-sr">{statusLabel}</span>
+                        </span>
+                    </f:else>
+                </f:if>
             </f:case>
             <f:case value="hidden">
                 <f:variable name="statusLabel"><f:translate key="{lll}status.hidden"/></f:variable>
-                <span
-                    class="arp-editor-status arp-editor-status--icon arp-editor-status--hidden"
-                    title="{statusLabel}"
-                    aria-label="{statusLabel}"
-                    role="img"
-                >
-                    <core:icon identifier="actions-edit-hide" size="small"/>
-                    <span class="arp-editor-sr">{statusLabel}</span>
-                </span>
+                <f:variable name="reviewLabel"><f:translate key="{lll}priceVisibility.entry.hidden"/></f:variable>
+                <f:if condition="{reviewUrl}">
+                    <f:then>
+                        <a
+                            class="arp-editor-icon-action arp-editor-status arp-editor-status--icon arp-editor-status--hidden"
+                            href="{reviewUrl}"
+                            title="{reviewLabel}"
+                            aria-label="{reviewLabel}"
+                            data-arp-edit-visibility="1"
+                        >
+                            <core:icon identifier="actions-edit-hide" size="small"/>
+                            <span class="arp-editor-sr">{statusLabel}</span>
+                        </a>
+                    </f:then>
+                    <f:else>
+                        <span
+                            class="arp-editor-status arp-editor-status--icon arp-editor-status--hidden"
+                            title="{statusLabel}"
+                            aria-label="{statusLabel}"
+                            role="img"
+                        >
+                            <core:icon identifier="actions-edit-hide" size="small"/>
+                            <span class="arp-editor-sr">{statusLabel}</span>
+                        </span>
+                    </f:else>
+                </f:if>
             </f:case>
             <f:case value="scheduled">
                 <f:variable name="statusLabel"><f:translate key="{lll}status.scheduled"/></f:variable>

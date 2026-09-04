@@ -138,8 +138,8 @@
                                                                             </f:if>
                                                                         </td>
                                                                         <td data-arp-col="status">
-                                                                            <f:for each="{placement.statusKeys}" as="statusKey">
-                                                                                <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 0}"/>
+                                                                            <f:for each="{option.statusKeys}" as="statusKey">
+                                                                                <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 0, reviewUrl: option.editVisibilityUrl}"/>
                                                                             </f:for>
                                                                         </td>
                                                                     </tr>
@@ -383,6 +383,145 @@
                                                     </f:else>
                                                 </f:if>
                                             </p>
+                                        </div>
+                                    </f:if>
+                                </f:if>
+                            </section>
+                        </f:if>
+
+                        <f:if condition="{priceVisibility} && {priceVisibility.hasPanel}">
+                            <section class="arp-editor-price-edit arp-editor-price-visibility" data-arp-price-visibility="1" id="arp-restaurant-price-visibility">
+                                <h2 class="arp-editor-price-edit__heading"><f:translate key="{lll}priceVisibility.heading"/></h2>
+
+                                <f:if condition="{priceVisibility.requestError}">
+                                    <p class="typo3-message message-error">
+                                        <f:switch expression="{priceVisibility.requestError}">
+                                            <f:case value="invalidCsrf"><f:translate key="{lll}priceVisibility.error.invalidCsrf"/></f:case>
+                                            <f:defaultCase><f:translate key="{lll}priceVisibility.error.invalidCsrf"/></f:defaultCase>
+                                        </f:switch>
+                                    </p>
+                                </f:if>
+
+                                <f:if condition="{priceVisibility.blockers}">
+                                    <f:for each="{priceVisibility.blockers}" as="priceVisibilityBlocker">
+                                        <p class="typo3-message message-error">
+                                            <f:switch expression="{priceVisibilityBlocker.code}">
+                                                <f:case value="inaccessiblePriceOption"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="wrongMenu"><f:translate key="{lll}priceVisibility.error.wrongMenu"/></f:case>
+                                                <f:case value="wrongPid"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="missingPriceOption"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="translatedPriceOption"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="brokenPlacement"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="brokenCategory"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="missingPublicUuid"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="ambiguousHidden"><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="fieldModifyDenied"><f:translate key="{lll}priceVisibility.error.fieldModifyDenied"/></f:case>
+                                                <f:case value="malformedVisibility"><f:translate key="{lll}priceVisibility.error.malformedVisibility"/></f:case>
+                                                <f:defaultCase><f:translate key="{lll}priceVisibility.error.inaccessiblePriceOption"/></f:defaultCase>
+                                            </f:switch>
+                                        </p>
+                                    </f:for>
+                                </f:if>
+
+                                <f:if condition="{priceVisibility.context}">
+                                    <form
+                                        id="arp-price-visibility-form"
+                                        action="{priceVisibility.formAction}"
+                                        method="post"
+                                        class="arp-editor-price-edit__form"
+                                        data-arp-price-visibility-form="1"
+                                    >
+                                        <input type="hidden" name="id" value="{priceVisibility.pid}"/>
+                                        <input type="hidden" name="menu" value="{priceVisibility.menuUid}"/>
+                                        <input type="hidden" name="priceOptionUid" value="{priceVisibility.context.uid}"/>
+                                        <input type="hidden" name="priceVisibilityToken" value="{priceVisibility.priceVisibilityToken}"/>
+
+                                        <p class="arp-editor-price-edit__context">
+                                            <span><f:translate key="{lll}priceVisibility.context.menu"/> {priceVisibility.context.menuTitle}</span>
+                                            <span><f:translate key="{lll}priceVisibility.context.category"/> {priceVisibility.context.categoryTitle}</span>
+                                            <span><f:translate key="{lll}priceVisibility.context.item"/> {priceVisibility.context.itemTitle}</span>
+                                            <span>
+                                                <f:translate key="{lll}priceVisibility.context.variant"/>
+                                                <f:if condition="{priceVisibility.context.label}">
+                                                    <f:then> {priceVisibility.context.label}</f:then>
+                                                    <f:else> <f:translate key="{lll}priceEdit.noVariant"/></f:else>
+                                                </f:if>
+                                            </span>
+                                            <span><f:translate key="{lll}priceVisibility.context.price"/> {priceVisibility.context.formattedAmount}</span>
+                                        </p>
+
+                                        <p class="arp-editor-price-visibility__current">
+                                            <f:translate key="{lll}priceVisibility.currentState"/>
+                                            <f:if condition="{priceVisibility.context.hidden}">
+                                                <f:then><f:translate key="{lll}priceVisibility.state.hidden"/></f:then>
+                                                <f:else><f:translate key="{lll}priceVisibility.state.visible"/></f:else>
+                                            </f:if>
+                                        </p>
+
+                                        <div class="arp-editor-price-edit__fields">
+                                            <label for="arp-price-visibility"><f:translate key="{lll}priceVisibility.field.visibility"/></label>
+                                            <select id="arp-price-visibility" name="visibility">
+                                                <option value="visible"{f:if(condition: priceVisibility.submittedVisibility == 'visible', then: ' selected="selected"')}>
+                                                    <f:translate key="{lll}priceVisibility.option.visible"/>
+                                                </option>
+                                                <option value="hidden"{f:if(condition: priceVisibility.submittedVisibility == 'hidden', then: ' selected="selected"')}>
+                                                    <f:translate key="{lll}priceVisibility.option.hidden"/>
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <p class="arp-editor-draft-actions">
+                                            <button type="submit" name="priceOptionVisibilityReview" value="1" class="btn btn-default">
+                                                <f:translate key="{lll}priceVisibility.review"/>
+                                            </button>
+                                            <a class="btn btn-default" href="{priceVisibility.cancelUrl}"><f:translate key="{lll}priceVisibility.cancel"/></a>
+                                            <f:if condition="{priceVisibility.context.recordEditUrl}">
+                                                <a class="arp-editor-inline-link" href="{priceVisibility.context.recordEditUrl}"><f:translate key="{lll}priceVisibility.openFullRecord"/></a>
+                                            </f:if>
+                                        </p>
+                                    </form>
+                                </f:if>
+
+                                <f:if condition="{priceVisibility.review}">
+                                    <f:if condition="{priceVisibility.review.outcome} == 'noChanges'">
+                                        <p class="typo3-message message-notice" data-arp-price-visibility-no-changes="1">
+                                            <f:translate key="{lll}priceVisibility.noChanges"/>
+                                        </p>
+                                    </f:if>
+                                    <f:if condition="{priceVisibility.review.outcome} == 'visibilityUpdateReady' && {priceVisibility.review.plan}">
+                                        <div class="arp-editor-price-update-card" data-arp-visibility-update-plan="1">
+                                            <p class="arp-editor-price-update-card__heading"><f:translate key="{lll}priceVisibility.reviewReady"/></p>
+                                            <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceVisibility.nothingWritten"/></p>
+                                            <p class="arp-editor-price-update-card__context">
+                                                <f:translate key="{lll}priceVisibility.context.menu"/> {priceVisibility.review.plan.menuTitle}<br/>
+                                                <f:translate key="{lll}priceVisibility.context.category"/> {priceVisibility.review.plan.categoryTitle}<br/>
+                                                <f:translate key="{lll}priceVisibility.context.item"/> {priceVisibility.review.plan.itemTitle}<br/>
+                                                <f:translate key="{lll}priceVisibility.context.variant"/>
+                                                <f:if condition="{priceVisibility.review.plan.label}">
+                                                    <f:then> {priceVisibility.review.plan.label}</f:then>
+                                                    <f:else> <f:translate key="{lll}priceEdit.noVariant"/></f:else>
+                                                </f:if>
+                                                <br/>
+                                                <f:translate key="{lll}priceVisibility.context.price"/> {priceVisibility.review.plan.formattedAmount}
+                                            </p>
+                                            <div class="arp-editor-price-update-card__diff">
+                                                <p>
+                                                    <f:translate key="{lll}priceVisibility.diff.visibility"/><br/>
+                                                    <f:translate key="{lll}priceVisibility.diff.before"/>
+                                                    <f:if condition="{priceVisibility.review.plan.currentHidden} == 1">
+                                                        <f:then><f:translate key="{lll}priceVisibility.state.hidden"/></f:then>
+                                                        <f:else><f:translate key="{lll}priceVisibility.state.visible"/></f:else>
+                                                    </f:if>
+                                                    <br/>
+                                                    <f:translate key="{lll}priceVisibility.diff.after"/>
+                                                    <f:if condition="{priceVisibility.review.plan.requestedHidden} == 1">
+                                                        <f:then><f:translate key="{lll}priceVisibility.state.hidden"/></f:then>
+                                                        <f:else><f:translate key="{lll}priceVisibility.state.visible"/></f:else>
+                                                    </f:if>
+                                                </p>
+                                            </div>
+                                            <p class="arp-editor-price-update-card__footer" data-arp-visibility-scope="1"><f:translate key="{lll}priceVisibility.scope"/></p>
+                                            <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceVisibility.savingNotAvailable"/></p>
                                         </div>
                                     </f:if>
                                 </f:if>
