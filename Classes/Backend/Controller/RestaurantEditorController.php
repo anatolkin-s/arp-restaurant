@@ -829,7 +829,11 @@ final class RestaurantEditorController
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         $button = $this->linkButtonFactory->createLinkButton($buttonBar)
-            ->setHref((string)$this->uriBuilder->buildUriFromRoute('web_list', ['id' => $pid]))
+            ->setHref('#')
+            ->setDataAttributes([
+                'dispatch-action' => 'TYPO3.ModuleMenu.showModule',
+                'dispatch-args-list' => 'web_list,&' . http_build_query(['id' => $pid]),
+            ])
             ->setTitle($languageService->sL(self::LLL . 'button.openList'))
             ->setShowLabelText(true)
             ->setIcon($this->iconFactory->getIcon('actions-list', IconSize::SMALL));
