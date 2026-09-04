@@ -220,7 +220,9 @@ final class RestaurantEditorController
                         $page,
                         $backendUser,
                     );
-                    $apply = $this->applyPlanBuilder->prepare($identity);
+                    if ($identity->outcome === 'identityResolved') {
+                        $apply = $this->applyPlanBuilder->prepare($identity);
+                    }
                 }
             }
         }

@@ -42,9 +42,31 @@ assertTrue(
 );
 assertTrue(
     str_contains($controller, 'bulkApplyPrepare')
-    && str_contains($controller, 'resolveIdentities(')
-    && str_contains($controller, 'applyPlanBuilder->prepare($identity)'),
-    'Prepare re-resolves identities then builds plan'
+    && str_contains($controller, 'resolveIdentities('),
+    'Prepare re-resolves identities'
+);
+
+$prepareBlock = '';
+if (preg_match(
+    '/\} elseif \(\$isPreparePost\) \{(.*?)return new BulkPreviewView\(/s',
+    $controller,
+    $prepareMatch
+)) {
+    $prepareBlock = $prepareMatch[1];
+}
+assertTrue($prepareBlock !== '', 'Prepare branch source block is extractable');
+assertTrue(
+    str_contains($prepareBlock, 'resolveIdentities(')
+    && str_contains($prepareBlock, "\$identity->outcome === 'identityResolved'")
+    && preg_match(
+        '/\$identity->outcome\s*===\s*\'identityResolved\'\s*\)\s*\{[^}]*applyPlanBuilder->prepare\(\$identity\)/s',
+        $prepareBlock
+    ) === 1,
+    'Prepare calls ApplyPlanBuilder only after identityResolved gate'
+);
+assertTrue(
+    substr_count($prepareBlock, 'applyPlanBuilder->prepare($identity)') === 1,
+    'Prepare invokes ApplyPlanBuilder exactly once (gated)'
 );
 assertTrue(
     !str_contains($controller, 'bulkApply')
