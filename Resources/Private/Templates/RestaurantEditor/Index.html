@@ -252,6 +252,16 @@
                                 class="arp-editor-grid arp-editor-block arp-editor-workbench"
                                 data-arp-editor-grid="1"
                             >
+                                <f:if condition="{bulk.confirmationWarning} == 'confirmationStale'">
+                                    <p class="typo3-message message-warning" data-arp-server-status="1" data-arp-confirmation-stale="1">
+                                        <f:translate key="{lll}bulk.apply.confirmationStale"/>
+                                    </p>
+                                </f:if>
+                                <f:if condition="{bulk.confirmationWarning} == 'writePreparationBlocked'">
+                                    <p class="typo3-message message-warning" data-arp-server-status="1" data-arp-write-preparation-blocked="1">
+                                        <f:translate key="{lll}bulk.apply.writePreparationBlocked"/>
+                                    </p>
+                                </f:if>
                                 <f:if condition="{bulk.draft.draftValid} && !{bulk.identity}">
                                     <f:then>
                                         <p class="typo3-message message-notice" data-arp-server-status="1">
@@ -401,16 +411,6 @@
                                                     <p class="arp-editor-apply-card__footer">
                                                         <f:translate key="{lll}bulk.apply.writeWarning"/>
                                                     </p>
-                                                    <f:if condition="{bulk.confirmationWarning} == 'confirmationStale'">
-                                                        <p class="typo3-message message-warning">
-                                                            <f:translate key="{lll}bulk.apply.confirmationStale"/>
-                                                        </p>
-                                                    </f:if>
-                                                    <f:if condition="{bulk.confirmationWarning} == 'writePreparationBlocked'">
-                                                        <p class="typo3-message message-warning">
-                                                            <f:translate key="{lll}bulk.apply.writePreparationBlocked"/>
-                                                        </p>
-                                                    </f:if>
                                                 </f:if>
                                             </f:then>
                                             <f:else>
@@ -657,7 +657,10 @@
                                         <f:if condition="{bulk.apply.outcome} == 'applyReady' && {bulk.apply.plan}">
                                             <span data-arp-server-status="1">
                                                 <button type="submit" name="bulkApply" value="1" class="btn btn-primary">
-                                                    <f:translate key="{lll}bulk.applyToMenu"/>
+                                                    <f:if condition="{bulk.confirmationWarning} == 'confirmationStale'">
+                                                        <f:then><f:translate key="{lll}bulk.applyRefreshedPlan"/></f:then>
+                                                        <f:else><f:translate key="{lll}bulk.applyToMenu"/></f:else>
+                                                    </f:if>
                                                 </button>
                                             </span>
                                         </f:if>

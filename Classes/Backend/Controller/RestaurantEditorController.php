@@ -279,7 +279,7 @@ final class RestaurantEditorController
         $redirectUri = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $preparation->plan->targetMenu->uid]
-        ) . '#arp-restaurant-bulk-workbench';
+        );
 
         return new RedirectResponse($redirectUri, 303);
     }

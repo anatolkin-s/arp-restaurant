@@ -118,7 +118,7 @@ ApplyReady
   → flash + POST/Redirect/GET (#arp-restaurant-bulk-workbench)
 ```
 
-Semantics: append-only; no outer transaction; partial failure possible; no automatic rollback; default language only; Core-generated `public_uuid` (not submitted); no idempotency guarantee; PRG prevents ordinary refresh replay; `confirmationStale` writes nothing and shows the refreshed plan.
+Semantics: append-only; no outer transaction; partial failure possible; no automatic rollback; default language only; Core-generated `public_uuid` (not submitted); no idempotency guarantee; PRG prevents ordinary refresh replay; `confirmationStale` writes nothing and requires a second explicit Apply on the refreshed plan. Success/attempted-write PRG lands at the editor page top (no workbench fragment) so the TYPO3 flash result is visible.
 
 ---
 

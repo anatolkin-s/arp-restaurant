@@ -276,6 +276,9 @@
       <trans-unit id="bulk.applyToMenu">
         <source>Apply to menu</source>
       </trans-unit>
+      <trans-unit id="bulk.applyRefreshedPlan">
+        <source>Apply refreshed plan</source>
+      </trans-unit>
       <trans-unit id="bulk.apply.confirmationStale">
         <source>Plan changed since confirmation. Nothing was written. Review the refreshed plan and apply again.</source>
       </trans-unit>
