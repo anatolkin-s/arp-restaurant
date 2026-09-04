@@ -26,6 +26,7 @@ final class BulkDraftValidator
         private readonly DecimalMinorUnitParser $priceParser,
         private readonly MinorUnitMoneyFormatter $moneyFormatter,
         private readonly RestaurantTitleNormalizer $titleNormalizer = new RestaurantTitleNormalizer(),
+        private readonly BulkDraftRunGrouping $runGrouping = new BulkDraftRunGrouping(),
     ) {}
 
     /**
@@ -41,7 +42,7 @@ final class BulkDraftValidator
                 sourceLine: $parsed->sourceLine,
                 category: $this->titleNormalizer->cleanDisplayTitle($parsed->category),
                 item: $this->titleNormalizer->cleanDisplayTitle($parsed->item),
-                variant: $parsed->variant,
+                variant: $this->titleNormalizer->cleanDisplayTitle($parsed->variant),
                 priceRaw: $parsed->priceRaw,
                 amountMinor: $parsed->amountMinor,
                 formattedAmount: $parsed->formattedAmount,
@@ -169,12 +170,14 @@ final class BulkDraftValidator
         $start = 0;
         while ($start < $count) {
             $end = $start;
-            $category = $rows[$start]->category;
-            $item = $rows[$start]->item;
             while (
                 $end + 1 < $count
-                && $rows[$end + 1]->category === $category
-                && $rows[$end + 1]->item === $item
+                && $this->runGrouping->sameCategoryItem(
+                    $rows[$start]->category,
+                    $rows[$start]->item,
+                    $rows[$end + 1]->category,
+                    $rows[$end + 1]->item,
+                )
             ) {
                 ++$end;
             }
@@ -248,11 +251,12 @@ final class BulkDraftValidator
         if ($empty === 0 && $named >= 2) {
             $tally = [];
             for ($i = $start; $i <= $end; ++$i) {
-                $label = $rows[$i]->variant;
-                $tally[$label] = ($tally[$label] ?? 0) + 1;
+                $key = $this->runGrouping->variantDuplicateKey($rows[$i]->variant);
+                $tally[$key] = ($tally[$key] ?? 0) + 1;
             }
             for ($i = $start; $i <= $end; ++$i) {
-                if ($tally[$rows[$i]->variant] > 1) {
+                $key = $this->runGrouping->variantDuplicateKey($rows[$i]->variant);
+                if (($tally[$key] ?? 0) > 1) {
                     $extraErrors[$i][] = 'duplicateVariant';
                 }
             }
@@ -275,7 +279,7 @@ final class BulkDraftValidator
     ): BulkDraftRow {
         $category = $this->titleNormalizer->cleanDisplayTitle($category);
         $item = $this->titleNormalizer->cleanDisplayTitle($item);
-        $variant = trim($variant);
+        $variant = $this->titleNormalizer->cleanDisplayTitle($variant);
         $priceRaw = trim($priceRaw);
 
         $errors = [];

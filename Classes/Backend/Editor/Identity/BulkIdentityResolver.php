@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Anatolkin\ArpRestaurant\Backend\Editor\Identity;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftRow;
+use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftRunGrouping;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\RestaurantTitleNormalizer;
 
@@ -26,6 +27,7 @@ final class BulkIdentityResolver
 
     public function __construct(
         private readonly RestaurantTitleNormalizer $titleNormalizer = new RestaurantTitleNormalizer(),
+        private readonly BulkDraftRunGrouping $runGrouping = new BulkDraftRunGrouping(),
     ) {}
 
     /**
@@ -171,7 +173,8 @@ final class BulkIdentityResolver
 
     /**
      * Draft-run Placement count (append semantics). Requires DraftValid rows.
-     * Runs use cleaned display Category+Item strings (case-preserving).
+     * Runs use the same normalized Category+Item matchKey contract as
+     * BulkDraftValidator (via BulkDraftRunGrouping).
      *
      * @param list<BulkDraftRow> $rows
      */
@@ -182,12 +185,14 @@ final class BulkIdentityResolver
         $start = 0;
         while ($start < $count) {
             $end = $start;
-            $category = $rows[$start]->category;
-            $item = $rows[$start]->item;
             while (
                 $end + 1 < $count
-                && $rows[$end + 1]->category === $category
-                && $rows[$end + 1]->item === $item
+                && $this->runGrouping->sameCategoryItem(
+                    $rows[$start]->category,
+                    $rows[$start]->item,
+                    $rows[$end + 1]->category,
+                    $rows[$end + 1]->item,
+                )
             ) {
                 ++$end;
             }

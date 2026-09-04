@@ -19,6 +19,7 @@ require dirname(__DIR__, 2) . '/Classes/Backend/Editor/RestaurantTitleNormalizer
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/DecimalMinorUnitParser.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftRow.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidationResult.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftRunGrouping.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidator.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Identity/PersistedIdentityCandidate.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Identity/TargetMenuSnapshot.php';
@@ -291,6 +292,33 @@ $namedRun = draftFrom($validator, [
 ]);
 assertTrue($resolver->countFuturePlacements($namedRun->rows) === 1, '27. all-named multi-variant run produces one Placement');
 assertTrue($resolver->countFuturePlacements($warningOnly->rows) === 1, '28. singleNamedVariant run produces one Placement');
+
+$caseFoldedNamed = draftFrom($validator, [
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'tea', 'Large', '4.50'),
+]);
+assertTrue($caseFoldedNamed->isDraftValid(), 'run-align 1. Tea/tea named draft is DraftValid');
+assertTrue(
+    $resolver->countFuturePlacements($caseFoldedNamed->rows) === 1,
+    'run-align 1b. Tea/tea consecutive named run => Placement count 1'
+);
+$caseFoldedResolve = $resolver->resolve($caseFoldedNamed, menuSnapshot(), [], []);
+assertTrue(
+    $caseFoldedResolve->summary->createPlacements === 1
+    && $caseFoldedResolve->summary->createPriceOptions === 2
+    && $caseFoldedResolve->summary->createItems === 1,
+    'run-align 1c. summary: 1 Placement, 2 PriceOptions, 1 Item'
+);
+
+$caseNonConsecutive = draftFrom($validator, [
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Mains', 'Soup', '', '8.00'),
+    'r2' => postedRow(2, 3, 'Drinks', 'tea', 'Large', '4.50'),
+]);
+assertTrue(
+    $resolver->countFuturePlacements($caseNonConsecutive->rows) === 3,
+    'run-align 7. non-consecutive Tea/tea remain separate Placement runs'
+);
 
 $nonConsecutive = draftFrom($validator, [
     'r0' => postedRow(0, 1, 'Mains', 'Salmon', '', '23.00'),

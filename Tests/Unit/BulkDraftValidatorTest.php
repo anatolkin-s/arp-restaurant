@@ -19,6 +19,7 @@ require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuParseResult.
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkMenuParser.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftRow.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidationResult.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftRunGrouping.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/BulkDraftValidator.php';
 
 $validator = new BulkDraftValidator(new DecimalMinorUnitParser(2), new MinorUnitMoneyFormatter(2));
@@ -248,6 +249,88 @@ assertTrue(
     && $reset->isDraftValid(),
     'Reset-from-parsed source reconstructs original values'
 );
+
+$caseRun = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'tea', 'Large', '4.50'),
+]);
+assertTrue($caseRun->isDraftValid(), '1. Tea/tea consecutive rows form one valid named run');
+assertTrue(
+    $caseRun->rows[0]->warnings === [] && $caseRun->rows[1]->warnings === [],
+    '1b. no singleNamedVariant warning on two-row case-folded run'
+);
+assertTrue(
+    $caseRun->rows[0]->item === 'Tea' && $caseRun->rows[1]->item === 'tea',
+    '8. case-preserving Item display strings remain unchanged'
+);
+
+$caseMixed = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', '', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'tea', 'Large', '4.50'),
+]);
+assertTrue(
+    !$caseMixed->isDraftValid()
+    && in_array('mixedVariantRun', $caseMixed->rows[0]->errors, true)
+    && in_array('mixedVariantRun', $caseMixed->rows[1]->errors, true),
+    '2. Tea/tea blank+named is mixedVariantRun blocking'
+);
+
+$caseCategoryItem = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'drinks', 'TEA', 'Large', '4.50'),
+]);
+assertTrue($caseCategoryItem->isDraftValid(), '3. drinks/TEA joins Drinks/Tea as one run');
+
+$caseDupVariant = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'tea', 'small', '4.50'),
+]);
+assertTrue(
+    !$caseDupVariant->isDraftValid()
+    && in_array('duplicateVariant', $caseDupVariant->rows[0]->errors, true)
+    && in_array('duplicateVariant', $caseDupVariant->rows[1]->errors, true),
+    '4. Small/small within case-folded run is duplicateVariant'
+);
+
+$caseDupWhitespace = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', ' Small ', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'tea', 'SMALL', '4.50'),
+]);
+assertTrue(
+    !$caseDupWhitespace->isDraftValid()
+    && in_array('duplicateVariant', $caseDupWhitespace->rows[0]->errors, true)
+    && $caseDupWhitespace->rows[0]->variant === 'Small'
+    && $caseDupWhitespace->rows[1]->variant === 'SMALL',
+    '5. whitespace+case Variant duplicates block; display capitalization preserved'
+);
+
+$casePunctuation = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Drinks', 'tea', 'Small!', '4.50'),
+]);
+assertTrue(
+    $casePunctuation->isDraftValid()
+    && $casePunctuation->rows[0]->errors === []
+    && $casePunctuation->rows[1]->errors === [],
+    '6. Small vs Small! are not duplicateVariant'
+);
+
+$nonConsecutiveCase = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', 'Small', '3.00'),
+    'r1' => postedRow(1, 2, 'Mains', 'Soup', '', '8.00'),
+    'r2' => postedRow(2, 3, 'Drinks', 'tea', 'Large', '4.50'),
+]);
+assertTrue($nonConsecutiveCase->isDraftValid(), '7. non-consecutive Tea/tea remain separate valid runs');
+assertTrue(
+    $nonConsecutiveCase->rows[0]->warnings === ['singleNamedVariant']
+    && $nonConsecutiveCase->rows[2]->warnings === ['singleNamedVariant'],
+    '7b. each one-row named Tea run keeps singleNamedVariant'
+);
+
+$variantCollapse = $validator->validatePosted([
+    'r0' => postedRow(0, 1, 'Drinks', 'Tea', '  Extra   Large ', '4.50'),
+]);
+assertTrue($variantCollapse->rows[0]->variant === 'Extra Large', '8b. Variant display collapses whitespace');
 
 if ($failures > 0) {
     echo "\n{$failures} failing assertion(s)\n";

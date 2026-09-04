@@ -70,7 +70,7 @@ Inspected in-repo sources, not a live DataHandler run:
 
 - TCA: Menu → IRRE Category → IRRE Placement → reusable Item + IRRE PriceOption. `public_uuid` is TCA `type=uuid` v4, required, `l10n_mode=exclude`. All five tables have `tstamp`, `deleted`, `versioningWS`, localization fields. No title UNIQUE. No `UNIQUE(category,item)`. No `sku` / `menu_code` columns.
 - `BulkMenuParser` / `BulkMenuRow`: TSV parse + validate only. No database. One pasted row is one preview row, not an Item.
-- `BulkDraftValidator` / `BulkDraftRow`: POST `bulkDraftRevalidate` rebuilds normalized draft state (trim, `DecimalMinorUnitParser`, consecutive Category+Item run rules). No QueryBuilder identity lookup. No writes.
+- `BulkDraftValidator` / `BulkDraftRow`: POST `bulkDraftRevalidate` rebuilds normalized draft state (`cleanDisplayTitle` on Category/Item/Variant, `DecimalMinorUnitParser`, Placement-run rules via `BulkDraftRunGrouping` matchKeys). No QueryBuilder identity lookup. No writes.
 - `RestaurantIdentityReader`: QueryBuilder **SELECT only** loads bounded default-language Item candidates for the selected pid and Category candidates for the selected pid + target Menu (DeletedRestriction, WorkspaceRestriction, `sys_language_uid=0`; hidden/scheduled included). Title matching is **not** done in SQL.
 - `RestaurantTitleNormalizer` / `BulkIdentityResolver`: identity comparison uses `matchKey` = Unicode whitespace-normalized + Unicode case-folded title. Display titles stay case-preserving (`cleanDisplayTitle`). No fuzzy matching. Unit-tested without DB.
 - `BulkDraftValidator` applies `cleanDisplayTitle` to Category/Item so spacing mistakes are cleaned in the draft without changing capitalization.
@@ -126,7 +126,7 @@ Minimum editable fields (EDITOR-2B1 implements these on the bulk draft table onl
 |---|---|---|
 | Category | column 1 | trim; non-empty |
 | Item | column 2 | trim; non-empty |
-| Variant | column 3 | trim; empty allowed |
+| Variant | column 3 | `cleanDisplayTitle`; empty allowed; duplicate labels compared by matchKey within a run |
 | Price | column 4 | `DecimalMinorUnitParser` → integer minor units |
 
 Per draft row, keep all of:
@@ -178,12 +178,12 @@ DOMAIN-1A allows both (a) one Placement with several PriceOptions and (b) multip
 
 First Apply grouping, in paste order:
 
-- A **run** is a maximal consecutive sequence of parse-valid rows sharing the same normalized Category **and** normalized Item.
+- A **run** is a maximal consecutive sequence of parse-valid rows sharing the same **logical** Category **and** Item. Logical equality uses `RestaurantTitleNormalizer::matchKey` (Unicode whitespace-normalized + Unicode case-folded), not case-preserving display strings. So `Drinks|Tea` and `drinks|tea` in consecutive `originalOrder` form **one** run. Display capitalization is preserved on each row; the first cleaned display spelling remains the CREATE proposal for identity.
 - If **every** row in the run has an empty Variant: each row becomes its **own** Placement with one empty-label PriceOption (duplicate simple offerings stay legal and independent).
-- If **every** row in the run has a non-empty Variant: the run becomes **one** Placement with one PriceOption per row, labels and amounts in row order.
-- If a run **mixes** empty and non-empty Variants: **blocking**. Ambiguous whether the user meant variants or duplicate simple dishes.
+- If **every** row in the run has a non-empty Variant: the run becomes **one** Placement with one PriceOption per row, labels and amounts in row order. Variant **display** uses `cleanDisplayTitle` (whitespace collapsed; capitalization preserved). Variant **duplicate** comparison within the run uses the same match-key contract (`Small` / `small` / ` SMALL` are duplicates → `duplicateVariant` blocking). Punctuation still distinguishes labels (`Small` ≠ `Small!`). No fuzzy matching.
+- If a run **mixes** empty and non-empty Variants: **blocking** (`mixedVariantRun`), including when Category/Item differ only by case/spacing.
 
-Non-consecutive repeats of the same Category+Item start a new Placement. No `UNIQUE(category,item)`.
+Non-consecutive repeats of the same logical Category+Item start a new Placement. No `UNIQUE(category,item)`. `BulkDraftValidator` and `BulkIdentityResolver` share `BulkDraftRunGrouping` so validation and future Placement counts cannot diverge.
 
 ---
 
