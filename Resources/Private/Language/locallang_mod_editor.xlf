@@ -465,6 +465,9 @@
       <trans-unit id="priceEdit.error.fieldModifyDenied">
         <source>You do not have permission to modify price option fields.</source>
       </trans-unit>
+      <trans-unit id="priceEdit.error.labelTooLong">
+        <source>Variant must be 255 characters or fewer.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

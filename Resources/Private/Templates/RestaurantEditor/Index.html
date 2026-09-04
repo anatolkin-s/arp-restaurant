@@ -202,6 +202,7 @@
                                                 <f:case value="brokenCategory"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
                                                 <f:case value="missingPublicUuid"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
                                                 <f:case value="fieldModifyDenied"><f:translate key="{lll}priceEdit.error.fieldModifyDenied"/></f:case>
+                                                <f:case value="labelTooLong"><f:translate key="{lll}priceEdit.error.labelTooLong"/></f:case>
                                                 <f:defaultCase><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:defaultCase>
                                             </f:switch>
                                         </p>
@@ -228,6 +229,7 @@
                                                 type="text"
                                                 name="label"
                                                 value="{priceEdit.submittedLabel}"
+                                                maxlength="255"
                                                 autocomplete="off"
                                             />
                                             <label for="arp-price-edit-price"><f:translate key="{lll}priceEdit.field.price"/></label>

@@ -159,5 +159,36 @@ assertTrue(
     'GET priceOption selection state wired'
 );
 
+$variantInput = '';
+if (preg_match(
+    '/id="arp-price-edit-label"[^>]*>/',
+    $template,
+    $inputMatch
+)) {
+    $variantInput = $inputMatch[0];
+}
+assertTrue(
+    $variantInput !== ''
+    && str_contains($variantInput, 'maxlength="255"'),
+    'template Variant input contains maxlength="255"'
+);
+assertTrue(
+    str_contains($template, 'value="labelTooLong"')
+    && str_contains($template, 'priceEdit.error.labelTooLong'),
+    'labelTooLong has a dedicated rendered message'
+);
+$xlf = file_get_contents($root . '/Resources/Private/Language/locallang_mod_editor.xlf') ?: '';
+assertTrue(
+    str_contains($xlf, 'id="priceEdit.error.labelTooLong"')
+    && str_contains($xlf, 'Variant must be 255 characters or fewer.'),
+    'labelTooLong localization copy present'
+);
+assertTrue(
+    str_contains($builder, 'labelTooLong')
+    && str_contains($builder, 'unicodeLength')
+    && preg_match('/cleanDisplayTitle\(\$submittedLabel\);[\s\S]*?labelTooLong/s', $builder) === 1,
+    'server validates length after normalization'
+);
+
 echo $failures === 0 ? "\nAll RestaurantPriceOptionEditContract tests passed.\n" : "\n{$failures} RestaurantPriceOptionEditContract test(s) failed.\n";
 exit($failures === 0 ? 0 : 1);

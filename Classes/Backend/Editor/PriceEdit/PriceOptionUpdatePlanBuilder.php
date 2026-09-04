@@ -26,6 +26,15 @@ final class PriceOptionUpdatePlanBuilder
     ): PriceOptionUpdatePreparationResult {
         $label = $this->titleNormalizer->cleanDisplayTitle($submittedLabel);
 
+        if ($this->unicodeLength($label) > 255) {
+            return new PriceOptionUpdatePreparationResult(
+                outcome: 'preparationBlocked',
+                context: $context,
+                plan: null,
+                blockers: [new PriceOptionEditBlocker('labelTooLong')],
+            );
+        }
+
         $parsed = $this->priceParser->parse($submittedPrice);
         if ($parsed['ok'] !== true) {
             return new PriceOptionUpdatePreparationResult(
@@ -74,5 +83,21 @@ final class PriceOptionUpdatePlanBuilder
             ),
             blockers: [],
         );
+    }
+
+    /**
+     * Unicode code-point length (not bytes). Aligns with TCA label max=255.
+     */
+    private function unicodeLength(string $value): int
+    {
+        if (\function_exists('mb_strlen')) {
+            return \mb_strlen($value, 'UTF-8');
+        }
+
+        if (preg_match_all('/./us', $value, $matches) === false) {
+            return 0;
+        }
+
+        return count($matches[0]);
     }
 }

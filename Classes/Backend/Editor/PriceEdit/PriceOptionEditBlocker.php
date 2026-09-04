@@ -9,7 +9,8 @@ namespace Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit;
  *
  * code examples: missingPriceOption, wrongPid, wrongMenu, translatedPriceOption,
  * brokenPlacement, brokenCategory, missingPublicUuid, inaccessiblePriceOption,
- * fieldModifyDenied, invalidPrice, missingPrice, noChanges (outcome, not blocker)
+ * fieldModifyDenied, invalidPrice, missingPrice, labelTooLong,
+ * noChanges (outcome, not blocker)
  */
 final readonly class PriceOptionEditBlocker
 {

@@ -72,6 +72,42 @@ assertTrue($both->plan?->after->label === 'Large' && $both->plan?->after->amount
 $blank = $builder->prepare(context('Small', 311), '', '3.11');
 assertTrue($blank->outcome === 'updateReady' && $blank->plan?->after->label === '', '12. blank label allowed');
 
+$ascii255 = str_repeat('a', 255);
+$ok255 = $builder->prepare(context('Small', 311), $ascii255, '3.25');
+assertTrue($ok255->outcome === 'updateReady' && $ok255->plan?->after->label === $ascii255, '12b. 255 ASCII chars -> allowed');
+
+$ascii256 = str_repeat('a', 256);
+$blocked256 = $builder->prepare(context('Small', 311), $ascii256, '3.25');
+assertTrue(
+    $blocked256->outcome === 'preparationBlocked'
+    && ($blocked256->blockers[0]->code ?? '') === 'labelTooLong',
+    '12c. 256 ASCII chars -> preparationBlocked / labelTooLong'
+);
+
+$unicode255 = str_repeat('é', 255);
+$okUnicode255 = $builder->prepare(context('Small', 311), $unicode255, '3.25');
+assertTrue(
+    $okUnicode255->outcome === 'updateReady'
+    && $okUnicode255->plan?->after->label === $unicode255,
+    '12d. 255 Unicode characters -> allowed'
+);
+
+$unicode256 = str_repeat('é', 256);
+$blockedUnicode256 = $builder->prepare(context('Small', 311), $unicode256, '3.25');
+assertTrue(
+    $blockedUnicode256->outcome === 'preparationBlocked'
+    && ($blockedUnicode256->blockers[0]->code ?? '') === 'labelTooLong',
+    '12e. 256 Unicode characters -> blocked'
+);
+
+$padded255 = str_repeat('a', 255) . '   ';
+$normalizedPad = $builder->prepare(context('Small', 311), $padded255, '3.25');
+assertTrue(
+    $normalizedPad->outcome === 'updateReady'
+    && $normalizedPad->plan?->after->label === str_repeat('a', 255),
+    '12f. whitespace normalization happens before length comparison'
+);
+
 $twentyThree = $builder->prepare(context('Small', 100), 'Small', '23');
 assertTrue($twentyThree->plan?->after->amountMinor === 2300, '13. 23 -> 2300');
 
