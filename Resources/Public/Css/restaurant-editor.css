@@ -388,19 +388,18 @@
 
 .arp-editor-identity-badge--create {
     color: var(--typo3-state-info-text-color, #1a5276);
-    background: var(--typo3-state-info-bg, #d6eaf8);
+    background: var(--typo3-surface, #fff);
     border-color: var(--typo3-state-info-border-color, #85c1e9);
 }
 
 .arp-editor-identity-badge--reuse {
     color: var(--typo3-state-success-text-color, #1e6b35);
-    background: var(--typo3-state-success-bg, #d5f5e3);
+    background: var(--typo3-surface, #fff);
     border-color: var(--typo3-state-success-border-color, #82e0aa);
 }
 
 .arp-editor-identity-badge--ambiguous,
 .arp-editor-identity-badge--inaccessible {
-    /* Outline-style danger: neutral fill + danger text/border (readable on TYPO3 13/14). */
     color: var(--typo3-state-danger-text-color, #922b21);
     background: var(--typo3-surface, #fff);
     border-color: var(--typo3-state-danger-border-color, #c45656);
