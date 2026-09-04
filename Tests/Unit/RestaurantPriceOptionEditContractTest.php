@@ -135,11 +135,13 @@ assertTrue(
 );
 assertTrue(
     str_contains($reviewCard, 'name="priceOptionEditApply"')
+    && str_contains($reviewCard, 'form="arp-price-edit-form"')
     && str_contains($reviewCard, 'priceEdit.save')
-    && str_contains($reviewCard, 'name="confirmedFingerprint"')
-    && str_contains($reviewCard, 'priceEdit.review.plan.fingerprint')
-    && str_contains($reviewCard, 'priceEdit.savingWillUpdate'),
-    '28. Save price present for updateReady plan with server fingerprint'
+    && str_contains($reviewCard, 'priceEdit.savingWillUpdate')
+    && !str_contains($reviewCard, 'name="confirmedFingerprint"')
+    && !str_contains($reviewCard, 'name="label"')
+    && !str_contains($reviewCard, 'name="price"'),
+    '28. Save price targets authoritative edit form; no shadow label/price/fingerprint in card'
 );
 assertTrue(
     str_contains($template, 'data-arp-editor-search="1"')

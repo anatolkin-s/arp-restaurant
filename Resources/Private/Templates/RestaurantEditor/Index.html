@@ -263,11 +263,21 @@
                                 </f:if>
 
                                 <f:if condition="{priceEdit.context}">
-                                    <form action="{priceEdit.formAction}" method="post" class="arp-editor-price-edit__form">
+                                    <form
+                                        id="arp-price-edit-form"
+                                        action="{priceEdit.formAction}"
+                                        method="post"
+                                        class="arp-editor-price-edit__form"
+                                        data-arp-price-edit-form="1"
+                                    >
                                         <input type="hidden" name="id" value="{priceEdit.pid}"/>
                                         <input type="hidden" name="menu" value="{priceEdit.menuUid}"/>
                                         <input type="hidden" name="priceOptionUid" value="{priceEdit.context.uid}"/>
                                         <input type="hidden" name="priceEditToken" value="{priceEdit.priceEditToken}"/>
+                                        <input type="hidden" name="priceEditApplyToken" value="{priceEdit.priceEditApplyToken}"/>
+                                        <f:if condition="{priceEdit.review.outcome} == 'updateReady' && {priceEdit.review.plan} && {priceEdit.review.plan.fingerprint}">
+                                            <input type="hidden" name="confirmedFingerprint" value="{priceEdit.review.plan.fingerprint}"/>
+                                        </f:if>
 
                                         <p class="arp-editor-price-edit__context">
                                             <span><f:translate key="{lll}priceEdit.context.menu"/> {priceEdit.context.menuTitle}</span>
@@ -344,30 +354,35 @@
                                                     <f:translate key="{lll}priceEdit.diff.after"/> {priceEdit.review.plan.after.formattedAmount}
                                                 </p>
                                             </div>
-                                            <form action="{priceEdit.formAction}" method="post" class="arp-editor-price-update-card__save">
-                                                <input type="hidden" name="id" value="{priceEdit.pid}"/>
-                                                <input type="hidden" name="menu" value="{priceEdit.menuUid}"/>
-                                                <input type="hidden" name="priceOptionUid" value="{priceEdit.priceOptionUid}"/>
-                                                <input type="hidden" name="label" value="{priceEdit.submittedLabel}"/>
-                                                <input type="hidden" name="price" value="{priceEdit.submittedPrice}"/>
-                                                <input type="hidden" name="confirmedFingerprint" value="{priceEdit.review.plan.fingerprint}"/>
-                                                <input type="hidden" name="priceEditApplyToken" value="{priceEdit.priceEditApplyToken}"/>
-                                                <p class="arp-editor-price-update-card__footer"><f:translate key="{lll}priceEdit.savingWillUpdate"/></p>
-                                                <p class="arp-editor-draft-actions">
-                                                    <f:if condition="{priceEdit.confirmationWarning} == 'confirmationStale'">
-                                                        <f:then>
-                                                            <button type="submit" name="priceOptionEditApply" value="1" class="btn btn-primary" data-arp-price-save-refreshed="1">
-                                                                <f:translate key="{lll}priceEdit.saveRefreshed"/>
-                                                            </button>
-                                                        </f:then>
-                                                        <f:else>
-                                                            <button type="submit" name="priceOptionEditApply" value="1" class="btn btn-primary" data-arp-price-save="1">
-                                                                <f:translate key="{lll}priceEdit.save"/>
-                                                            </button>
-                                                        </f:else>
-                                                    </f:if>
-                                                </p>
-                                            </form>
+                                            <p class="arp-editor-price-update-card__footer"><f:translate key="{lll}priceEdit.savingWillUpdate"/></p>
+                                            <p class="arp-editor-draft-actions">
+                                                <f:if condition="{priceEdit.confirmationWarning} == 'confirmationStale'">
+                                                    <f:then>
+                                                        <button
+                                                            type="submit"
+                                                            form="arp-price-edit-form"
+                                                            name="priceOptionEditApply"
+                                                            value="1"
+                                                            class="btn btn-primary"
+                                                            data-arp-price-save-refreshed="1"
+                                                        >
+                                                            <f:translate key="{lll}priceEdit.saveRefreshed"/>
+                                                        </button>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <button
+                                                            type="submit"
+                                                            form="arp-price-edit-form"
+                                                            name="priceOptionEditApply"
+                                                            value="1"
+                                                            class="btn btn-primary"
+                                                            data-arp-price-save="1"
+                                                        >
+                                                            <f:translate key="{lll}priceEdit.save"/>
+                                                        </button>
+                                                    </f:else>
+                                                </f:if>
+                                            </p>
                                         </div>
                                     </f:if>
                                 </f:if>
