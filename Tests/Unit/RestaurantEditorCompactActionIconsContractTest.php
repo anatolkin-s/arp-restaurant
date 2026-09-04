@@ -91,14 +91,50 @@ assertTrue(
     str_contains($statusPartial, 'identifier="actions-eye"')
     && str_contains($statusPartial, "value=\"visible\"")
     && str_contains($statusPartial, 'status.visible'),
-    'visible status is represented by the expected Core icon'
+    'visible icon still uses actions-eye'
 );
 assertTrue(
-    str_contains($statusPartial, 'identifier="actions-edit-hide"')
-    && str_contains($statusPartial, 'identifier="actions-clock"')
-    && str_contains($statusPartial, 'status.itemHidden')
-    && !preg_match('/value="itemHidden"[\s\S]*?core:icon/', $statusPartial),
-    'hidden/scheduled iconized; itemHidden stays textual for safe distinction'
+    str_contains($statusPartial, 'identifier="actions-edit-hide"'),
+    'hidden icon still uses actions-edit-hide'
+);
+assertTrue(
+    str_contains($statusPartial, 'identifier="actions-clock"'),
+    'scheduled icon still uses actions-clock'
+);
+
+foreach (['visible', 'hidden', 'scheduled'] as $statusKey) {
+    assertTrue(
+        preg_match(
+            '/value="' . $statusKey . '"[\s\S]*?<span class="arp-editor-sr">\{statusLabel\}<\/span>/s',
+            $statusPartial
+        ) === 1,
+        "{$statusKey} iconized status contains visually hidden localized text"
+    );
+    assertTrue(
+        preg_match(
+            '/value="' . $statusKey . '"[\s\S]*?title="\{statusLabel\}"[\s\S]*?aria-label="\{statusLabel\}"/s',
+            $statusPartial
+        ) === 1,
+        "{$statusKey} status title/aria-label remain present"
+    );
+}
+
+assertTrue(
+    !preg_match(
+        '/arp-editor-status--(?:visible|hidden|scheduled)"[^>]*>\s*\{statusLabel\}/',
+        $statusPartial
+    )
+    && preg_match_all('/arp-editor-status--icon/', $statusPartial) === 3,
+    'visible textual label is NOT rendered as ordinary visible service text'
+);
+assertTrue(
+    preg_match(
+        '/value="itemHidden">\s*<span class="arp-editor-status arp-editor-status--itemHidden">\s*<f:translate key="\{lll\}status\.itemHidden"\/>/s',
+        $statusPartial
+    ) === 1
+    && !preg_match('/value="itemHidden"[\s\S]*?core:icon/', $statusPartial)
+    && !preg_match('/value="itemHidden"[\s\S]*?arp-editor-sr/', $statusPartial),
+    'itemHidden textual fallback remains unchanged'
 );
 
 assertTrue(
