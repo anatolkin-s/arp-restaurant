@@ -28,7 +28,11 @@
                         <span class="arp-editor-tab{f:if(condition: menuTab.active, then: ' arp-editor-tab--active')}">
                             <a href="{menuTab.url}">{menuTab.title}</a>
                             <f:if condition="{menuTab.editUrl}">
-                                <a class="arp-editor-inline-link" href="{menuTab.editUrl}"><f:translate key="{lll}button.openRecord"/></a>
+                                <f:variable name="openMenuLabel"><f:translate key="{lll}action.openMenuRecord"/></f:variable>
+                                <f:render
+                                    partial="RestaurantEditor/IconActionLink"
+                                    arguments="{url: menuTab.editUrl, icon: 'actions-open', label: openMenuLabel}"
+                                />
                             </f:if>
                         </span>
                     </f:for>
@@ -110,14 +114,27 @@
                                                                         <td data-arp-col="item" data-arp-sort-value="{placement.itemTitle}">
                                                                             <span class="arp-editor-item">{placement.itemTitle}</span>
                                                                             <f:if condition="{placement.itemEditUrl}">
-                                                                                <a class="arp-editor-inline-link" href="{placement.itemEditUrl}"><f:translate key="{lll}button.openItem"/></a>
+                                                                                <f:variable name="openItemLabel"><f:translate key="{lll}action.openItemRecord"/></f:variable>
+                                                                                <f:render
+                                                                                    partial="RestaurantEditor/IconActionLink"
+                                                                                    arguments="{url: placement.itemEditUrl, icon: 'actions-open', label: openItemLabel}"
+                                                                                />
                                                                             </f:if>
                                                                         </td>
                                                                         <td data-arp-col="variant">{option.displayLabel}</td>
                                                                         <td class="arp-editor-table__price" data-arp-col="price">
                                                                             {option.formattedAmount}
                                                                             <f:if condition="{option.editPriceUrl}">
-                                                                                <a class="arp-editor-inline-link" href="{option.editPriceUrl}" data-arp-edit-price="1"><f:translate key="{lll}priceEdit.editPrice"/></a>
+                                                                                <f:variable name="editPriceLabel"><f:translate key="{lll}priceEdit.editPrice"/></f:variable>
+                                                                                <a
+                                                                                    class="arp-editor-icon-action"
+                                                                                    href="{option.editPriceUrl}"
+                                                                                    title="{editPriceLabel}"
+                                                                                    aria-label="{editPriceLabel}"
+                                                                                    data-arp-edit-price="1"
+                                                                                >
+                                                                                    <core:icon identifier="actions-open" size="small"/>
+                                                                                </a>
                                                                             </f:if>
                                                                         </td>
                                                                         <td data-arp-col="status">
@@ -135,7 +152,11 @@
                                                                     <td data-arp-col="item" data-arp-sort-value="{placement.itemTitle}">
                                                                         <span class="arp-editor-item">{placement.itemTitle}</span>
                                                                         <f:if condition="{placement.itemEditUrl}">
-                                                                            <a class="arp-editor-inline-link" href="{placement.itemEditUrl}"><f:translate key="{lll}button.openItem"/></a>
+                                                                            <f:variable name="openItemLabelEmpty"><f:translate key="{lll}action.openItemRecord"/></f:variable>
+                                                                            <f:render
+                                                                                partial="RestaurantEditor/IconActionLink"
+                                                                                arguments="{url: placement.itemEditUrl, icon: 'actions-open', label: openItemLabelEmpty}"
+                                                                            />
                                                                         </f:if>
                                                                     </td>
                                                                     <td data-arp-col="variant">—</td>

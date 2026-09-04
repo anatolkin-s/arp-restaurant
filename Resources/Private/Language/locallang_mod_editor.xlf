@@ -27,6 +27,27 @@
       <trans-unit id="button.openItem">
         <source>Open item</source>
       </trans-unit>
+      <trans-unit id="action.openCategoryRecord">
+        <source>Open category record</source>
+      </trans-unit>
+      <trans-unit id="action.openItemRecord">
+        <source>Open item record</source>
+      </trans-unit>
+      <trans-unit id="action.openMenuRecord">
+        <source>Open menu record</source>
+      </trans-unit>
+      <trans-unit id="status.visible">
+        <source>Visible</source>
+      </trans-unit>
+      <trans-unit id="status.hidden">
+        <source>Hidden</source>
+      </trans-unit>
+      <trans-unit id="status.scheduled">
+        <source>Scheduled</source>
+      </trans-unit>
+      <trans-unit id="status.itemHidden">
+        <source>Item hidden</source>
+      </trans-unit>
       <trans-unit id="column.item">
         <source>Item</source>
       </trans-unit>
@@ -68,18 +89,6 @@
       </trans-unit>
       <trans-unit id="column.status">
         <source>Status</source>
-      </trans-unit>
-      <trans-unit id="status.visible">
-        <source>visible</source>
-      </trans-unit>
-      <trans-unit id="status.hidden">
-        <source>hidden</source>
-      </trans-unit>
-      <trans-unit id="status.scheduled">
-        <source>scheduled</source>
-      </trans-unit>
-      <trans-unit id="status.itemHidden">
-        <source>item hidden</source>
       </trans-unit>
       <trans-unit id="empty.selectPage">
         <source>Select a page in the page tree. Restaurant records are loaded from that storage page.</source>

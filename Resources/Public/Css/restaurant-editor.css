@@ -37,6 +37,36 @@
     white-space: nowrap;
 }
 
+.arp-editor-icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.25rem;
+    padding: 0.2rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    vertical-align: middle;
+    line-height: 1;
+    text-decoration: none;
+    color: inherit;
+}
+
+.arp-editor-icon-action:hover,
+.arp-editor-icon-action:focus {
+    text-decoration: none;
+    outline: 1px solid var(--typo3-border-color, #8c8c8c);
+    outline-offset: 1px;
+}
+
+.arp-editor-status--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.15rem;
+    vertical-align: middle;
+    line-height: 1;
+}
+
 .arp-editor-grid {
     position: relative;
 }

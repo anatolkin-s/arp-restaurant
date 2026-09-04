@@ -1,18 +1,51 @@
 <html
     xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
     data-namespace-typo3-fluid="true"
 >
 <f:if condition="{skipVisible} && {statusKey} == 'visible'">
     <f:then></f:then>
     <f:else>
-        <span class="arp-editor-status arp-editor-status--{statusKey}">
-            <f:switch expression="{statusKey}">
-                <f:case value="visible"><f:translate key="{lll}status.visible"/></f:case>
-                <f:case value="hidden"><f:translate key="{lll}status.hidden"/></f:case>
-                <f:case value="scheduled"><f:translate key="{lll}status.scheduled"/></f:case>
-                <f:case value="itemHidden"><f:translate key="{lll}status.itemHidden"/></f:case>
-            </f:switch>
-        </span>
+        <f:switch expression="{statusKey}">
+            <f:case value="visible">
+                <f:variable name="statusLabel"><f:translate key="{lll}status.visible"/></f:variable>
+                <span
+                    class="arp-editor-status arp-editor-status--icon arp-editor-status--visible"
+                    title="{statusLabel}"
+                    aria-label="{statusLabel}"
+                    role="img"
+                >
+                    <core:icon identifier="actions-eye" size="small"/>
+                </span>
+            </f:case>
+            <f:case value="hidden">
+                <f:variable name="statusLabel"><f:translate key="{lll}status.hidden"/></f:variable>
+                <span
+                    class="arp-editor-status arp-editor-status--icon arp-editor-status--hidden"
+                    title="{statusLabel}"
+                    aria-label="{statusLabel}"
+                    role="img"
+                >
+                    <core:icon identifier="actions-edit-hide" size="small"/>
+                </span>
+            </f:case>
+            <f:case value="scheduled">
+                <f:variable name="statusLabel"><f:translate key="{lll}status.scheduled"/></f:variable>
+                <span
+                    class="arp-editor-status arp-editor-status--icon arp-editor-status--scheduled"
+                    title="{statusLabel}"
+                    aria-label="{statusLabel}"
+                    role="img"
+                >
+                    <core:icon identifier="actions-clock" size="small"/>
+                </span>
+            </f:case>
+            <f:case value="itemHidden">
+                <span class="arp-editor-status arp-editor-status--itemHidden">
+                    <f:translate key="{lll}status.itemHidden"/>
+                </span>
+            </f:case>
+        </f:switch>
     </f:else>
 </f:if>
 </html>
