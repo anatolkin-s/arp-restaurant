@@ -277,8 +277,12 @@ assertTrue(
 );
 
 $actionsBlock = '';
-if (preg_match('/class="arp-editor-draft-actions"(.*?)<\/p>/s', $template, $actionsMatch)) {
-    $actionsBlock = $actionsMatch[1];
+if (preg_match(
+    '/class="arp-editor-draft-actions"[^>]*>[\s\S]*?name="bulkApply"[\s\S]*?<\/p>/',
+    $template,
+    $actionsMatch
+)) {
+    $actionsBlock = $actionsMatch[0];
 }
 assertTrue($actionsBlock !== '', 'draft actions block extractable');
 assertTrue(

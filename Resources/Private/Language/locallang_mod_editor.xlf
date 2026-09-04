@@ -390,6 +390,81 @@
       <trans-unit id="bulk.error.invalidOriginalOrder">
         <source>Draft order metadata is invalid and was rejected.</source>
       </trans-unit>
+      <trans-unit id="priceEdit.editPrice">
+        <source>Edit price</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.heading">
+        <source>Edit price</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.review">
+        <source>Review changes</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.cancel">
+        <source>Cancel</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.openFullRecord">
+        <source>Open full record</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.field.variant">
+        <source>Variant</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.field.price">
+        <source>Price</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.context.menu">
+        <source>Menu:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.context.category">
+        <source>Category:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.context.item">
+        <source>Item:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.noChanges">
+        <source>No changes to review.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.reviewReady">
+        <source>PRICE UPDATE · READY</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.nothingWritten">
+        <source>Nothing has been written yet.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.savingNotAvailable">
+        <source>Saving is not available in this step.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.noVariant">
+        <source>No variant</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.diff.variant">
+        <source>Variant:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.diff.price">
+        <source>Price:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.diff.before">
+        <source>Before:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.diff.after">
+        <source>After:</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.error.invalidCsrf">
+        <source>The form token was invalid. Reload and try again.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.error.invalidPrice">
+        <source>Enter a valid price with at most 2 decimals (dot separator, no currency symbol).</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.error.missingPrice">
+        <source>Price is required.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.error.inaccessiblePriceOption">
+        <source>This price option cannot be edited in the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.error.wrongMenu">
+        <source>This price option does not belong to the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceEdit.error.fieldModifyDenied">
+        <source>You do not have permission to modify price option fields.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

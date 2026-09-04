@@ -114,7 +114,12 @@
                                                                             </f:if>
                                                                         </td>
                                                                         <td data-arp-col="variant">{option.displayLabel}</td>
-                                                                        <td class="arp-editor-table__price" data-arp-col="price">{option.formattedAmount}</td>
+                                                                        <td class="arp-editor-table__price" data-arp-col="price">
+                                                                            {option.formattedAmount}
+                                                                            <f:if condition="{option.editPriceUrl}">
+                                                                                <a class="arp-editor-inline-link" href="{option.editPriceUrl}" data-arp-edit-price="1"><f:translate key="{lll}priceEdit.editPrice"/></a>
+                                                                            </f:if>
+                                                                        </td>
                                                                         <td data-arp-col="status">
                                                                             <f:for each="{placement.statusKeys}" as="statusKey">
                                                                                 <f:render partial="RestaurantEditor/Status" arguments="{lll: lll, statusKey: statusKey, skipVisible: 0}"/>
@@ -166,6 +171,130 @@
                             </div>
                             <p class="arp-editor-empty" hidden="hidden" data-arp-editor-empty="1"><f:translate key="{lll}table.emptyFilter"/></p>
                         </div>
+
+                        <f:if condition="{priceEdit} && {priceEdit.hasPanel}">
+                            <section class="arp-editor-price-edit" data-arp-price-edit="1" id="arp-restaurant-price-edit">
+                                <h2 class="arp-editor-price-edit__heading"><f:translate key="{lll}priceEdit.heading"/></h2>
+
+                                <f:if condition="{priceEdit.requestError}">
+                                    <p class="typo3-message message-error">
+                                        <f:switch expression="{priceEdit.requestError}">
+                                            <f:case value="invalidCsrf"><f:translate key="{lll}priceEdit.error.invalidCsrf"/></f:case>
+                                            <f:defaultCase><f:translate key="{lll}priceEdit.error.invalidCsrf"/></f:defaultCase>
+                                        </f:switch>
+                                    </p>
+                                </f:if>
+
+                                <f:if condition="{priceEdit.blockers}">
+                                    <f:for each="{priceEdit.blockers}" as="priceEditBlocker">
+                                        <p class="typo3-message message-error">
+                                            <f:switch expression="{priceEditBlocker.code}">
+                                                <f:case value="invalidPrice"><f:translate key="{lll}priceEdit.error.invalidPrice"/></f:case>
+                                                <f:case value="missingPrice"><f:translate key="{lll}priceEdit.error.missingPrice"/></f:case>
+                                                <f:case value="negativePrice"><f:translate key="{lll}priceEdit.error.invalidPrice"/></f:case>
+                                                <f:case value="tooManyDecimals"><f:translate key="{lll}priceEdit.error.invalidPrice"/></f:case>
+                                                <f:case value="inaccessiblePriceOption"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="wrongMenu"><f:translate key="{lll}priceEdit.error.wrongMenu"/></f:case>
+                                                <f:case value="wrongPid"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="missingPriceOption"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="translatedPriceOption"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="brokenPlacement"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="brokenCategory"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="missingPublicUuid"><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:case>
+                                                <f:case value="fieldModifyDenied"><f:translate key="{lll}priceEdit.error.fieldModifyDenied"/></f:case>
+                                                <f:defaultCase><f:translate key="{lll}priceEdit.error.inaccessiblePriceOption"/></f:defaultCase>
+                                            </f:switch>
+                                        </p>
+                                    </f:for>
+                                </f:if>
+
+                                <f:if condition="{priceEdit.context}">
+                                    <form action="{priceEdit.formAction}" method="post" class="arp-editor-price-edit__form">
+                                        <input type="hidden" name="id" value="{priceEdit.pid}"/>
+                                        <input type="hidden" name="menu" value="{priceEdit.menuUid}"/>
+                                        <input type="hidden" name="priceOptionUid" value="{priceEdit.context.uid}"/>
+                                        <input type="hidden" name="priceEditToken" value="{priceEdit.priceEditToken}"/>
+
+                                        <p class="arp-editor-price-edit__context">
+                                            <span><f:translate key="{lll}priceEdit.context.menu"/> {priceEdit.context.menuTitle}</span>
+                                            <span><f:translate key="{lll}priceEdit.context.category"/> {priceEdit.context.categoryTitle}</span>
+                                            <span><f:translate key="{lll}priceEdit.context.item"/> {priceEdit.context.itemTitle}</span>
+                                        </p>
+
+                                        <div class="arp-editor-price-edit__fields">
+                                            <label for="arp-price-edit-label"><f:translate key="{lll}priceEdit.field.variant"/></label>
+                                            <input
+                                                id="arp-price-edit-label"
+                                                type="text"
+                                                name="label"
+                                                value="{priceEdit.submittedLabel}"
+                                                autocomplete="off"
+                                            />
+                                            <label for="arp-price-edit-price"><f:translate key="{lll}priceEdit.field.price"/></label>
+                                            <input
+                                                id="arp-price-edit-price"
+                                                type="text"
+                                                name="price"
+                                                value="{priceEdit.submittedPrice}"
+                                                inputmode="decimal"
+                                                autocomplete="off"
+                                            />
+                                        </div>
+
+                                        <p class="arp-editor-draft-actions">
+                                            <button type="submit" name="priceOptionEditReview" value="1" class="btn btn-default">
+                                                <f:translate key="{lll}priceEdit.review"/>
+                                            </button>
+                                            <a class="btn btn-default" href="{priceEdit.cancelUrl}"><f:translate key="{lll}priceEdit.cancel"/></a>
+                                            <f:if condition="{priceEdit.context.recordEditUrl}">
+                                                <a class="arp-editor-inline-link" href="{priceEdit.context.recordEditUrl}"><f:translate key="{lll}priceEdit.openFullRecord"/></a>
+                                            </f:if>
+                                        </p>
+                                    </form>
+                                </f:if>
+
+                                <f:if condition="{priceEdit.review}">
+                                    <f:if condition="{priceEdit.review.outcome} == 'noChanges'">
+                                        <p class="typo3-message message-notice" data-arp-price-edit-no-changes="1">
+                                            <f:translate key="{lll}priceEdit.noChanges"/>
+                                        </p>
+                                    </f:if>
+                                    <f:if condition="{priceEdit.review.outcome} == 'updateReady' && {priceEdit.review.plan}">
+                                        <div class="arp-editor-price-update-card" data-arp-price-update-plan="1">
+                                            <p class="arp-editor-price-update-card__heading"><f:translate key="{lll}priceEdit.reviewReady"/></p>
+                                            <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceEdit.nothingWritten"/></p>
+                                            <p class="arp-editor-price-update-card__context">
+                                                <f:translate key="{lll}priceEdit.context.menu"/> {priceEdit.review.plan.menuTitle}<br/>
+                                                <f:translate key="{lll}priceEdit.context.category"/> {priceEdit.review.plan.categoryTitle}<br/>
+                                                <f:translate key="{lll}priceEdit.context.item"/> {priceEdit.review.plan.itemTitle}
+                                            </p>
+                                            <div class="arp-editor-price-update-card__diff">
+                                                <p>
+                                                    <f:translate key="{lll}priceEdit.diff.variant"/><br/>
+                                                    <f:translate key="{lll}priceEdit.diff.before"/>
+                                                    <f:if condition="{priceEdit.review.plan.before.label}">
+                                                        <f:then>{priceEdit.review.plan.before.label}</f:then>
+                                                        <f:else><f:translate key="{lll}priceEdit.noVariant"/></f:else>
+                                                    </f:if>
+                                                    <br/>
+                                                    <f:translate key="{lll}priceEdit.diff.after"/>
+                                                    <f:if condition="{priceEdit.review.plan.after.label}">
+                                                        <f:then>{priceEdit.review.plan.after.label}</f:then>
+                                                        <f:else><f:translate key="{lll}priceEdit.noVariant"/></f:else>
+                                                    </f:if>
+                                                </p>
+                                                <p>
+                                                    <f:translate key="{lll}priceEdit.diff.price"/><br/>
+                                                    <f:translate key="{lll}priceEdit.diff.before"/> {priceEdit.review.plan.before.formattedAmount}<br/>
+                                                    <f:translate key="{lll}priceEdit.diff.after"/> {priceEdit.review.plan.after.formattedAmount}
+                                                </p>
+                                            </div>
+                                            <p class="arp-editor-price-update-card__footer"><f:translate key="{lll}priceEdit.savingNotAvailable"/></p>
+                                        </div>
+                                    </f:if>
+                                </f:if>
+                            </section>
+                        </f:if>
                     </f:then>
                     <f:else>
                         <p class="arp-editor-empty"><f:translate key="{lll}empty.noCategories"/></p>

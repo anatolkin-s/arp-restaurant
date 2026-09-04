@@ -534,3 +534,71 @@
     font-style: italic;
     opacity: 0.9;
 }
+
+.arp-editor-price-edit {
+    margin: 1rem 0 0;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--typo3-border-color, #c5c5c5);
+    border-left: 4px solid var(--typo3-state-info-border-color, #3c78b5);
+    border-radius: 0.2rem;
+    background: var(--typo3-surface-container, #f3f6f9);
+}
+
+.arp-editor-price-edit__heading {
+    margin: 0 0 0.55rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.arp-editor-price-edit__context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin: 0 0 0.65rem;
+    font-size: 0.875rem;
+}
+
+.arp-editor-price-edit__fields {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 0.65rem;
+    align-items: center;
+    max-width: 28rem;
+    margin: 0 0 0.65rem;
+}
+
+.arp-editor-price-edit__fields input {
+    width: 100%;
+    max-width: 16rem;
+}
+
+.arp-editor-price-update-card {
+    margin: 0.75rem 0 0;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--typo3-border-color, #c5c5c5);
+    border-left: 4px solid var(--typo3-state-success-border-color, #2e7d32);
+    border-radius: 0.2rem;
+    background: var(--typo3-surface, #fff);
+}
+
+.arp-editor-price-update-card__heading {
+    margin: 0 0 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.arp-editor-price-update-card__note,
+.arp-editor-price-update-card__context,
+.arp-editor-price-update-card__diff,
+.arp-editor-price-update-card__footer {
+    margin: 0 0 0.45rem;
+    font-size: 0.875rem;
+}
+
+.arp-editor-price-update-card__footer {
+    margin-bottom: 0;
+    font-style: italic;
+    opacity: 0.9;
+}

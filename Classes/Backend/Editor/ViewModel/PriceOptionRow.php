@@ -14,5 +14,6 @@ final readonly class PriceOptionRow
         public string $formattedAmount,
         public bool $hidden,
         public ?string $editUrl,
+        public ?string $editPriceUrl = null,
     ) {}
 }

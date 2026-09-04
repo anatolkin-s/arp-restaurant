@@ -4,7 +4,28 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance.
+Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review** (label + amount only, no write).
+
+## EDITOR-2C1 — Existing PriceOption update review
+
+EDITOR-2C1 is a **separate mutation boundary** from Bulk Apply. Bulk Apply remains append-only CREATE / REUSE-to-new-Placement. Existing PriceOption edit does **not** reuse `BulkApplyPlan`, `ApplyDataMapBuilder`, or `RestaurantApplyWriter`.
+
+| Implemented | Not implemented (EDITOR-2C2+) |
+|---|---|
+| Saved-table **Edit price** GET `priceOption=<uid>` | Confirmed DataHandler update |
+| Server graph membership: pid → Menu → Category → Placement → PriceOption | Fingerprint / stale confirmation reject |
+| Review POST `priceOptionEditReview` + CSRF `priceEditToken` | Save / Apply / Update write control |
+| Pure `PriceOptionUpdatePlan` before→after | Sorting / hidden / language / uuid changes |
+| `noChanges` when normalized values match | Category / Item / Placement edits |
+
+Contract:
+
+- Editable fields in this phase: **PriceOption.label**, **PriceOption.amount** only.
+- Graph membership is server-authoritative. A PriceOption is not editable merely because `uid` exists or `pid` matches.
+- Review re-reads the persisted row; posted `public_uuid` / `tstamp` / relations / stored amounts are **not** authority.
+- Plan snapshot carries `uid`, `public_uuid`, `tstamp`, `pid`, `placementUid` for a future concurrency check.
+- Future write must re-read, compare snapshot/fingerprint, and DataHandler-update only label/amount.
+- No transaction/rollback claim. **No update write exists in EDITOR-2C1.**
 
 ## EDITOR-2B1 implementation status
 

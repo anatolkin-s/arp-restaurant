@@ -100,6 +100,43 @@ final class BackendAccessGuard
         return '';
     }
 
+    /**
+     * Conservative FUTURE PriceOption-edit preflight (label + amount only).
+     * Does not write. DataHandler remains final permission authority.
+     *
+     * @param array<string, mixed> $pageRow page row already readable via readPage()
+     * @return string empty when OK; otherwise a blocker code
+     */
+    public function priceOptionEditPermissionBlocker(
+        array $pageRow,
+        BackendUserAuthentication $backendUser,
+    ): string {
+        if ((int)$backendUser->workspace !== 0) {
+            return 'nonLiveWorkspace';
+        }
+
+        if (
+            !$backendUser->isAdmin()
+            && !$backendUser->doesUserHaveAccess($pageRow, Permission::CONTENT_EDIT)
+        ) {
+            return 'pageContentEditDenied';
+        }
+
+        if (!$backendUser->check('tables_modify', MenuGraphAssembler::TABLE_PRICEOPTION)) {
+            return 'tablesModifyDenied';
+        }
+
+        if (!$backendUser->isAdmin()) {
+            foreach (['label', 'amount'] as $field) {
+                if (!$this->canModifyField($backendUser, MenuGraphAssembler::TABLE_PRICEOPTION, $field)) {
+                    return 'fieldModifyDenied';
+                }
+            }
+        }
+
+        return '';
+    }
+
     private function canModifyField(
         BackendUserAuthentication $backendUser,
         string $table,

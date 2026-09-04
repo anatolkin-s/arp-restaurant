@@ -35,6 +35,7 @@ final class MenuGraphAssembler
      * @param list<array<string, mixed>> $items
      * @param list<array<string, mixed>> $priceOptions
      * @param callable(int): string|null $moduleUrlBuilder
+     * @param callable(int, int): string|null $priceEditUrlBuilder optionUid, menuUid
      */
     public function assemble(
         int $pid,
@@ -48,6 +49,7 @@ final class MenuGraphAssembler
         int $now,
         ?callable $moduleUrlBuilder = null,
         ?RecordEditUrlBuilder $editUrlBuilder = null,
+        ?callable $priceEditUrlBuilder = null,
     ): EditorScreen {
         $menus = $this->sortRows($menus, 'title', true);
         $categories = $this->sortRows($categories, 'sorting');
@@ -151,6 +153,9 @@ final class MenuGraphAssembler
                             formattedAmount: $this->moneyFormatter->format($amountMinor),
                             hidden: (int)($priceOption['hidden'] ?? 0) === 1,
                             editUrl: $this->editUrl($editUrlBuilder, self::TABLE_PRICEOPTION, $optionUid),
+                            editPriceUrl: $priceEditUrlBuilder !== null
+                                ? $priceEditUrlBuilder($optionUid, $menuUid)
+                                : null,
                         );
                     }
 
