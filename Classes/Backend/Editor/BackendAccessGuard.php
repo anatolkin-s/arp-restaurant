@@ -50,8 +50,18 @@ final class BackendAccessGuard
     }
 
     /**
-     * Conservative FUTURE-APPLY preflight for identity resolution.
-     * Does not write. DataHandler remains final permission authority later.
+     * @var array<string, list<string>>
+     */
+    private const REQUIRED_EXCLUDE_FIELDS = [
+        MenuGraphAssembler::TABLE_CATEGORY => ['title', 'menu'],
+        MenuGraphAssembler::TABLE_ITEM => ['title'],
+        MenuGraphAssembler::TABLE_PLACEMENT => ['category', 'item'],
+        MenuGraphAssembler::TABLE_PRICEOPTION => ['label', 'amount', 'placement'],
+    ];
+
+    /**
+     * Conservative FUTURE-APPLY / real-Apply preflight.
+     * Does not write. DataHandler remains final permission authority.
      *
      * @param array<string, mixed> $pageRow page row already readable via readPage()
      * @return string empty when OK; otherwise a blocker code
@@ -77,6 +87,32 @@ final class BackendAccessGuard
             }
         }
 
+        if (!$backendUser->isAdmin()) {
+            foreach (self::REQUIRED_EXCLUDE_FIELDS as $table => $fields) {
+                foreach ($fields as $field) {
+                    if (!$this->canModifyField($backendUser, $table, $field)) {
+                        return 'fieldModifyDenied';
+                    }
+                }
+            }
+        }
+
         return '';
+    }
+
+    private function canModifyField(
+        BackendUserAuthentication $backendUser,
+        string $table,
+        string $field,
+    ): bool {
+        $column = $GLOBALS['TCA'][$table]['columns'][$field] ?? null;
+        if (!is_array($column)) {
+            return false;
+        }
+        if (empty($column['exclude'])) {
+            return true;
+        }
+
+        return $backendUser->check('non_exclude_fields', $table . ':' . $field);
     }
 }

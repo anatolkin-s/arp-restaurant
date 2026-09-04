@@ -281,6 +281,7 @@
                                                         <f:case value="nonLiveWorkspace"><f:translate key="{lll}bulk.identity.blocker.nonLiveWorkspace"/></f:case>
                                                         <f:case value="pageContentEditDenied"><f:translate key="{lll}bulk.identity.blocker.pageContentEditDenied"/></f:case>
                                                         <f:case value="tablesModifyDenied"><f:translate key="{lll}bulk.identity.blocker.tablesModifyDenied"/></f:case>
+                                                        <f:case value="fieldModifyDenied"><f:translate key="{lll}bulk.identity.blocker.fieldModifyDenied"/></f:case>
                                                         <f:defaultCase><f:translate key="{lll}bulk.identity.blocked"/></f:defaultCase>
                                                     </f:switch>
                                                 </p>
@@ -397,7 +398,14 @@
                                                             </li>
                                                         </f:for>
                                                     </ul>
-                                                    <p class="arp-editor-apply-card__footer"><f:translate key="{lll}bulk.apply.notAvailable"/></p>
+                                                    <p class="arp-editor-apply-card__footer">
+                                                        <f:translate key="{lll}bulk.apply.writeWarning"/>
+                                                    </p>
+                                                    <f:if condition="{bulk.confirmationWarning} == 'confirmationStale'">
+                                                        <p class="typo3-message message-warning">
+                                                            <f:translate key="{lll}bulk.apply.confirmationStale"/>
+                                                        </p>
+                                                    </f:if>
                                                 </f:if>
                                             </f:then>
                                             <f:else>
@@ -446,6 +454,10 @@
                                     <input type="hidden" name="resetToken" value="{bulk.resetToken}"/>
                                     <input type="hidden" name="resolveToken" value="{bulk.resolveToken}"/>
                                     <input type="hidden" name="prepareToken" value="{bulk.prepareToken}"/>
+                                    <input type="hidden" name="applyToken" value="{bulk.applyToken}"/>
+                                    <f:if condition="{bulk.apply.outcome} == 'applyReady' && {bulk.apply.plan.fingerprint}">
+                                        <input type="hidden" name="confirmedFingerprint" value="{bulk.apply.plan.fingerprint}"/>
+                                    </f:if>
                                     <textarea name="bulkSource" hidden="hidden">{bulk.rawInput}</textarea>
                                     <div class="arp-editor-table-wrap">
                                         <table class="arp-editor-table arp-editor-table--preview" data-arp-editor-table="1" data-arp-draft="1">
@@ -637,6 +649,13 @@
                                         <button type="submit" name="bulkApplyPrepare" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.prepareApply"/>
                                         </button>
+                                        <f:if condition="{bulk.apply.outcome} == 'applyReady' && {bulk.apply.plan}">
+                                            <span data-arp-server-status="1">
+                                                <button type="submit" name="bulkApply" value="1" class="btn btn-primary">
+                                                    <f:translate key="{lll}bulk.applyToMenu"/>
+                                                </button>
+                                            </span>
+                                        </f:if>
                                         <button type="submit" name="bulkDraftReset" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.resetDraft"/>
                                         </button>

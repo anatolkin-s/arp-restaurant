@@ -4,7 +4,7 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: **DESIGN ONLY** for Apply / DataHandler writes. EDITOR-2B2 implements **read-only** identity resolution. EDITOR-2B3 implements **read-only** ApplyPlan + ApplyReady confirmation preview. Restaurant records remain unwritten.
+Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance.
 
 ## EDITOR-2B1 implementation status
 
@@ -64,16 +64,16 @@ Transitions that **must not** write still include: parse, preview, cell edit, se
 
 ## EDITOR-2B3 implementation status
 
-EDITOR-2B3 adds a **read-only exact ApplyPlan** and confirmation preview after `identityResolved`:
+EDITOR-2B3 adds a **read-only exact ApplyPlan** and confirmation preview after `identityResolved` (LIVE ACCEPTED at `c38fa3a` on TYPO3 13.4.34 + 14.3.6):
 
-| Implemented | Not implemented |
+| Implemented | Not implemented (at 2B3) |
 |---|---|
-| Explicit POST `bulkApplyPrepare` (dedicated CSRF `prepareToken`) | DataHandler / `process_datamap` / `process_cmdmap` |
-| Revalidate posted draft + re-resolve identities (server-authoritative) | Confirmed / Applying / Applied |
-| Pure `BulkApplyPlanBuilder` → `ApplyPlan` (no QueryBuilder, no writes) | Apply / Import / Save / Confirm & save button |
-| Outcomes `applyReady` \| `preparationBlocked` | Session / localStorage draft persistence |
-| Confirmation preview card (append-only semantics) | `Item.sku`, `Placement.menu_code`, schema/TCA changes |
-| Deterministic SHA-256 plan fingerprint (confirmation continuity only) | Fingerprint compare on write (EDITOR-2B4) |
+| Explicit POST `bulkApplyPrepare` (dedicated CSRF `prepareToken`) | Session / localStorage draft persistence |
+| Revalidate posted draft + re-resolve identities (server-authoritative) | `Item.sku`, `Placement.menu_code`, schema/TCA changes |
+| Pure `BulkApplyPlanBuilder` → `ApplyPlan` (no QueryBuilder, no writes) | |
+| Outcomes `applyReady` \| `preparationBlocked` | |
+| Confirmation preview card (append-only semantics) | |
+| Deterministic SHA-256 plan fingerprint (confirmation continuity only) | |
 
 State machine for this gate:
 
@@ -82,14 +82,43 @@ identityResolved
   → explicit Prepare apply
   → revalidate + re-resolve
   → ApplyReady (or preparationBlocked)
-  → future explicit confirmation/write (EDITOR-2B4)
+  → explicit Apply (EDITOR-2B4)
 ```
 
-The fingerprint is **not** authentication, authorization, CSRF, or external identity. EDITOR-2B4 must rebuild the plan immediately before DataHandler and compare fingerprints; mismatch blocks and requires confirmation again.
+The fingerprint is **not** authentication, authorization, CSRF, or external identity.
 
 Transitions that **must not** write still include Prepare apply. Editing Category / Item / Variant / Price stales identity badges and ApplyPlan; search / sort / Restore order do not.
 
 Warnings (e.g. `singleNamedVariant`) remain non-blocking: a warning-only DraftValid draft may become ApplyReady.
+
+## EDITOR-2B4 implementation status
+
+EDITOR-2B4 implements the **first confirmed DataHandler Apply** (repo implemented; runtime acceptance pending):
+
+| Implemented | Not implemented |
+|---|---|
+| Explicit POST `bulkApply` (dedicated CSRF `applyToken`) | Atomic transaction / automatic rollback |
+| Rebuild: revalidate → re-resolve → fresh ApplyPlan → fingerprint `hash_equals` | Idempotent re-apply / batch provenance |
+| `RestaurantApplyWriter` sole write boundary: `DataHandler::start` + `process_datamap` | `process_cmdmap`, UPDATE/DELETE of reused records |
+| Append-only CREATE Category/Item/Placement/PriceOption | Menu create/replace; localization/workspace writes |
+| SELECT-only sort positions + post-write verification | Schema/TCA changes; `Item.sku` / `Placement.menu_code` |
+| Outcomes `applied` \| `partialFailure` \| `failed` + flash + HTTP 303 PRG | Claiming Apply is atomic |
+
+Pipeline:
+
+```
+ApplyReady
+  → explicit Apply to menu
+  → revalidate posted draft
+  → re-resolve identities
+  → rebuild ApplyPlan
+  → compare confirmedFingerprint
+  → DataHandler process_datamap (no process_cmdmap)
+  → SELECT verification
+  → flash + POST/Redirect/GET (#arp-restaurant-bulk-workbench)
+```
+
+Semantics: append-only; no outer transaction; partial failure possible; no automatic rollback; default language only; Core-generated `public_uuid` (not submitted); no idempotency guarantee; PRG prevents ordinary refresh replay; `confirmationStale` writes nothing and shows the refreshed plan.
 
 ---
 
@@ -103,11 +132,12 @@ Inspected in-repo sources, not a live DataHandler run:
 - `RestaurantIdentityReader`: QueryBuilder **SELECT only** loads bounded default-language Item candidates for the selected pid and Category candidates for the selected pid + target Menu (DeletedRestriction, WorkspaceRestriction, `sys_language_uid=0`; hidden/scheduled included). Title matching is **not** done in SQL.
 - `RestaurantTitleNormalizer` / `BulkIdentityResolver`: identity comparison uses `matchKey` = Unicode whitespace-normalized + Unicode case-folded title. Display titles stay case-preserving (`cleanDisplayTitle`). No fuzzy matching. Unit-tested without DB.
 - `BulkDraftValidator` applies `cleanDisplayTitle` to Category/Item so spacing mistakes are cleaned in the draft without changing capitalization.
-- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` / `bulkDraftRevalidate` / `bulkDraftReset` / `bulkIdentityResolve` / `bulkApplyPrepare` are separate CSRF actions. No DataHandler. Module `workspaces: live`.
-- `BulkApplyPlanBuilder` / `ApplyPlan`: pure value plan from `identityResolved` only. Fingerprint is confirmation continuity for future EDITOR-2B4. No restaurant-record writes.
+- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` / `bulkDraftRevalidate` / `bulkDraftReset` / `bulkIdentityResolve` / `bulkApplyPrepare` / `bulkApply` are separate CSRF actions. Module `workspaces: live`. DataHandler only via `RestaurantApplyWriter` after fingerprint match + PRG.
+- `BulkApplyPlanBuilder` / `ApplyPlan`: pure value plan from `identityResolved` only. Fingerprint is confirmation continuity for Apply.
+- `ApplyDataMapBuilder` / `RestaurantApplyWriter` / `ApplyWriteVerifier`: append-only datamap; `process_datamap` only; SELECT verification; no `process_cmdmap` / transactions / UPDATE of reused records.
 - `MenuGraphReader`: default language (`sys_language_uid=0`), selected pid only, deleted excluded, hidden/scheduled included. Item reads are pid-bounded.
-- `BackendAccessGuard`: page show + `tables_select` for module open; identity resolution / Prepare apply add future-Apply preflight (`CONTENT_EDIT`, `tables_modify`, live workspace). Fail closed. DataHandler remains final write authority later.
-- Fluid table: read projection. `#` is transient view state. Identity badges/summary and ApplyPlan are stale after draft cell edits until Resolve / Prepare again.
+- `BackendAccessGuard`: page show + `tables_select` for module open; Apply preflight (`CONTENT_EDIT`, `tables_modify`, live workspace, exclude-field checks). Fail closed. DataHandler remains final write authority.
+- Fluid table: read projection. `#` is transient view state. Identity badges/summary, ApplyPlan, and Apply button are stale after draft cell edits until Resolve / Prepare again.
 
 DOMAIN-1A is not redesigned. One pasted commercial row is **not** automatically one Item. Item stays reusable identity. Placement stays the occurrence in a Category. PriceOption stays the commercial variant/price on that Placement.
 

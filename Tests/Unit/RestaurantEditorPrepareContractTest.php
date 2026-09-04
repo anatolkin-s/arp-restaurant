@@ -69,9 +69,9 @@ assertTrue(
     'Prepare invokes ApplyPlanBuilder exactly once (gated)'
 );
 assertTrue(
-    !str_contains($controller, 'bulkApply')
-    || (str_contains($controller, 'bulkApplyPrepare') && !preg_match("/'bulkApply'/", $controller)),
-    'no bulkApply write action'
+    str_contains($controller, "BULK_APPLY_ACTION = 'bulkApply'")
+    && str_contains($controller, 'applyToken'),
+    'bulkApply write action is dedicated (EDITOR-2B4)'
 );
 assertTrue(
     !str_contains($controller, "body['identity")
@@ -91,10 +91,10 @@ assertTrue(
     'BulkPreviewView exposes prepareToken and apply result'
 );
 assertTrue(
-    str_contains($template, 'bulk.apply.notAvailable')
-    && !str_contains($template, 'name="bulkApply"')
-    && !str_contains(strtolower($template), 'confirm & save'),
-    'no Apply/Save button in template'
+    str_contains($template, 'bulk.apply.writeWarning')
+    && str_contains($template, 'name="bulkApply"')
+    && str_contains($template, 'name="confirmedFingerprint"'),
+    'Apply button + confirmed fingerprint present for applyReady'
 );
 
 $draftValidNoticeBlock = '';

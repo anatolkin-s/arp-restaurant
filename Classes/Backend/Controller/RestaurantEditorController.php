@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Anatolkin\ArpRestaurant\Backend\Controller;
 
 use Anatolkin\ArpRestaurant\Backend\Editor\Apply\BulkApplyPlanBuilder;
+use Anatolkin\ArpRestaurant\Backend\Editor\Apply\BulkApplyPreparationResult;
+use Anatolkin\ArpRestaurant\Backend\Editor\Apply\Write\ApplyExecutionResult;
+use Anatolkin\ArpRestaurant\Backend\Editor\Apply\Write\RestaurantApplySortPositionReader;
+use Anatolkin\ArpRestaurant\Backend\Editor\Apply\Write\RestaurantApplyWriter;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendAccessGuard;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendRecordEditUrlBuilder;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
@@ -26,9 +30,13 @@ use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
+use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
 #[AsController]
@@ -41,6 +49,8 @@ final class RestaurantEditorController
     private const BULK_RESET_ACTION = 'bulkDraftReset';
     private const BULK_RESOLVE_ACTION = 'bulkIdentityResolve';
     private const BULK_PREPARE_ACTION = 'bulkApplyPrepare';
+    private const BULK_APPLY_ACTION = 'bulkApply';
+    private const FINGERPRINT_PATTERN = '/^[0-9a-f]{64}$/';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -55,6 +65,9 @@ final class RestaurantEditorController
         private readonly RestaurantIdentityReader $identityReader,
         private readonly BulkIdentityResolver $identityResolver,
         private readonly BulkApplyPlanBuilder $applyPlanBuilder,
+        private readonly RestaurantApplySortPositionReader $applySortPositionReader,
+        private readonly RestaurantApplyWriter $applyWriter,
+        private readonly FlashMessageService $flashMessageService,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -91,6 +104,17 @@ final class RestaurantEditorController
         }
 
         $requestedMenuUid = (int)($request->getQueryParams()['menu'] ?? ($request->getParsedBody()['menu'] ?? 0));
+
+        $applyRenderState = null;
+        $body = $request->getParsedBody();
+        if (is_array($body) && isset($body['bulkApply'])) {
+            $applyHandled = $this->processBulkApplyWrite($request, $pid, $page, $backendUser, $languageService);
+            if ($applyHandled instanceof RedirectResponse) {
+                return $applyHandled;
+            }
+            $applyRenderState = $applyHandled;
+        }
+
         $editUrlBuilder = new BackendRecordEditUrlBuilder($this->uriBuilder, $request);
         $uriBuilder = $this->uriBuilder;
         $screen = $this->menuGraphReader->load(
@@ -112,7 +136,7 @@ final class RestaurantEditorController
         $moduleTemplate->assign('screen', $screen);
         $moduleTemplate->assign(
             'bulk',
-            $this->buildBulkPreview($request, $pid, $activeMenuUid, $page, $backendUser)
+            $this->buildBulkPreview($request, $pid, $activeMenuUid, $page, $backendUser, $applyRenderState)
         );
 
         return $moduleTemplate->renderResponse('RestaurantEditor/Index');
@@ -120,6 +144,144 @@ final class RestaurantEditorController
 
     /**
      * @param array<string, mixed> $page
+     * @return RedirectResponse|array{
+     *   rawInput: string,
+     *   draft: ?BulkDraftValidationResult,
+     *   requestError: string,
+     *   identity: ?BulkIdentityResolutionResult,
+     *   apply: ?BulkApplyPreparationResult,
+     *   confirmationWarning: string
+     * }|null
+     */
+    private function processBulkApplyWrite(
+        ServerRequestInterface $request,
+        int $pid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+        LanguageService $languageService,
+    ): RedirectResponse|array|null {
+        $body = $request->getParsedBody();
+        if (!is_array($body)) {
+            return null;
+        }
+
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $submittedToken = (string)($body['applyToken'] ?? '');
+        $rawInput = (string)($body['bulkSource'] ?? '');
+        if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_APPLY_ACTION)) {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => null,
+                'requestError' => 'invalidCsrf',
+                'identity' => null,
+                'apply' => null,
+                'confirmationWarning' => '',
+            ];
+        }
+
+        $draft = $this->bulkDraftValidator->validatePosted($body['rows'] ?? null);
+        if (!$draft->isDraftValid()) {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => null,
+                'apply' => null,
+                'confirmationWarning' => '',
+            ];
+        }
+
+        $claimedMenuUid = (int)($body['menu'] ?? 0);
+        $identity = $this->resolveIdentities($draft, $pid, $claimedMenuUid, $page, $backendUser);
+        if ($identity->outcome !== 'identityResolved') {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => $identity,
+                'apply' => null,
+                'confirmationWarning' => '',
+            ];
+        }
+
+        $preparation = $this->applyPlanBuilder->prepare($identity);
+        if ($preparation->outcome !== 'applyReady' || $preparation->plan === null) {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => $identity,
+                'apply' => $preparation,
+                'confirmationWarning' => '',
+            ];
+        }
+
+        $confirmedFingerprint = strtolower(trim((string)($body['confirmedFingerprint'] ?? '')));
+        if (preg_match(self::FINGERPRINT_PATTERN, $confirmedFingerprint) !== 1) {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => $identity,
+                'apply' => $preparation,
+                'confirmationWarning' => '',
+            ];
+        }
+
+        if (!hash_equals($preparation->plan->fingerprint, $confirmedFingerprint)) {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => $identity,
+                'apply' => $preparation,
+                'confirmationWarning' => 'confirmationStale',
+            ];
+        }
+
+        try {
+            $sortContext = $this->applySortPositionReader->buildContext(
+                $preparation->plan,
+                $pid,
+                $backendUser,
+            );
+            $execution = $this->applyWriter->execute(
+                $preparation->plan,
+                $sortContext,
+                $pid,
+                $backendUser,
+            );
+        } catch (\Throwable) {
+            $execution = new ApplyExecutionResult(
+                outcome: 'failed',
+                createdCategories: 0,
+                createdItems: 0,
+                createdPlacements: 0,
+                createdPriceOptions: 0,
+                diagnostics: ['applyFailed'],
+            );
+        }
+
+        $this->enqueueApplyFlash($execution, $languageService);
+
+        $redirectUri = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $preparation->plan->targetMenu->uid]
+        ) . '#arp-restaurant-bulk-workbench';
+
+        return new RedirectResponse($redirectUri, 303);
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     * @param array{
+     *   rawInput: string,
+     *   draft: ?BulkDraftValidationResult,
+     *   requestError: string,
+     *   identity: ?BulkIdentityResolutionResult,
+     *   apply: ?BulkApplyPreparationResult,
+     *   confirmationWarning: string
+     * }|null $applyRenderState
      */
     private function buildBulkPreview(
         ServerRequestInterface $request,
@@ -127,6 +289,7 @@ final class RestaurantEditorController
         int $menuUid,
         array $page,
         BackendUserAuthentication $backendUser,
+        ?array $applyRenderState = null,
     ): BulkPreviewView {
         $formProtection = $this->formProtectionFactory->createFromRequest($request);
         $previewToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_PREVIEW_ACTION);
@@ -134,6 +297,7 @@ final class RestaurantEditorController
         $resetToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESET_ACTION);
         $resolveToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESOLVE_ACTION);
         $prepareToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_PREPARE_ACTION);
+        $applyToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_APPLY_ACTION);
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
@@ -145,6 +309,30 @@ final class RestaurantEditorController
         $requestError = '';
         $identity = null;
         $apply = null;
+        $confirmationWarning = '';
+
+        if ($applyRenderState !== null) {
+            return new BulkPreviewView(
+                formAction: $formAction,
+                previewToken: $previewToken,
+                revalidateToken: $revalidateToken,
+                resetToken: $resetToken,
+                resolveToken: $resolveToken,
+                prepareToken: $prepareToken,
+                applyToken: $applyToken,
+                rawInput: $applyRenderState['rawInput'],
+                parseGlobalError: '',
+                draft: $applyRenderState['draft'],
+                requestError: $applyRenderState['requestError'],
+                pid: $pid,
+                menuUid: $menuUid,
+                maxBytes: BulkMenuParser::DEFAULT_MAX_BYTES,
+                maxRows: BulkMenuParser::DEFAULT_MAX_ROWS,
+                identity: $applyRenderState['identity'],
+                apply: $applyRenderState['apply'],
+                confirmationWarning: $applyRenderState['confirmationWarning'],
+            );
+        }
 
         $body = $request->getParsedBody();
         $isPreviewPost = is_array($body) && isset($body['bulkPreview']);
@@ -152,6 +340,7 @@ final class RestaurantEditorController
         $isRevalidatePost = is_array($body) && isset($body['bulkDraftRevalidate']);
         $isResolvePost = is_array($body) && isset($body['bulkIdentityResolve']);
         $isPreparePost = is_array($body) && isset($body['bulkApplyPrepare']);
+
         if ($isPreviewPost) {
             $rawInput = (string)($body['bulkPaste'] ?? '');
             $submittedToken = (string)($body['formToken'] ?? '');
@@ -234,6 +423,7 @@ final class RestaurantEditorController
             resetToken: $resetToken,
             resolveToken: $resolveToken,
             prepareToken: $prepareToken,
+            applyToken: $applyToken,
             rawInput: $rawInput,
             parseGlobalError: $parseGlobalError,
             draft: $draft,
@@ -244,6 +434,7 @@ final class RestaurantEditorController
             maxRows: BulkMenuParser::DEFAULT_MAX_ROWS,
             identity: $identity,
             apply: $apply,
+            confirmationWarning: $confirmationWarning,
         );
     }
 
@@ -293,6 +484,49 @@ final class RestaurantEditorController
             $itemCandidates,
             $categoryCandidates,
         );
+    }
+
+    private function enqueueApplyFlash(
+        ApplyExecutionResult $execution,
+        LanguageService $languageService,
+    ): void {
+        $queue = $this->flashMessageService->getMessageQueueByIdentifier();
+        if ($execution->outcome === 'applied') {
+            $body = sprintf(
+                $languageService->sL(self::LLL . 'bulk.apply.flash.applied'),
+                $execution->createdCategories,
+                $execution->createdItems,
+                $execution->createdPlacements,
+                $execution->createdPriceOptions,
+            );
+            $queue->enqueue(new FlashMessage(
+                $body,
+                $languageService->sL(self::LLL . 'bulk.apply.flash.appliedTitle'),
+                ContextualFeedbackSeverity::OK,
+                true,
+            ));
+            return;
+        }
+
+        if ($execution->outcome === 'partialFailure') {
+            $detail = $execution->diagnostics !== []
+                ? ' ' . implode(' ', array_slice($execution->diagnostics, 0, 3))
+                : '';
+            $queue->enqueue(new FlashMessage(
+                $languageService->sL(self::LLL . 'bulk.apply.flash.partial') . $detail,
+                $languageService->sL(self::LLL . 'bulk.apply.flash.partialTitle'),
+                ContextualFeedbackSeverity::WARNING,
+                true,
+            ));
+            return;
+        }
+
+        $queue->enqueue(new FlashMessage(
+            $languageService->sL(self::LLL . 'bulk.apply.flash.failed'),
+            $languageService->sL(self::LLL . 'bulk.apply.flash.failedTitle'),
+            ContextualFeedbackSeverity::ERROR,
+            true,
+        ));
     }
 
     private function resolvePid(ServerRequestInterface $request): int

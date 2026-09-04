@@ -134,3 +134,7 @@ Explicit POST `bulkIdentityResolve` revalidates the posted draft, then performs 
 ### EDITOR-2B3 — REPO IMPLEMENTED / READ-ONLY APPLY PLAN / NO WRITES
 
 Explicit POST `bulkApplyPrepare` revalidates, re-resolves identities, then builds a pure `ApplyPlan` (`applyReady` / `preparationBlocked`) with deterministic fingerprint and confirmation preview. No Apply button, no DataHandler, no restaurant-record writes.
+
+### EDITOR-2B4 — REPO IMPLEMENTED / FIRST DATAHANDLER APPLY / RUNTIME ACCEPTANCE PENDING
+
+Explicit POST `bulkApply` rebuilds identity + ApplyPlan, compares confirmation fingerprints, then writes only through `DataHandler::process_datamap()` (append-only). PRG + flash report `applied` / `partialFailure` / `failed`. No `process_cmdmap`, no UPDATE/DELETE of reused records, no schema/TCA, no transaction wrapper.

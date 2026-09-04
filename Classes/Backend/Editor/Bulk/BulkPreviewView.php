@@ -16,6 +16,7 @@ final readonly class BulkPreviewView
         public string $resetToken,
         public string $resolveToken,
         public string $prepareToken,
+        public string $applyToken,
         public string $rawInput,
         public string $parseGlobalError,
         public ?BulkDraftValidationResult $draft,
@@ -26,5 +27,6 @@ final readonly class BulkPreviewView
         public int $maxRows,
         public ?BulkIdentityResolutionResult $identity = null,
         public ?BulkApplyPreparationResult $apply = null,
+        public string $confirmationWarning = '',
     ) {}
 }
