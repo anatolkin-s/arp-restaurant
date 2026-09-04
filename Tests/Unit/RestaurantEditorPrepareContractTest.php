@@ -96,6 +96,31 @@ assertTrue(
     && !str_contains(strtolower($template), 'confirm & save'),
     'no Apply/Save button in template'
 );
+
+$draftValidNoticeBlock = '';
+if (preg_match(
+    '/data-arp-editor-grid="1"\s*>(.*?)<f:if condition="\{bulk\.identity\}"/s',
+    $template,
+    $noticeMatch
+)) {
+    $draftValidNoticeBlock = $noticeMatch[1];
+}
+assertTrue($draftValidNoticeBlock !== '', 'DraftValid notice region before identity card is extractable');
+assertTrue(
+    preg_match(
+        '/<f:if condition="\{bulk\.draft\.draftValid\} && !\{bulk\.identity\}">\s*<f:then>\s*<p[^>]*>\s*<f:translate key="\{lll\}bulk\.draftValid"\/>/s',
+        $draftValidNoticeBlock
+    ) === 1,
+    'DraftValid notice requires DraftValid and absence of bulk.identity'
+);
+assertTrue(
+    !preg_match(
+        '/<f:if condition="\{bulk\.draft\.draftValid\}">\s*<f:then>\s*<p[^>]*>\s*<f:translate key="\{lll\}bulk\.draftValid"\/>/s',
+        $draftValidNoticeBlock
+    ),
+    'DraftValid notice is not gated on draftValid alone'
+);
+
 assertTrue(
     !str_contains($applyBlob, 'DataHandler')
     && !str_contains($applyBlob, 'process_datamap')
