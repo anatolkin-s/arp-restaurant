@@ -322,6 +322,101 @@
                                         </f:if>
                                     </div>
                                 </f:if>
+                                <f:if condition="{bulk.apply}">
+                                    <div class="arp-editor-apply-card" data-arp-apply-plan="1" data-arp-server-status="1">
+                                        <p class="arp-editor-apply-card__heading">
+                                            <f:if condition="{bulk.apply.outcome} == 'applyReady'">
+                                                <f:then><f:translate key="{lll}bulk.apply.cardReady"/></f:then>
+                                                <f:else><f:translate key="{lll}bulk.apply.cardBlocked"/></f:else>
+                                            </f:if>
+                                        </p>
+                                        <f:if condition="{bulk.apply.outcome} == 'applyReady'">
+                                            <f:then>
+                                                <p class="arp-editor-apply-card__note"><f:translate key="{lll}bulk.apply.nothingWritten"/></p>
+                                                <f:if condition="{bulk.apply.plan}">
+                                                    <p class="arp-editor-apply-card__target">
+                                                        <f:translate key="{lll}bulk.apply.target" arguments="{0: bulk.apply.plan.targetMenu.title}"/>
+                                                    </p>
+                                                    <div class="arp-editor-apply-card__counts">
+                                                        <div class="arp-editor-apply-card__group">
+                                                            <p class="arp-editor-apply-card__label"><f:translate key="{lll}bulk.apply.labelCreate"/></p>
+                                                            <ul>
+                                                                <li><f:translate key="{lll}bulk.apply.countCategories" arguments="{0: bulk.apply.plan.summary.createCategories}"/></li>
+                                                                <li><f:translate key="{lll}bulk.apply.countItems" arguments="{0: bulk.apply.plan.summary.createItems}"/></li>
+                                                                <li><f:translate key="{lll}bulk.apply.countPlacements" arguments="{0: bulk.apply.plan.summary.createPlacements}"/></li>
+                                                                <li><f:translate key="{lll}bulk.apply.countPriceOptions" arguments="{0: bulk.apply.plan.summary.createPriceOptions}"/></li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="arp-editor-apply-card__group">
+                                                            <p class="arp-editor-apply-card__label"><f:translate key="{lll}bulk.apply.labelReuse"/></p>
+                                                            <ul>
+                                                                <li><f:translate key="{lll}bulk.apply.countCategories" arguments="{0: bulk.apply.plan.summary.reuseCategories}"/></li>
+                                                                <li><f:translate key="{lll}bulk.apply.countItems" arguments="{0: bulk.apply.plan.summary.reuseItems}"/></li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <p class="arp-editor-apply-card__append"><f:translate key="{lll}bulk.apply.appendOnly"/></p>
+                                                    <ul class="arp-editor-apply-card__placements">
+                                                        <f:for each="{bulk.apply.plan.placements}" as="placement" iteration="placementIterator">
+                                                            <li class="arp-editor-apply-placement">
+                                                                <p class="arp-editor-apply-placement__title">
+                                                                    <f:translate key="{lll}bulk.apply.placementHeading"/>
+                                                                    <f:format.raw> </f:format.raw>
+                                                                    {placementIterator.cycle}
+                                                                </p>
+                                                                <p class="arp-editor-apply-placement__line">
+                                                                    <span class="arp-editor-apply-placement__entity">{placement.categoryDisplayTitle}</span>
+                                                                    <span class="arp-editor-identity-badge arp-editor-identity-badge--{placement.categoryStatus}">
+                                                                        <f:if condition="{placement.categoryStatus} == 'reuse'">
+                                                                            <f:then><f:translate key="{lll}bulk.identity.badge.reuse"/></f:then>
+                                                                            <f:else><f:translate key="{lll}bulk.identity.badge.create"/></f:else>
+                                                                        </f:if>
+                                                                    </span>
+                                                                </p>
+                                                                <p class="arp-editor-apply-placement__line">
+                                                                    <span class="arp-editor-apply-placement__entity">{placement.itemDisplayTitle}</span>
+                                                                    <span class="arp-editor-identity-badge arp-editor-identity-badge--{placement.itemStatus}">
+                                                                        <f:if condition="{placement.itemStatus} == 'reuse'">
+                                                                            <f:then><f:translate key="{lll}bulk.identity.badge.reuse"/></f:then>
+                                                                            <f:else><f:translate key="{lll}bulk.identity.badge.create"/></f:else>
+                                                                        </f:if>
+                                                                    </span>
+                                                                </p>
+                                                                <ul class="arp-editor-apply-placement__prices">
+                                                                    <f:for each="{placement.priceOptions}" as="priceOption">
+                                                                        <li>
+                                                                            <f:if condition="{priceOption.label}">
+                                                                                <f:then>{priceOption.label}</f:then>
+                                                                                <f:else><f:translate key="{lll}bulk.apply.emptyVariant"/></f:else>
+                                                                            </f:if>
+                                                                            <f:format.raw> · </f:format.raw>
+                                                                            {priceOption.formattedAmount}
+                                                                        </li>
+                                                                    </f:for>
+                                                                </ul>
+                                                            </li>
+                                                        </f:for>
+                                                    </ul>
+                                                    <p class="arp-editor-apply-card__footer"><f:translate key="{lll}bulk.apply.notAvailable"/></p>
+                                                </f:if>
+                                            </f:then>
+                                            <f:else>
+                                                <f:for each="{bulk.apply.blockers}" as="applyBlocker">
+                                                    <p class="arp-editor-apply-card__blocker">
+                                                        <f:switch expression="{applyBlocker.code}">
+                                                            <f:case value="draftNotValid"><f:translate key="{lll}bulk.apply.blocker.draftNotValid"/></f:case>
+                                                            <f:case value="identityNotResolved"><f:translate key="{lll}bulk.apply.blocker.identityNotResolved"/></f:case>
+                                                            <f:case value="applyPlanInvariant"><f:translate key="{lll}bulk.apply.blocker.applyPlanInvariant"/></f:case>
+                                                            <f:case value="missingBoundResolution"><f:translate key="{lll}bulk.apply.blocker.missingBoundResolution"/></f:case>
+                                                            <f:case value="missingAmountMinor"><f:translate key="{lll}bulk.apply.blocker.missingAmountMinor"/></f:case>
+                                                            <f:defaultCase><f:translate key="{lll}bulk.apply.blocker.applyPlanInvariant"/></f:defaultCase>
+                                                        </f:switch>
+                                                    </p>
+                                                </f:for>
+                                            </f:else>
+                                        </f:if>
+                                    </div>
+                                </f:if>
                                 <p class="typo3-message message-notice" data-arp-draft-dirty="1" hidden="hidden">
                                     <f:translate key="{lll}bulk.draftChanged"/>
                                 </p>
@@ -350,6 +445,7 @@
                                     <input type="hidden" name="formToken" value="{bulk.revalidateToken}"/>
                                     <input type="hidden" name="resetToken" value="{bulk.resetToken}"/>
                                     <input type="hidden" name="resolveToken" value="{bulk.resolveToken}"/>
+                                    <input type="hidden" name="prepareToken" value="{bulk.prepareToken}"/>
                                     <textarea name="bulkSource" hidden="hidden">{bulk.rawInput}</textarea>
                                     <div class="arp-editor-table-wrap">
                                         <table class="arp-editor-table arp-editor-table--preview" data-arp-editor-table="1" data-arp-draft="1">
@@ -537,6 +633,9 @@
                                         </button>
                                         <button type="submit" name="bulkIdentityResolve" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.resolveIdentities"/>
+                                        </button>
+                                        <button type="submit" name="bulkApplyPrepare" value="1" class="btn btn-default">
+                                            <f:translate key="{lll}bulk.prepareApply"/>
                                         </button>
                                         <button type="submit" name="bulkDraftReset" value="1" class="btn btn-default">
                                             <f:translate key="{lll}bulk.resetDraft"/>

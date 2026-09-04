@@ -32,7 +32,7 @@ composer validate --strict
 
 Also check JSON/YAML/XML/PHP syntax of the shipped metadata files. TYPO3 runtime activation cannot be verified here until a TYPO3 test installation exists.
 
-Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner also exercises compact-editor read-model mapping, the bulk-paste parser, `BulkDraftValidator`, and pure `BulkIdentityResolver` decisions (no TYPO3 DB runtime).
+Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner also exercises compact-editor read-model mapping, the bulk-paste parser, `BulkDraftValidator`, pure `BulkIdentityResolver` decisions, and pure `BulkApplyPlanBuilder` / fingerprint checks (no TYPO3 DB runtime).
 
 ## Compact backend editor
 
@@ -40,7 +40,7 @@ Copy/translation UUID alignment is covered by `php Tests/run.php`. That runner a
 
 The selected context is a storage pid/page, not necessarily a sysfolder. That pid is the read boundary for every restaurant table, including Item. Duplicate Placements for the same Category+Item are rendered as separate rows in one flat table. Price formatting is display-only via `MinorUnitMoneyFormatter`; Site Settings will own currency later.
 
-Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMenuParser`, and renders an editable in-request draft. `BulkDraftValidator` revalidates posted cell strings on `bulkDraftRevalidate`. `bulkDraftReset` rebuilds that draft from the last Preview TSV. Restore order is view-only. After a cell edit, the UI shows that server validation is stale until Revalidate. `bulkIdentityResolve` revalidates again, then runs read-only identity resolution (`RestaurantIdentityReader` + `BulkIdentityResolver`). That path still does not write restaurant records: no DataHandler, no Apply.
+Bulk paste accepts TSV (Category, Item, Variant, Price), validates it in `BulkMenuParser`, and renders an editable in-request draft. `BulkDraftValidator` revalidates posted cell strings on `bulkDraftRevalidate`. `bulkDraftReset` rebuilds that draft from the last Preview TSV. Restore order is view-only. After a cell edit, the UI shows that server validation is stale until Revalidate. `bulkIdentityResolve` revalidates again, then runs read-only identity resolution (`RestaurantIdentityReader` + `BulkIdentityResolver`). `bulkApplyPrepare` revalidates and re-resolves again, then builds a read-only `ApplyPlan` / confirmation preview (`ApplyReady`). That path still does not write restaurant records: no DataHandler, no Apply write action.
 
 EDITOR-2A.1 is **PASS / TYPO3 14 LIVE ACCEPTED** at extension SHA `0afa5ca60104cc24166a3bd60fdde8b4d452758f` on TYPO3 14.3.6. That gate covers the unified saved/preview grid, cell rules, and cell-level invalid preview highlighting. TYPO3 13 is not part of that runtime acceptance. Production was not touched.
 

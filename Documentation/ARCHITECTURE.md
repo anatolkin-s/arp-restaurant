@@ -130,3 +130,7 @@ Editable temporary draft, server revalidation, Restore order vs Reset draft, Var
 ### EDITOR-2B2 — REPO IMPLEMENTED / READ-ONLY / NO WRITES
 
 Explicit POST `bulkIdentityResolve` revalidates the posted draft, then performs pid-scoped QueryBuilder SELECTs for target Menu / Item / Category identity. Outcomes are `identityResolved` or `resolutionBlocked` with create/reuse/ambiguous statuses, last-seen snapshots, and a future create/reuse summary. No Apply button, no DataHandler, no restaurant-record writes, no `Item.sku` / `Placement.menu_code`. Runtime acceptance on TYPO3 13/14 is pending.
+
+### EDITOR-2B3 — REPO IMPLEMENTED / READ-ONLY APPLY PLAN / NO WRITES
+
+Explicit POST `bulkApplyPrepare` revalidates, re-resolves identities, then builds a pure `ApplyPlan` (`applyReady` / `preparationBlocked`) with deterministic fingerprint and confirmation preview. No Apply button, no DataHandler, no restaurant-record writes.

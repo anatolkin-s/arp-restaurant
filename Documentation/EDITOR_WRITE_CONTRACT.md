@@ -4,7 +4,7 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: **DESIGN ONLY** for Apply / DataHandler writes. EDITOR-2B2 implements **read-only** identity resolution. Restaurant records remain unwritten.
+Status: **DESIGN ONLY** for Apply / DataHandler writes. EDITOR-2B2 implements **read-only** identity resolution. EDITOR-2B3 implements **read-only** ApplyPlan + ApplyReady confirmation preview. Restaurant records remain unwritten.
 
 ## EDITOR-2B1 implementation status
 
@@ -49,7 +49,7 @@ EDITOR-2B2 adds **read-only** identity resolution after DraftValid:
 
 | Implemented | Not implemented |
 |---|---|
-| Explicit POST `bulkIdentityResolve` (dedicated CSRF) | Apply / Import / Save / `ApplyReady` |
+| Explicit POST `bulkIdentityResolve` (dedicated CSRF) | Apply / Import / Save / write Apply |
 | Revalidate posted draft before any identity read | DataHandler, QueryBuilder writes, Extbase writes |
 | Target Menu re-resolved by uid+pid+default language | Menu creation |
 | Item CREATE / REUSE / AMBIGUOUS (pid-wide; matchKey = whitespace-normalized + Unicode case-folded) | `Item.sku`, `Placement.menu_code` |
@@ -61,6 +61,35 @@ EDITOR-2B2 adds **read-only** identity resolution after DraftValid:
 Missing/unusable `public_uuid` on a sole REUSE candidate fails closed (`inaccessible` + blocker). Outcomes are `identityResolved` or `resolutionBlocked` — not ApplyReady. Future Apply must re-check concurrency and access.
 
 Transitions that **must not** write still include: parse, preview, cell edit, search, sort, restore order, reset, revalidate, **and** identity resolution.
+
+## EDITOR-2B3 implementation status
+
+EDITOR-2B3 adds a **read-only exact ApplyPlan** and confirmation preview after `identityResolved`:
+
+| Implemented | Not implemented |
+|---|---|
+| Explicit POST `bulkApplyPrepare` (dedicated CSRF `prepareToken`) | DataHandler / `process_datamap` / `process_cmdmap` |
+| Revalidate posted draft + re-resolve identities (server-authoritative) | Confirmed / Applying / Applied |
+| Pure `BulkApplyPlanBuilder` → `ApplyPlan` (no QueryBuilder, no writes) | Apply / Import / Save / Confirm & save button |
+| Outcomes `applyReady` \| `preparationBlocked` | Session / localStorage draft persistence |
+| Confirmation preview card (append-only semantics) | `Item.sku`, `Placement.menu_code`, schema/TCA changes |
+| Deterministic SHA-256 plan fingerprint (confirmation continuity only) | Fingerprint compare on write (EDITOR-2B4) |
+
+State machine for this gate:
+
+```
+identityResolved
+  → explicit Prepare apply
+  → revalidate + re-resolve
+  → ApplyReady (or preparationBlocked)
+  → future explicit confirmation/write (EDITOR-2B4)
+```
+
+The fingerprint is **not** authentication, authorization, CSRF, or external identity. EDITOR-2B4 must rebuild the plan immediately before DataHandler and compare fingerprints; mismatch blocks and requires confirmation again.
+
+Transitions that **must not** write still include Prepare apply. Editing Category / Item / Variant / Price stales identity badges and ApplyPlan; search / sort / Restore order do not.
+
+Warnings (e.g. `singleNamedVariant`) remain non-blocking: a warning-only DraftValid draft may become ApplyReady.
 
 ---
 
@@ -74,10 +103,11 @@ Inspected in-repo sources, not a live DataHandler run:
 - `RestaurantIdentityReader`: QueryBuilder **SELECT only** loads bounded default-language Item candidates for the selected pid and Category candidates for the selected pid + target Menu (DeletedRestriction, WorkspaceRestriction, `sys_language_uid=0`; hidden/scheduled included). Title matching is **not** done in SQL.
 - `RestaurantTitleNormalizer` / `BulkIdentityResolver`: identity comparison uses `matchKey` = Unicode whitespace-normalized + Unicode case-folded title. Display titles stay case-preserving (`cleanDisplayTitle`). No fuzzy matching. Unit-tested without DB.
 - `BulkDraftValidator` applies `cleanDisplayTitle` to Category/Item so spacing mistakes are cleaned in the draft without changing capitalization.
-- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` / `bulkDraftRevalidate` / `bulkDraftReset` / `bulkIdentityResolve` are separate CSRF actions. No DataHandler. Module `workspaces: live`.
+- `RestaurantEditorController`: QueryBuilder reads via `MenuGraphReader`; POST `bulkPreview` / `bulkDraftRevalidate` / `bulkDraftReset` / `bulkIdentityResolve` / `bulkApplyPrepare` are separate CSRF actions. No DataHandler. Module `workspaces: live`.
+- `BulkApplyPlanBuilder` / `ApplyPlan`: pure value plan from `identityResolved` only. Fingerprint is confirmation continuity for future EDITOR-2B4. No restaurant-record writes.
 - `MenuGraphReader`: default language (`sys_language_uid=0`), selected pid only, deleted excluded, hidden/scheduled included. Item reads are pid-bounded.
-- `BackendAccessGuard`: page show + `tables_select` for module open; identity resolution adds future-Apply preflight (`CONTENT_EDIT`, `tables_modify`, live workspace). Fail closed. DataHandler remains final write authority later.
-- Fluid table: read projection. `#` is transient view state. Identity badges/summary are stale after draft cell edits until Resolve again.
+- `BackendAccessGuard`: page show + `tables_select` for module open; identity resolution / Prepare apply add future-Apply preflight (`CONTENT_EDIT`, `tables_modify`, live workspace). Fail closed. DataHandler remains final write authority later.
+- Fluid table: read projection. `#` is transient view state. Identity badges/summary and ApplyPlan are stale after draft cell edits until Resolve / Prepare again.
 
 DOMAIN-1A is not redesigned. One pasted commercial row is **not** automatically one Item. Item stays reusable identity. Placement stays the occurrence in a Category. PriceOption stays the commercial variant/price on that Placement.
 
@@ -112,7 +142,7 @@ raw TSV
 | `PartialFailure` | DataHandler finished with some records created and `errorLog` non-empty | maybe partial |
 | `Failed` | Apply refused before DataHandler, or DataHandler failed with nothing usable | no or unknown; reload |
 
-Transitions that **must not** write: parse, preview render, cell edit of draft values, search, sort, filter, reset original order, numbering, `bulkDraftRevalidate`.
+Transitions that **must not** write: parse, preview render, cell edit of draft values, search, sort, filter, reset original order, numbering, `bulkDraftRevalidate`, `bulkIdentityResolve`, `bulkApplyPrepare`.
 
 The draft remains separate from persisted TYPO3 records until `Applying`.
 

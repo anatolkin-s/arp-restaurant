@@ -17,7 +17,8 @@ final readonly class BulkDraftValidationResult
     ) {}
 
     /**
-     * Cell-valid and run-valid. Warnings do not block. Not apply-ready: identity resolution is EDITOR-2B2.
+     * Cell-valid and run-valid. Warnings do not block. Not apply-ready alone:
+     * identity resolution (EDITOR-2B2) and Prepare apply (EDITOR-2B3) are separate.
      */
     public function isDraftValid(): bool
     {

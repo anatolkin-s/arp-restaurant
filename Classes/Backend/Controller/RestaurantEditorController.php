@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Anatolkin\ArpRestaurant\Backend\Controller;
 
+use Anatolkin\ArpRestaurant\Backend\Editor\Apply\BulkApplyPlanBuilder;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendAccessGuard;
 use Anatolkin\ArpRestaurant\Backend\Editor\BackendRecordEditUrlBuilder;
 use Anatolkin\ArpRestaurant\Backend\Editor\Bulk\BulkDraftValidationResult;
@@ -39,6 +40,7 @@ final class RestaurantEditorController
     private const BULK_REVALIDATE_ACTION = 'bulkDraftRevalidate';
     private const BULK_RESET_ACTION = 'bulkDraftReset';
     private const BULK_RESOLVE_ACTION = 'bulkIdentityResolve';
+    private const BULK_PREPARE_ACTION = 'bulkApplyPrepare';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -52,6 +54,7 @@ final class RestaurantEditorController
         private readonly BulkDraftValidator $bulkDraftValidator,
         private readonly RestaurantIdentityReader $identityReader,
         private readonly BulkIdentityResolver $identityResolver,
+        private readonly BulkApplyPlanBuilder $applyPlanBuilder,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -130,6 +133,7 @@ final class RestaurantEditorController
         $revalidateToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_REVALIDATE_ACTION);
         $resetToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESET_ACTION);
         $resolveToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_RESOLVE_ACTION);
+        $prepareToken = $formProtection->generateToken(self::BULK_FORM, self::BULK_PREPARE_ACTION);
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
@@ -140,12 +144,14 @@ final class RestaurantEditorController
         $draft = null;
         $requestError = '';
         $identity = null;
+        $apply = null;
 
         $body = $request->getParsedBody();
         $isPreviewPost = is_array($body) && isset($body['bulkPreview']);
         $isResetPost = is_array($body) && isset($body['bulkDraftReset']);
         $isRevalidatePost = is_array($body) && isset($body['bulkDraftRevalidate']);
         $isResolvePost = is_array($body) && isset($body['bulkIdentityResolve']);
+        $isPreparePost = is_array($body) && isset($body['bulkApplyPrepare']);
         if ($isPreviewPost) {
             $rawInput = (string)($body['bulkPaste'] ?? '');
             $submittedToken = (string)($body['formToken'] ?? '');
@@ -198,6 +204,25 @@ final class RestaurantEditorController
                     );
                 }
             }
+        } elseif ($isPreparePost) {
+            $rawInput = (string)($body['bulkSource'] ?? '');
+            $submittedToken = (string)($body['prepareToken'] ?? '');
+            if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::BULK_PREPARE_ACTION)) {
+                $requestError = 'invalidCsrf';
+            } else {
+                $draft = $this->bulkDraftValidator->validatePosted($body['rows'] ?? null);
+                if ($draft->isDraftValid()) {
+                    $claimedMenuUid = (int)($body['menu'] ?? 0);
+                    $identity = $this->resolveIdentities(
+                        $draft,
+                        $pid,
+                        $claimedMenuUid,
+                        $page,
+                        $backendUser,
+                    );
+                    $apply = $this->applyPlanBuilder->prepare($identity);
+                }
+            }
         }
 
         return new BulkPreviewView(
@@ -206,6 +231,7 @@ final class RestaurantEditorController
             revalidateToken: $revalidateToken,
             resetToken: $resetToken,
             resolveToken: $resolveToken,
+            prepareToken: $prepareToken,
             rawInput: $rawInput,
             parseGlobalError: $parseGlobalError,
             draft: $draft,
@@ -215,6 +241,7 @@ final class RestaurantEditorController
             maxBytes: BulkMenuParser::DEFAULT_MAX_BYTES,
             maxRows: BulkMenuParser::DEFAULT_MAX_ROWS,
             identity: $identity,
+            apply: $apply,
         );
     }
 

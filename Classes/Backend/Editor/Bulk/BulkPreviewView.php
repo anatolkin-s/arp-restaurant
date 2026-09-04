@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Anatolkin\ArpRestaurant\Backend\Editor\Bulk;
 
+use Anatolkin\ArpRestaurant\Backend\Editor\Apply\BulkApplyPreparationResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\Identity\BulkIdentityResolutionResult;
 
 final readonly class BulkPreviewView
@@ -14,6 +15,7 @@ final readonly class BulkPreviewView
         public string $revalidateToken,
         public string $resetToken,
         public string $resolveToken,
+        public string $prepareToken,
         public string $rawInput,
         public string $parseGlobalError,
         public ?BulkDraftValidationResult $draft,
@@ -23,5 +25,6 @@ final readonly class BulkPreviewView
         public int $maxBytes,
         public int $maxRows,
         public ?BulkIdentityResolutionResult $identity = null,
+        public ?BulkApplyPreparationResult $apply = null,
     ) {}
 }

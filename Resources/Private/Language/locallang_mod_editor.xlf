@@ -132,11 +132,14 @@
       <trans-unit id="bulk.resolveIdentities">
         <source>Resolve identities</source>
       </trans-unit>
+      <trans-unit id="bulk.prepareApply">
+        <source>Prepare apply</source>
+      </trans-unit>
       <trans-unit id="bulk.draftValid">
         <source>Draft is valid. Identity resolution has not been performed yet.</source>
       </trans-unit>
       <trans-unit id="bulk.draftChanged">
-        <source>Draft changed — revalidate / resolve again.</source>
+        <source>Draft changed — revalidate / resolve / prepare again.</source>
       </trans-unit>
       <trans-unit id="bulk.identity.resolved">
         <source>Identity resolution complete. Nothing was written.</source>
@@ -227,6 +230,63 @@
       </trans-unit>
       <trans-unit id="bulk.identity.blocker.tablesModifyDenied">
         <source>You can read restaurant tables, but future Apply would require modify permission on all restaurant tables.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.cardReady">
+        <source>Apply plan · Ready</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.cardBlocked">
+        <source>Apply plan · Blocked</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.nothingWritten">
+        <source>Nothing has been written yet.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.target">
+        <source>Target: %s</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.labelCreate">
+        <source>Create</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.labelReuse">
+        <source>Reuse</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.countCategories">
+        <source>%s Categories</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.countItems">
+        <source>%s Items</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.countPlacements">
+        <source>%s Placements</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.countPriceOptions">
+        <source>%s Price options</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.appendOnly">
+        <source>Append-only: Existing reused Categories and Items will not be modified. Existing Placements and PriceOptions will not be replaced.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.notAvailable">
+        <source>Apply is not available in this step.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.placementHeading">
+        <source>Placement</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.emptyVariant">
+        <source>(empty)</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.blocker.draftNotValid">
+        <source>Draft must be valid before Prepare apply.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.blocker.identityNotResolved">
+        <source>Identities are not resolved. Resolve blockers first, then Prepare apply again.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.blocker.applyPlanInvariant">
+        <source>Apply plan is inconsistent and was blocked.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.blocker.missingBoundResolution">
+        <source>A draft row is missing a bound identity resolution.</source>
+      </trans-unit>
+      <trans-unit id="bulk.apply.blocker.missingAmountMinor">
+        <source>A draft row is missing an integer price amount.</source>
       </trans-unit>
       <trans-unit id="bulk.summary">
         <source>%1$d valid row(s), %2$d invalid row(s). Nothing was saved.</source>
