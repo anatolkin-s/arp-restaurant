@@ -828,13 +828,17 @@ final class RestaurantEditorController
         LanguageService $languageService,
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        // LinkButton on TYPO3 13/14 uses setTitle() for both the title attribute and
+        // the visible label when setShowLabelText(true). Prefer the short label.
+        $label = $languageService->sL(self::LLL . 'button.openList');
+        $title = $languageService->sL(self::LLL . 'button.openList.title');
         $button = $this->linkButtonFactory->createLinkButton($buttonBar)
             ->setHref('#')
             ->setDataAttributes([
                 'dispatch-action' => 'TYPO3.ModuleMenu.showModule',
                 'dispatch-args-list' => 'web_list,&' . http_build_query(['id' => $pid]),
             ])
-            ->setTitle($languageService->sL(self::LLL . 'button.openList'))
+            ->setTitle($label !== '' ? $label : $title)
             ->setShowLabelText(true)
             ->setIcon($this->iconFactory->getIcon('actions-list', IconSize::SMALL));
         $buttonBar->addButton($button, ButtonBar::BUTTON_POSITION_LEFT, 1);

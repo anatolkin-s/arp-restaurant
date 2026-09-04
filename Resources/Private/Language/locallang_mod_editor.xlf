@@ -16,7 +16,10 @@
         <source>Restaurant Menus</source>
       </trans-unit>
       <trans-unit id="button.openList">
-        <source>Open List</source>
+        <source>Open records</source>
+      </trans-unit>
+      <trans-unit id="button.openList.title">
+        <source>Open this page in TYPO3's native records module</source>
       </trans-unit>
       <trans-unit id="button.openRecord">
         <source>Open record</source>
