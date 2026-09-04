@@ -229,9 +229,35 @@ if (preg_match(
 assertTrue($workbenchHead !== '', 'workbench status head before identity card is extractable');
 assertTrue(
     str_contains($workbenchHead, "confirmationWarning} == 'confirmationStale'")
-    && str_contains($workbenchHead, 'bulk.apply.confirmationStale')
-    && str_contains($workbenchHead, 'data-arp-confirmation-stale'),
-    '1. confirmationStale warning appears before identity/apply cards'
+    && str_contains($workbenchHead, 'data-arp-confirmation-stale="1"'),
+    '1. stale warning is before Identity card'
+);
+assertTrue(
+    preg_match(
+        '/<div\b[^>]*\barp-editor-stale-warning\b[^>]*\bdata-arp-confirmation-stale="1"/s',
+        $workbenchHead
+    ) === 1,
+    '2. stale warning has dedicated wrapper'
+);
+assertTrue(
+    preg_match(
+        '/<div\b[^>]*\barp-editor-stale-warning\b[^>]*\brole="alert"/s',
+        $workbenchHead
+    ) === 1,
+    '3. wrapper has role="alert"'
+);
+assertTrue(
+    str_contains($workbenchHead, 'bulk.apply.confirmationStale.heading'),
+    '4. dedicated heading localization key is used'
+);
+assertTrue(
+    str_contains($workbenchHead, 'bulk.apply.confirmationStale.body'),
+    '5. dedicated body localization key is used'
+);
+assertTrue(
+    str_contains($workbenchHead, 'arp-editor-stale-warning')
+    && str_contains($workbenchHead, 'message-warning'),
+    '6. warning visual class is present'
 );
 
 $applyCardBlock = '';
@@ -244,9 +270,10 @@ if (preg_match(
 }
 assertTrue($applyCardBlock !== '', 'ApplyPlan card block is extractable');
 assertTrue(
-    !str_contains($applyCardBlock, 'bulk.apply.confirmationStale')
-    && !str_contains($applyCardBlock, 'data-arp-confirmation-stale'),
-    '2. stale warning is not duplicated later in ApplyPlan'
+    !str_contains($applyCardBlock, 'confirmationStale')
+    && !str_contains($applyCardBlock, 'data-arp-confirmation-stale')
+    && !str_contains($applyCardBlock, 'arp-editor-stale-warning'),
+    '7. warning is not duplicated later in ApplyPlan'
 );
 
 $actionsBlock = '';
@@ -255,16 +282,19 @@ if (preg_match('/class="arp-editor-draft-actions"(.*?)<\/p>/s', $template, $acti
 }
 assertTrue($actionsBlock !== '', 'draft actions block extractable');
 assertTrue(
-    str_contains($actionsBlock, 'bulk.applyToMenu')
-    && str_contains($actionsBlock, "confirmationWarning} == 'confirmationStale'")
+    str_contains($actionsBlock, "confirmationWarning} == 'confirmationStale'")
     && str_contains($actionsBlock, 'bulk.applyRefreshedPlan')
     && substr_count($actionsBlock, 'name="bulkApply"') === 1,
-    '3/4/5. normal + stale button labels; both submit bulkApply once'
+    '8. Apply refreshed plan behavior is unchanged'
+);
+assertTrue(
+    str_contains($actionsBlock, 'bulk.applyToMenu'),
+    '9. normal Apply to menu behavior is unchanged'
 );
 assertTrue(
     str_contains($template, 'name="confirmedFingerprint"')
     && str_contains($template, 'bulk.apply.plan.fingerprint'),
-    '6. both use current server plan fingerprint'
+    'both button states still use current server plan fingerprint'
 );
 
 $prgBlock = '';
@@ -278,23 +308,23 @@ if (preg_match(
 assertTrue($prgBlock !== '', 'attempted-write PRG block extractable');
 assertTrue(
     str_contains($prgBlock, 'RedirectResponse($redirectUri, 303)'),
-    '7. successful/attempted-write RedirectResponse remains HTTP 303'
+    'successful/attempted-write RedirectResponse remains HTTP 303'
 );
 assertTrue(
     !str_contains($prgBlock, '#arp-restaurant-bulk-workbench'),
-    '8. redirect URI does NOT contain workbench fragment'
+    'redirect URI does NOT contain workbench fragment'
 );
 assertTrue(
     str_contains($prgBlock, "'id' => \$pid")
     && str_contains($prgBlock, "'menu' => \$preparation->plan->targetMenu->uid"),
-    '9. redirect still contains same pid/id and menu'
+    'redirect still contains same pid/id and menu'
 );
 assertTrue(
     preg_match(
         '/!hash_equals\(\$preparation->plan->fingerprint,\s*\$confirmedFingerprint\)\)\s*\{\s*return \[[\s\S]*?\'confirmationWarning\'\s*=>\s*\'confirmationStale\',[\s\S]*?\];\s*\}/s',
         $applyBlock
     ) === 1,
-    '10. confirmationStale remains non-redirect'
+    'confirmationStale remains non-redirect'
 );
 assertTrue(
     preg_match_all(
@@ -302,12 +332,14 @@ assertTrue(
         $applyBlock,
         $prepBlockedMatches
     ) === 2,
-    '11. writePreparationBlocked remains non-redirect'
+    'writePreparationBlocked remains non-redirect'
 );
 assertTrue(
     str_contains($writer, 'process_datamap')
-    && !str_contains($writerWithoutComments, 'process_cmdmap'),
-    '12. no write pipeline persistence redesign'
+    && !str_contains($writerWithoutComments, 'process_cmdmap')
+    && str_contains($applyBlock, 'hash_equals($preparation->plan->fingerprint, $confirmedFingerprint)')
+    && str_contains($applyBlock, 'applyWriter->execute'),
+    '10. no controller/write pipeline behavior redesign'
 );
 
 echo $failures === 0 ? "\nAll RestaurantEditorApplyContract tests passed.\n" : "\n{$failures} RestaurantEditorApplyContract test(s) failed.\n";

@@ -81,5 +81,27 @@ assertTrue(
 assertTrue(str_contains($danger, '--typo3-state-danger-text-color'), 'AMBIGUOUS/INACCESSIBLE keeps danger text color');
 assertTrue(str_contains($danger, '--typo3-state-danger-border-color'), 'AMBIGUOUS/INACCESSIBLE keeps danger border color');
 
+$staleWarning = extractRuleBlock($css, '\.arp-editor-stale-warning');
+assertTrue($staleWarning !== '', 'stale warning rule block is present');
+assertTrue(
+    preg_match('/background\s*:\s*var\(--typo3-state-warning-bg/', $staleWarning) === 1,
+    'stale warning uses tinted warning background (not neutral surface only)'
+);
+assertTrue(
+    preg_match('/background\s*:\s*var\(--typo3-surface(?!-)/', $staleWarning) !== 1
+    && preg_match('/background\s*:\s*#fff\b/i', $staleWarning) !== 1,
+    'stale warning background is not plain/neutral white surface'
+);
+assertTrue(
+    str_contains($staleWarning, '--typo3-state-warning-border')
+    || str_contains($staleWarning, '--typo3-state-warning-border-color'),
+    'stale warning keeps visible warning border accent'
+);
+assertTrue(
+    preg_match('/padding\s*:/', $staleWarning) === 1
+    && preg_match('/width\s*:\s*100%/', $staleWarning) === 1,
+    'stale warning has padding and full workbench width'
+);
+
 echo $failures === 0 ? "\nAll RestaurantEditorCssContrast tests passed.\n" : "\n{$failures} RestaurantEditorCssContrast test(s) failed.\n";
 exit($failures === 0 ? 0 : 1);

@@ -1,5 +1,6 @@
 <html
     xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
     data-namespace-typo3-fluid="true"
 >
 <f:layout name="Module"/>
@@ -253,9 +254,25 @@
                                 data-arp-editor-grid="1"
                             >
                                 <f:if condition="{bulk.confirmationWarning} == 'confirmationStale'">
-                                    <p class="typo3-message message-warning" data-arp-server-status="1" data-arp-confirmation-stale="1">
-                                        <f:translate key="{lll}bulk.apply.confirmationStale"/>
-                                    </p>
+                                    <div
+                                        class="arp-editor-stale-warning typo3-message message-warning"
+                                        role="alert"
+                                        aria-live="polite"
+                                        data-arp-server-status="1"
+                                        data-arp-confirmation-stale="1"
+                                    >
+                                        <span class="arp-editor-stale-warning__icon" aria-hidden="true">
+                                            <core:icon identifier="status-dialog-warning" size="small"/>
+                                        </span>
+                                        <div class="arp-editor-stale-warning__content">
+                                            <p class="arp-editor-stale-warning__heading">
+                                                <f:translate key="{lll}bulk.apply.confirmationStale.heading"/>
+                                            </p>
+                                            <p class="arp-editor-stale-warning__body">
+                                                <f:translate key="{lll}bulk.apply.confirmationStale.body"/>
+                                            </p>
+                                        </div>
+                                    </div>
                                 </f:if>
                                 <f:if condition="{bulk.confirmationWarning} == 'writePreparationBlocked'">
                                     <p class="typo3-message message-warning" data-arp-server-status="1" data-arp-write-preparation-blocked="1">
