@@ -16,10 +16,10 @@
         <source>Restaurant Menus</source>
       </trans-unit>
       <trans-unit id="button.openList">
-        <source>Open records</source>
+        <source>Open all records</source>
       </trans-unit>
       <trans-unit id="button.openList.title">
-        <source>Open this page in TYPO3's native records module</source>
+        <source>Open the full TYPO3 records view for this page, including all record types.</source>
       </trans-unit>
       <trans-unit id="button.openRecord">
         <source>Open record</source>
@@ -103,7 +103,7 @@
         <source>No price</source>
       </trans-unit>
       <trans-unit id="readonly.notice">
-        <source>Read-only compact view of the same DOMAIN-1A records. Native List, FormEngine, and IRRE remain available.</source>
+        <source>Compact restaurant view. Use “Open all records” for the full TYPO3 records view of this page.</source>
       </trans-unit>
       <trans-unit id="bulk.heading">
         <source>Bulk paste</source>

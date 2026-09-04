@@ -828,20 +828,30 @@ final class RestaurantEditorController
         LanguageService $languageService,
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        // LinkButton on TYPO3 13/14 uses setTitle() for both the title attribute and
-        // the visible label when setShowLabelText(true). Prefer the short label.
+        // LinkButton on TYPO3 13/14 uses setTitle() for both the HTML title attribute
+        // and the visible label when setShowLabelText(true). There is no shared 13/14
+        // API to override only the title attribute while keeping a short visible label.
         $label = $languageService->sL(self::LLL . 'button.openList');
-        $title = $languageService->sL(self::LLL . 'button.openList.title');
+        $helpTitle = $languageService->sL(self::LLL . 'button.openList.title');
         $button = $this->linkButtonFactory->createLinkButton($buttonBar)
             ->setHref('#')
             ->setDataAttributes([
                 'dispatch-action' => 'TYPO3.ModuleMenu.showModule',
                 'dispatch-args-list' => 'web_list,&' . http_build_query(['id' => $pid]),
             ])
-            ->setTitle($label !== '' ? $label : $title)
+            ->setTitle($label)
             ->setShowLabelText(true)
             ->setIcon($this->iconFactory->getIcon('actions-list', IconSize::SMALL));
         $buttonBar->addButton($button, ButtonBar::BUTTON_POSITION_LEFT, 1);
+
+        // Native icon-only help control: title attribute carries the longer explanation
+        // (hover + accessible name). No Bootstrap tooltip JS / custom JS.
+        $helpButton = $this->linkButtonFactory->createLinkButton($buttonBar)
+            ->setHref('#')
+            ->setTitle($helpTitle)
+            ->setShowLabelText(false)
+            ->setIcon($this->iconFactory->getIcon('actions-info', IconSize::SMALL));
+        $buttonBar->addButton($helpButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
     }
 
     private function getLanguageService(): LanguageService
