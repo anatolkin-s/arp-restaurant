@@ -279,6 +279,9 @@
       <trans-unit id="bulk.apply.confirmationStale">
         <source>Plan changed since confirmation. Nothing was written. Review the refreshed plan and apply again.</source>
       </trans-unit>
+      <trans-unit id="bulk.apply.writePreparationBlocked">
+        <source>Write preparation failed. Nothing was written. Review the plan before trying again.</source>
+      </trans-unit>
       <trans-unit id="bulk.apply.flash.appliedTitle">
         <source>Menu updated</source>
       </trans-unit>

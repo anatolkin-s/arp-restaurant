@@ -29,30 +29,82 @@ final class RestaurantApplyWriter
         int $pid,
         BackendUserAuthentication $backendUser,
     ): ApplyExecutionResult {
-        $dataMap = $this->dataMapBuilder->build($plan, $pid, $sortContext);
+        try {
+            $dataMap = $this->dataMapBuilder->build($plan, $pid, $sortContext);
+        } catch (\Throwable) {
+            return new ApplyExecutionResult(
+                outcome: 'failed',
+                createdCategories: 0,
+                createdItems: 0,
+                createdPlacements: 0,
+                createdPriceOptions: 0,
+                dataHandlerAttempted: false,
+                diagnostics: ['writePreparationFailed'],
+            );
+        }
 
-        $errorLog = [];
-        $substNEWwithIDs = [];
-        $substNEWwithIDsTable = [];
-        $threw = false;
+        $dataHandlerAttempted = false;
+        $processThrew = false;
+        $snapshot = ApplyDataHandlerStateSnapshot::empty();
+        /** @var DataHandler|null $dataHandler */
+        $dataHandler = null;
 
         try {
             /** @var DataHandler $dataHandler */
             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
             $dataHandler->start($dataMap->dataMap, [], $backendUser);
+            $dataHandlerAttempted = true;
             $dataHandler->process_datamap();
-            $errorLog = is_array($dataHandler->errorLog) ? array_values($dataHandler->errorLog) : [];
-            $substNEWwithIDs = is_array($dataHandler->substNEWwithIDs)
-                ? $dataHandler->substNEWwithIDs
-                : [];
-            $substNEWwithIDsTable = is_array($dataHandler->substNEWwithIDs_table)
-                ? $dataHandler->substNEWwithIDs_table
-                : [];
         } catch (\Throwable) {
-            $threw = true;
+            if ($dataHandlerAttempted) {
+                $processThrew = true;
+            } else {
+                return new ApplyExecutionResult(
+                    outcome: 'failed',
+                    createdCategories: 0,
+                    createdItems: 0,
+                    createdPlacements: 0,
+                    createdPriceOptions: 0,
+                    dataHandlerAttempted: false,
+                    diagnostics: ['writePreparationFailed'],
+                );
+            }
+        } finally {
+            if ($dataHandler !== null) {
+                $snapshot = ApplyDataHandlerStateSnapshot::fromDataHandler($dataHandler);
+            }
+        }
+
+        $errorLog = $snapshot->errorLog;
+        if ($processThrew) {
             $errorLog[] = 'applyException';
         }
 
+        return $this->verifyAfterAttempt(
+            $dataMap,
+            $snapshot->substNEWwithIDs,
+            $snapshot->substNEWwithIDsTable,
+            $errorLog,
+            $pid,
+            $backendUser,
+            $processThrew,
+        );
+    }
+
+    /**
+     * @param array<string, int|string> $substNEWwithIDs
+     * @param array<string, string> $substNEWwithIDsTable
+     * @param list<string> $errorLog
+     */
+    private function verifyAfterAttempt(
+        ApplyDataMap $dataMap,
+        array $substNEWwithIDs,
+        array $substNEWwithIDsTable,
+        array $errorLog,
+        int $pid,
+        BackendUserAuthentication $backendUser,
+        bool $processThrew,
+    ): ApplyExecutionResult {
         $targets = [];
         foreach ($dataMap->expectedCreates as $expected) {
             $uid = (int)($substNEWwithIDs[$expected->newToken] ?? 0);
@@ -68,27 +120,49 @@ final class RestaurantApplyWriter
             $errorLog[] = 'verificationReadFailed';
         }
 
-        $result = $this->verifier->verify(
-            $dataMap,
-            $substNEWwithIDs,
-            $substNEWwithIDsTable,
-            $errorLog,
-            $fetched,
-            $pid,
-        );
+        try {
+            $result = $this->verifier->verify(
+                $dataMap,
+                $substNEWwithIDs,
+                $substNEWwithIDsTable,
+                $errorLog,
+                $fetched,
+                $pid,
+            );
+        } catch (\Throwable) {
+            return new ApplyExecutionResult(
+                outcome: $fetched !== [] ? 'partialFailure' : 'failed',
+                createdCategories: 0,
+                createdItems: 0,
+                createdPlacements: 0,
+                createdPriceOptions: 0,
+                dataHandlerAttempted: true,
+                diagnostics: array_values(array_unique(array_merge($errorLog, ['verificationFailed']))),
+            );
+        }
 
-        if ($threw && $result->outcome === 'failed' && $fetched !== []) {
+        if ($processThrew && $result->outcome === 'failed' && $fetched !== []) {
             return new ApplyExecutionResult(
                 outcome: 'partialFailure',
                 createdCategories: $result->createdCategories,
                 createdItems: $result->createdItems,
                 createdPlacements: $result->createdPlacements,
                 createdPriceOptions: $result->createdPriceOptions,
+                dataHandlerAttempted: true,
                 diagnostics: $result->diagnostics,
                 createdUidsByLocalRef: $result->createdUidsByLocalRef,
             );
         }
 
-        return $result;
+        return new ApplyExecutionResult(
+            outcome: $result->outcome,
+            createdCategories: $result->createdCategories,
+            createdItems: $result->createdItems,
+            createdPlacements: $result->createdPlacements,
+            createdPriceOptions: $result->createdPriceOptions,
+            dataHandlerAttempted: true,
+            diagnostics: $result->diagnostics,
+            createdUidsByLocalRef: $result->createdUidsByLocalRef,
+        );
     }
 }

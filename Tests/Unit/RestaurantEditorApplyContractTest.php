@@ -156,5 +156,67 @@ assertTrue(
     'BulkPreviewView exposes applyToken + confirmationWarning'
 );
 
+assertTrue(
+    str_contains($controller, 'dataHandlerAttempted')
+    && preg_match(
+        '/if\s*\(\s*!\$execution->dataHandlerAttempted\s*\)\s*\{[^}]*writePreparationBlocked/s',
+        $controller
+    ) === 1
+    && str_contains($controller, 'RedirectResponse'),
+    'A. PRG is conditional on dataHandlerAttempted'
+);
+assertTrue(
+    preg_match(
+        '/buildContext\([\s\S]*?catch\s*\(\s*\\\\Throwable\s*\)\s*\{[\s\S]*?writePreparationBlocked/s',
+        $controller
+    ) === 1,
+    'B. pre-write sort failure does not PRG'
+);
+assertTrue(
+    str_contains($writer, 'writePreparationFailed')
+    && str_contains($writer, 'dataHandlerAttempted: false')
+    && str_contains($controller, "'writePreparationBlocked'"),
+    'C. pre-write datamap failure does not PRG'
+);
+assertTrue(
+    preg_match(
+        '/if\s*\(\s*!\$execution->dataHandlerAttempted\s*\)[\s\S]*?enqueueApplyFlash\(\$execution[\s\S]*?RedirectResponse\(\$redirectUri,\s*303\)/s',
+        $controller
+    ) === 1,
+    'D. attempted DataHandler result does PRG after attempt branch'
+);
+assertTrue(
+    preg_match(
+        '/buildContext\([\s\S]*?catch[\s\S]*?writePreparationBlocked[\s\S]*?applyWriter->execute/s',
+        $controller
+    ) === 1,
+    'E. writer cannot be invoked when sort context failed'
+);
+assertTrue(
+    substr_count($controller, 'applyWriter->execute(') === 1,
+    'F. no automatic retry (writer invoked once in controller source)'
+);
+assertTrue(
+    !str_contains($writerWithoutComments, 'rollBack')
+    && !str_contains($controller, 'rollBack')
+    && !str_contains($writerWithoutComments, 'process_cmdmap'),
+    'G. no rollback / process_cmdmap'
+);
+
+$snapshotHelper = file_get_contents($root . '/Classes/Backend/Editor/Apply/Write/ApplyDataHandlerStateSnapshot.php') ?: '';
+assertTrue(
+    str_contains($snapshotHelper, 'fromDataHandler')
+    && str_contains($writer, 'ApplyDataHandlerStateSnapshot::fromDataHandler')
+    && preg_match(
+        '/\$dataHandlerAttempted\s*=\s*true;\s*\$dataHandler->process_datamap\(\);[\s\S]*?finally\s*\{[\s\S]*?fromDataHandler/s',
+        $writerWithoutComments
+    ) === 1,
+    'DataHandler state captured in finally after process_datamap attempt'
+);
+assertTrue(
+    str_contains($template, 'bulk.apply.writePreparationBlocked'),
+    'writePreparationBlocked UI copy present'
+);
+
 echo $failures === 0 ? "\nAll RestaurantEditorApplyContract tests passed.\n" : "\n{$failures} RestaurantEditorApplyContract test(s) failed.\n";
 exit($failures === 0 ? 0 : 1);

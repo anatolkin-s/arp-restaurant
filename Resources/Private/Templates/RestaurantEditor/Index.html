@@ -406,6 +406,11 @@
                                                             <f:translate key="{lll}bulk.apply.confirmationStale"/>
                                                         </p>
                                                     </f:if>
+                                                    <f:if condition="{bulk.confirmationWarning} == 'writePreparationBlocked'">
+                                                        <p class="typo3-message message-warning">
+                                                            <f:translate key="{lll}bulk.apply.writePreparationBlocked"/>
+                                                        </p>
+                                                    </f:if>
                                                 </f:if>
                                             </f:then>
                                             <f:else>

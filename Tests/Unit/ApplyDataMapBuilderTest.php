@@ -280,19 +280,30 @@ $priceSorts = array_values(array_map(
 assertTrue($priceSorts === [256, 512], 'sort6. PriceOptions preserve plan order');
 
 $overflowFailed = false;
-try {
-    $mapBuilder->build($simplePlan, 5, new ApplySortContext(PHP_INT_MAX, [], 256, 256));
-} catch (\InvalidArgumentException) {
-    // allocateSorting may still return PHP_INT_MAX; force overflow via nextAfter in reader tests separately
-}
-// Force overflow by constructing context where categoryNext is fine but step addition overflows in builder loop for 2 cats
+$overflowMessage = '';
 try {
     $mapBuilder->build($twoCatPlan, 5, new ApplySortContext(PHP_INT_MAX - 100, [], 256, 256));
-    // second category needs first+256 which overflows past max if first is MAX-100? MAX-100+256 could overflow check
-} catch (\Throwable $e) {
-    $overflowFailed = true;
+} catch (\InvalidArgumentException $e) {
+    $overflowFailed = $e->getMessage() === ApplyDataMapBuilder::SORT_OVERFLOW;
+    $overflowMessage = $e->getMessage();
 }
-assertTrue(true, 'sort7. overflow path exercised when possible');
+assertTrue($overflowFailed === true, 'sort7. second Category allocation overflows with SORT_OVERFLOW');
+
+$priceOverflowFailed = false;
+try {
+    $mapBuilder->build($namedPlan, 5, new ApplySortContext(256, [], 256, PHP_INT_MAX - 100));
+} catch (\InvalidArgumentException $e) {
+    $priceOverflowFailed = $e->getMessage() === ApplyDataMapBuilder::SORT_OVERFLOW;
+}
+assertTrue($priceOverflowFailed === true, 'sort7b. second PriceOption allocation overflows with SORT_OVERFLOW');
+
+$placeOverflowFailed = false;
+try {
+    $mapBuilder->build($dupPlan, 5, new ApplySortContext(256, [], 256, PHP_INT_MAX - 100));
+} catch (\InvalidArgumentException $e) {
+    $placeOverflowFailed = $e->getMessage() === ApplyDataMapBuilder::SORT_OVERFLOW;
+}
+assertTrue($placeOverflowFailed === true, 'sort7c. second Placement allocation overflows with SORT_OVERFLOW');
 
 $sortReaderSrc = file_get_contents(dirname(__DIR__, 2) . '/Classes/Backend/Editor/Apply/Write/RestaurantApplySortPositionReader.php') ?: '';
 assertTrue(

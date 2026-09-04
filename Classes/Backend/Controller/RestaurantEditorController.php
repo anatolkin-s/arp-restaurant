@@ -245,21 +245,33 @@ final class RestaurantEditorController
                 $pid,
                 $backendUser,
             );
-            $execution = $this->applyWriter->execute(
-                $preparation->plan,
-                $sortContext,
-                $pid,
-                $backendUser,
-            );
         } catch (\Throwable) {
-            $execution = new ApplyExecutionResult(
-                outcome: 'failed',
-                createdCategories: 0,
-                createdItems: 0,
-                createdPlacements: 0,
-                createdPriceOptions: 0,
-                diagnostics: ['applyFailed'],
-            );
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => $identity,
+                'apply' => $preparation,
+                'confirmationWarning' => 'writePreparationBlocked',
+            ];
+        }
+
+        $execution = $this->applyWriter->execute(
+            $preparation->plan,
+            $sortContext,
+            $pid,
+            $backendUser,
+        );
+
+        if (!$execution->dataHandlerAttempted) {
+            return [
+                'rawInput' => $rawInput,
+                'draft' => $draft,
+                'requestError' => '',
+                'identity' => $identity,
+                'apply' => $preparation,
+                'confirmationWarning' => 'writePreparationBlocked',
+            ];
         }
 
         $this->enqueueApplyFlash($execution, $languageService);

@@ -74,8 +74,8 @@ final class ApplyDataMapBuilder
                 $this->assertUniqueToken($localRefToNewToken, $category->localRef, $token);
                 $localRefToNewToken[$category->localRef] = $token;
                 $categoryTokens[$category->localRef] = $token;
-                $sorting = $this->allocateSorting($categoryNext, $sortContext->step);
-                $categoryNext = $sorting + $sortContext->step;
+                $sorting = $this->requireSortingValue($categoryNext);
+                $categoryNext = $this->checkedAdd($sorting, $sortContext->step);
                 $fields = [
                     'pid' => $pid,
                     'title' => $category->displayTitle,
@@ -124,13 +124,13 @@ final class ApplyDataMapBuilder
             if ($category->status === 'reuse') {
                 $reuseUid = (int)$category->uid;
                 $next = $placementNextByReuse[$reuseUid] ?? $sortContext->newCategoryPlacementBase;
-                $sorting = $this->allocateSorting($next, $sortContext->step);
-                $placementNextByReuse[$reuseUid] = $sorting + $sortContext->step;
+                $sorting = $this->requireSortingValue($next);
+                $placementNextByReuse[$reuseUid] = $this->checkedAdd($sorting, $sortContext->step);
             } else {
                 $catToken = $categoryTokens[$category->localRef];
                 $next = $placementNextByCreateToken[$catToken] ?? $sortContext->newCategoryPlacementBase;
-                $sorting = $this->allocateSorting($next, $sortContext->step);
-                $placementNextByCreateToken[$catToken] = $sorting + $sortContext->step;
+                $sorting = $this->requireSortingValue($next);
+                $placementNextByCreateToken[$catToken] = $this->checkedAdd($sorting, $sortContext->step);
             }
 
             $placementToken = $this->newToken('P', $placement->localRef);
@@ -158,8 +158,8 @@ final class ApplyDataMapBuilder
                 $priceToken = $this->newToken('O', $priceOption->localRef);
                 $this->assertUniqueToken($localRefToNewToken, $priceOption->localRef, $priceToken);
                 $localRefToNewToken[$priceOption->localRef] = $priceToken;
-                $priceSortValue = $this->allocateSorting($priceSorting, $sortContext->step);
-                $priceSorting = $priceSortValue + $sortContext->step;
+                $priceSortValue = $this->requireSortingValue($priceSorting);
+                $priceSorting = $this->checkedAdd($priceSortValue, $sortContext->step);
 
                 $priceFields = [
                     'pid' => $pid,
@@ -211,19 +211,28 @@ final class ApplyDataMapBuilder
             ?? throw new \InvalidArgumentException('Missing CREATE token for ' . $entity->localRef, 1757000107);
     }
 
-    private function allocateSorting(int $next, int $step): int
+    private function requireSortingValue(int $value): int
     {
-        if ($next < 0 || $next > PHP_INT_MAX) {
+        if ($value < 0) {
             throw new \InvalidArgumentException(self::SORT_OVERFLOW, 1757000108);
         }
-        if ($next > PHP_INT_MAX - $step) {
-            // next itself may be near overflow when used as value; still allow if next fits
+
+        return $value;
+    }
+
+    private function checkedAdd(int $current, int $step): int
+    {
+        if ($step <= 0) {
+            throw new \InvalidArgumentException('Sorting step must be positive', 1757000101);
         }
-        if ($next > PHP_INT_MAX) {
+        if ($current < 0) {
             throw new \InvalidArgumentException(self::SORT_OVERFLOW, 1757000109);
         }
+        if ($current > PHP_INT_MAX - $step) {
+            throw new \InvalidArgumentException(self::SORT_OVERFLOW, 1757000116);
+        }
 
-        return $next;
+        return $current + $step;
     }
 
     /**

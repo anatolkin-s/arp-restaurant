@@ -90,6 +90,7 @@ final class ApplyWriteVerifier
                 createdItems: $verifiedByKind['item'],
                 createdPlacements: $verifiedByKind['placement'],
                 createdPriceOptions: $verifiedByKind['priceoption'],
+                dataHandlerAttempted: false,
                 diagnostics: [],
                 createdUidsByLocalRef: $createdUids,
             );
@@ -102,6 +103,7 @@ final class ApplyWriteVerifier
                 createdItems: 0,
                 createdPlacements: 0,
                 createdPriceOptions: 0,
+                dataHandlerAttempted: false,
                 diagnostics: $diagnostics === [] ? ['applyFailed'] : array_values(array_unique($diagnostics)),
                 createdUidsByLocalRef: [],
             );
@@ -113,6 +115,7 @@ final class ApplyWriteVerifier
             createdItems: $verifiedByKind['item'],
             createdPlacements: $verifiedByKind['placement'],
             createdPriceOptions: $verifiedByKind['priceoption'],
+            dataHandlerAttempted: false,
             diagnostics: array_values(array_unique($diagnostics)),
             createdUidsByLocalRef: $createdUids,
         );
