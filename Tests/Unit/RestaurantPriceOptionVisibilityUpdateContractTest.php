@@ -235,9 +235,11 @@ assertTrue(
 
 assertTrue(
     str_contains($statusPartial, 'identifier="actions-eye"')
-    && str_contains($statusPartial, 'identifier="actions-edit-hide"')
+    && str_contains($statusPartial, 'overlay="overlay-hidden"')
+    && !str_contains($statusPartial, 'actions-edit-hide')
+    && !str_contains($statusPartial, 'actions-edit-unhide')
     && str_contains($statusPartial, '<span class="arp-editor-sr">{statusLabel}</span>'),
-    'table icon semantics preserved: Core eye/hide + visually-hidden Visible/Hidden'
+    'table icon semantics preserved: Core eye / eye+overlay-hidden + visually-hidden Visible/Hidden'
 );
 
 echo $failures === 0

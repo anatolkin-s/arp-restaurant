@@ -34,8 +34,10 @@ foreach (glob($visibilityDir . '/*.php') ?: [] as $file) {
 
 assertTrue(
     str_contains($statusPartial, 'identifier="actions-eye"')
-    && str_contains($statusPartial, 'identifier="actions-edit-hide"')
-    && str_contains($statusPartial, 'data-arp-edit-visibility="1"'),
+    && str_contains($statusPartial, 'overlay="overlay-hidden"')
+    && str_contains($statusPartial, 'data-arp-edit-visibility="1"')
+    && !str_contains($statusPartial, 'actions-edit-hide')
+    && !str_contains($statusPartial, 'actions-edit-unhide'),
     '1. Core icon entry point for visibility review'
 );
 
@@ -48,6 +50,18 @@ if (preg_match('/value="hidden"[\s\S]*?<\/f:case>/', $statusPartial, $hiddenMatc
     $hiddenCase = $hiddenMatch[0];
 }
 assertTrue($visibleCase !== '' && $hiddenCase !== '', 'visible/hidden status cases extractable');
+assertTrue(
+    str_contains($visibleCase, 'identifier="actions-eye"')
+    && !str_contains($visibleCase, 'overlay-hidden'),
+    '1b. visible status: actions-eye, no overlay-hidden'
+);
+assertTrue(
+    str_contains($hiddenCase, 'identifier="actions-eye"')
+    && str_contains($hiddenCase, 'overlay="overlay-hidden"')
+    && !str_contains($hiddenCase, 'actions-edit-hide')
+    && !str_contains($hiddenCase, 'actions-edit-unhide'),
+    '1c. hidden status: actions-eye + overlay-hidden, not edit-hide/unhide'
+);
 assertTrue(
     str_contains($visibleCase, 'priceVisibility.entry.visible')
     && str_contains($visibleCase, 'title="{reviewLabel}"')

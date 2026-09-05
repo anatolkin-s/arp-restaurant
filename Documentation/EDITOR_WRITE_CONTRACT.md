@@ -74,7 +74,7 @@ Changing `PriceOption.hidden` does **not** override effective frontend visibilit
 | Implemented | Not implemented (at 2C3) |
 |---|---|
 | Saved-table GET `priceOptionVisibility=<uid>` | Confirmed DataHandler update of `hidden` (EDITOR-2C4) |
-| Status icon entry (Core eye / hide) when PriceOption.hidden is unambiguous | Clickable scheduled / parent-hidden / item-hidden icons |
+| Status icon entry (Core eye / eye+overlay-hidden) when PriceOption.hidden is unambiguous | Clickable scheduled / parent-hidden / item-hidden icons |
 | POST `priceOptionVisibilityReview` + CSRF `priceVisibilityToken` | Reuse of `priceOptionEditReview` / `priceEditToken` / Apply tokens |
 | Pure `PriceOptionVisibilityPlan` current→requested hidden | Category / Item / Placement / Menu writes |
 | `noChanges` when requested state equals current `hidden` | Schema/TCA |

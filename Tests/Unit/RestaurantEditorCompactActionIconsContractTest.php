@@ -93,9 +93,27 @@ assertTrue(
     && str_contains($statusPartial, 'status.visible'),
     'visible icon still uses actions-eye'
 );
+$visibleStatusCase = '';
+if (preg_match('/value="visible"[\s\S]*?<\/f:case>/', $statusPartial, $visibleStatusMatch)) {
+    $visibleStatusCase = $visibleStatusMatch[0];
+}
 assertTrue(
-    str_contains($statusPartial, 'identifier="actions-edit-hide"'),
-    'hidden icon still uses actions-edit-hide'
+    $visibleStatusCase !== ''
+    && str_contains($visibleStatusCase, 'identifier="actions-eye"')
+    && !str_contains($visibleStatusCase, 'overlay-hidden'),
+    'visible status uses actions-eye with no overlay-hidden'
+);
+$hiddenStatusCase = '';
+if (preg_match('/value="hidden"[\s\S]*?<\/f:case>/', $statusPartial, $hiddenStatusMatch)) {
+    $hiddenStatusCase = $hiddenStatusMatch[0];
+}
+assertTrue(
+    $hiddenStatusCase !== ''
+    && str_contains($hiddenStatusCase, 'identifier="actions-eye"')
+    && str_contains($hiddenStatusCase, 'overlay="overlay-hidden"')
+    && !str_contains($hiddenStatusCase, 'actions-edit-hide')
+    && !str_contains($hiddenStatusCase, 'actions-edit-unhide'),
+    'hidden status uses actions-eye + overlay-hidden, not edit-hide/unhide'
 );
 assertTrue(
     str_contains($statusPartial, 'identifier="actions-clock"'),
@@ -186,7 +204,7 @@ assertTrue(
     'saved-table sort/reset hooks unchanged'
 );
 
-$coreIcons = ['actions-open', 'actions-eye', 'actions-edit-hide', 'actions-clock'];
+$coreIcons = ['actions-open', 'actions-eye', 'overlay-hidden', 'actions-clock'];
 foreach ($coreIcons as $iconId) {
     assertTrue(
         str_contains($categoryCell . $savedTable . $statusPartial . $iconLink, $iconId)
