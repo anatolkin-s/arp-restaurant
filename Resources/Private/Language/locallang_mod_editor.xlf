@@ -645,6 +645,114 @@
       <trans-unit id="priceVisibility.flash.failed">
         <source>Nothing could be confirmed as saved. Review the current visibility before trying again.</source>
       </trans-unit>
+      <trans-unit id="priceCreate.addPriceOption">
+        <source>Add price option</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.heading">
+        <source>Add price option</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.review">
+        <source>Review addition</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.cancel">
+        <source>Cancel</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.openPlacementRecord">
+        <source>Open placement record</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.field.variant">
+        <source>Variant</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.field.price">
+        <source>Price</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.context.menu">
+        <source>Menu:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.context.category">
+        <source>Category:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.context.item">
+        <source>Item:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.context.existingPrices">
+        <source>Existing prices:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.reviewReady">
+        <source>PRICE OPTION CREATE · READY</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.nothingWritten">
+        <source>Nothing has been written yet.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.newOption">
+        <source>New price option:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.diff.variant">
+        <source>Variant:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.diff.price">
+        <source>Price:</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.noVariant">
+        <source>(no variant)</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.scope">
+        <source>This will create one PriceOption under the existing Placement.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.savingNotAvailable">
+        <source>Saving is not available in this step.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.invalidCsrf">
+        <source>The form token was invalid. Reload and try again.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.invalidPrice">
+        <source>Enter a valid price using a period as the decimal separator.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.missingPrice">
+        <source>Price is required.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.labelTooLong">
+        <source>Variant must be 255 characters or fewer.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.variantRequired">
+        <source>This placement already has named prices. Enter a Variant name.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.duplicateVariant">
+        <source>A price option with this Variant already exists on this placement.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.simplePriceMustBecomeVariantFirst">
+        <source>This placement currently has a simple price. Give the existing price a Variant name before adding another option.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.existingVariantSetInvalid">
+        <source>This placement’s stored prices are mixed or incomplete. Fix the existing options before adding another.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.sortingOverflow">
+        <source>A new sort position cannot be allocated for this placement.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.inaccessiblePlacement">
+        <source>This placement cannot be used to add a price option in the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.wrongMenu">
+        <source>This placement does not belong to the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.brokenCategory">
+        <source>This placement is not in a valid category for the selected menu.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.missingItem">
+        <source>This placement does not point to a valid item.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.fieldModifyDenied">
+        <source>You do not have permission to create a price option here.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.tablesModifyDenied">
+        <source>You do not have permission to modify price options.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.nonLiveWorkspace">
+        <source>Price option creation is only available in the live workspace.</source>
+      </trans-unit>
+      <trans-unit id="priceCreate.error.pageContentEditDenied">
+        <source>You do not have permission to edit content on this page.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

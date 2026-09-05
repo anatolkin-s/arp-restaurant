@@ -377,6 +377,55 @@ assertTrue(
     'parent-hidden + hidden PriceOption remains unambiguously actionable'
 );
 
+$createUrl = static fn (int $placementUid, int $menuUid): string => '/create/' . $menuUid . '/' . $placementUid;
+$multiAdd = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 0, 'starttime' => 0, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [
+        ['uid' => 8, 'placement' => 4, 'label' => 'Small', 'amount' => 313, 'sorting' => 10, 'hidden' => 0],
+        ['uid' => 9, 'placement' => 4, 'label' => 'Large', 'amount' => 422, 'sorting' => 20, 'hidden' => 0],
+    ],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+    $createUrl,
+);
+$multiPlacement = $multiAdd->selectedMenu->categories[0]->placements[0];
+assertTrue(
+    $multiPlacement->addPriceOptionUrl === '/create/2/4'
+    && count($multiPlacement->priceOptions) === 2,
+    'Add PriceOption URL belongs to the Placement, not each PriceOption row'
+);
+
+$emptyAdd = $assembler->assemble(
+    10,
+    'Storage',
+    [['uid' => 2, 'title' => 'Lunch', 'hidden' => 0]],
+    [['uid' => 3, 'title' => 'Mains', 'menu' => 2, 'sorting' => 10, 'hidden' => 0]],
+    [['uid' => 4, 'category' => 3, 'item' => 1, 'sorting' => 10, 'hidden' => 0, 'starttime' => 0, 'endtime' => 0]],
+    [['uid' => 1, 'title' => 'Soup', 'hidden' => 0]],
+    [],
+    2,
+    $now,
+    null,
+    $editUrls,
+    $priceEditUrl,
+    $visibilityUrl,
+    $createUrl,
+);
+assertTrue(
+    $emptyAdd->selectedMenu->categories[0]->placements[0]->addPriceOptionUrl === '/create/2/4'
+    && $emptyAdd->selectedMenu->categories[0]->placements[0]->priceOptions === [],
+    'zero-price Placement still receives addPriceOptionUrl'
+);
+
 if ($failures > 0) {
     echo "\n{$failures} failing assertion(s)\n";
     exit(1);

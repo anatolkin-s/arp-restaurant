@@ -204,7 +204,7 @@ assertTrue(
     'saved-table sort/reset hooks unchanged'
 );
 
-$coreIcons = ['actions-open', 'actions-eye', 'overlay-hidden', 'actions-clock'];
+$coreIcons = ['actions-open', 'actions-eye', 'overlay-hidden', 'actions-clock', 'actions-plus'];
 foreach ($coreIcons as $iconId) {
     assertTrue(
         str_contains($categoryCell . $savedTable . $statusPartial . $iconLink, $iconId)

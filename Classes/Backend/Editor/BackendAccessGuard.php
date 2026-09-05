@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Anatolkin\ArpRestaurant\Backend\Editor;
 
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePermissionPreflight;
 use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityPermissionPreflight;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -159,6 +160,31 @@ final class BackendAccessGuard
                 MenuGraphAssembler::TABLE_PRICEOPTION,
                 'hidden'
             ),
+        );
+    }
+
+    /**
+     * Conservative PriceOption-create review preflight (new row under an existing Placement).
+     * Does not write. Does not require Menu/Category/Item/Placement tables_modify
+     * or PriceOption.hidden.
+     *
+     * @param array<string, mixed> $pageRow page row already readable via readPage()
+     * @return string empty when OK; otherwise a blocker code
+     */
+    public function priceOptionCreatePermissionBlocker(
+        array $pageRow,
+        BackendUserAuthentication $backendUser,
+    ): string {
+        $isAdmin = $backendUser->isAdmin();
+
+        return (new PriceOptionCreatePermissionPreflight())->blocker(
+            (int)$backendUser->workspace,
+            $isAdmin,
+            $isAdmin || $backendUser->doesUserHaveAccess($pageRow, Permission::CONTENT_EDIT),
+            $backendUser->check('tables_modify', MenuGraphAssembler::TABLE_PRICEOPTION),
+            $isAdmin || $this->canModifyField($backendUser, MenuGraphAssembler::TABLE_PRICEOPTION, 'label'),
+            $isAdmin || $this->canModifyField($backendUser, MenuGraphAssembler::TABLE_PRICEOPTION, 'amount'),
+            $isAdmin || $this->canModifyField($backendUser, MenuGraphAssembler::TABLE_PRICEOPTION, 'placement'),
         );
     }
 

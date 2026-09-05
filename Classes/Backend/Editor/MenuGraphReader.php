@@ -29,6 +29,7 @@ final class MenuGraphReader
      * @param callable(int): string $moduleUrlBuilder
      * @param callable(int, int): string|null $priceEditUrlBuilder optionUid, menuUid
      * @param callable(int, int): string|null $priceVisibilityUrlBuilder optionUid, menuUid
+     * @param callable(int, int): string|null $priceOptionCreateUrlBuilder placementUid, menuUid
      */
     public function load(
         int $pid,
@@ -40,6 +41,7 @@ final class MenuGraphReader
         RecordEditUrlBuilder $editUrlBuilder,
         ?callable $priceEditUrlBuilder = null,
         ?callable $priceVisibilityUrlBuilder = null,
+        ?callable $priceOptionCreateUrlBuilder = null,
     ): EditorScreen {
         $menus = $this->fetchTable(
             MenuGraphAssembler::TABLE_MENU,
@@ -107,6 +109,7 @@ final class MenuGraphReader
             $editUrlBuilder,
             $priceEditUrlBuilder,
             $priceVisibilityUrlBuilder,
+            $priceOptionCreateUrlBuilder,
         );
     }
 

@@ -17,5 +17,6 @@ final readonly class PlacementGroup
         public ?string $editUrl,
         public array $statusKeys,
         public array $priceOptions,
+        public ?string $addPriceOptionUrl = null,
     ) {}
 }

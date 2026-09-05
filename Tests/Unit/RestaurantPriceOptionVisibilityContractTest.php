@@ -208,10 +208,10 @@ assertTrue(
 
 $priceRowBlock = '';
 if (preg_match(
-    '/<f:for each=\"\{placement\.priceOptions\}\" as=\"option\">(.*?)<\/f:for>/s',
+    '/<f:for each=\"\{placement\.priceOptions\}\" as=\"option\"[^>]*>(.*?)<\/f:for>/s',
     $template,
     $rowMatch
-)) {
+) === 1) {
     $priceRowBlock = $rowMatch[1] ?? '';
 }
 assertTrue($priceRowBlock !== '', 'PriceOption row block extractable');

@@ -20,6 +20,11 @@ use Anatolkin\ArpRestaurant\Backend\Editor\Identity\BulkIdentityResolver;
 use Anatolkin\ArpRestaurant\Backend\Editor\Identity\RestaurantIdentityReader;
 use Anatolkin\ArpRestaurant\Backend\Editor\MenuGraphReader;
 use Anatolkin\ArpRestaurant\Backend\Editor\ModuleLinkButtonFactory;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreateBlocker;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePanelView;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePlanBuilder;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePreparationResult;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\RestaurantPriceOptionCreateReader;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\PriceOptionEditBlocker;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\PriceOptionEditPanelView;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\PriceOptionUpdatePlanBuilder;
@@ -68,6 +73,7 @@ final class RestaurantEditorController
     private const PRICE_EDIT_APPLY_ACTION = 'priceOptionEditApply';
     private const PRICE_VISIBILITY_REVIEW_ACTION = 'priceOptionVisibilityReview';
     private const PRICE_VISIBILITY_APPLY_ACTION = 'priceOptionVisibilityApply';
+    private const PRICE_CREATE_REVIEW_ACTION = 'priceOptionCreateReview';
     private const FINGERPRINT_PATTERN = '/^[0-9a-f]{64}$/';
 
     public function __construct(
@@ -92,6 +98,8 @@ final class RestaurantEditorController
         private readonly RestaurantPriceOptionVisibilityReader $priceOptionVisibilityReader,
         private readonly PriceOptionVisibilityPlanBuilder $priceOptionVisibilityPlanBuilder,
         private readonly RestaurantPriceOptionVisibilityWriter $priceOptionVisibilityWriter,
+        private readonly RestaurantPriceOptionCreateReader $priceOptionCreateReader,
+        private readonly PriceOptionCreatePlanBuilder $priceOptionCreatePlanBuilder,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -104,6 +112,7 @@ final class RestaurantEditorController
         $moduleTemplate->assign('bulk', null);
         $moduleTemplate->assign('priceEdit', null);
         $moduleTemplate->assign('priceVisibility', null);
+        $moduleTemplate->assign('priceCreate', null);
 
         $pid = $this->resolvePid($request);
         $backendUser = $this->getBackendUser();
@@ -134,6 +143,7 @@ final class RestaurantEditorController
         $applyRenderState = null;
         $priceEditReviewState = null;
         $visibilityReviewState = null;
+        $priceCreateReviewState = null;
         $body = $request->getParsedBody();
         if (is_array($body) && isset($body['bulkApply'])) {
             $applyHandled = $this->processBulkApplyWrite($request, $pid, $page, $backendUser, $languageService);
@@ -169,6 +179,8 @@ final class RestaurantEditorController
             $visibilityReviewState = $visibilityHandled;
         } elseif (is_array($body) && isset($body['priceOptionVisibilityReview'])) {
             $visibilityReviewState = $this->processPriceOptionVisibilityReview($request, $pid, $page, $backendUser);
+        } elseif (is_array($body) && isset($body['priceOptionCreateReview'])) {
+            $priceCreateReviewState = $this->processPriceOptionCreateReview($request, $pid, $page, $backendUser);
         }
 
         $editUrlBuilder = new BackendRecordEditUrlBuilder($this->uriBuilder, $request);
@@ -196,6 +208,12 @@ final class RestaurantEditorController
                 return (string)$uriBuilder->buildUriFromRoute(
                     'web_arp_restaurant_editor',
                     ['id' => $pid, 'menu' => $menuUid, 'priceOptionVisibility' => $optionUid]
+                );
+            },
+            static function (int $placementUid, int $menuUid) use ($uriBuilder, $pid): string {
+                return (string)$uriBuilder->buildUriFromRoute(
+                    'web_arp_restaurant_editor',
+                    ['id' => $pid, 'menu' => $menuUid, 'priceOptionCreate' => $placementUid]
                 );
             },
         );
@@ -228,6 +246,18 @@ final class RestaurantEditorController
                 $backendUser,
                 $editUrlBuilder,
                 $visibilityReviewState,
+            )
+        );
+        $moduleTemplate->assign(
+            'priceCreate',
+            $this->buildPriceOptionCreatePanel(
+                $request,
+                $pid,
+                $activeMenuUid,
+                $page,
+                $backendUser,
+                $editUrlBuilder,
+                $priceCreateReviewState,
             )
         );
 
@@ -1235,6 +1265,236 @@ final class RestaurantEditorController
             context: $context,
             review: null,
             submittedVisibility: $submittedVisibility,
+            requestError: '',
+            blockers: $load->outcome === 'blocked' ? $load->blockers : [],
+            cancelUrl: $cancelUrl,
+        );
+    }
+
+    /**
+     * Review-only creation of one PriceOption under an existing Placement.
+     * No DataHandler / write / PRG.
+     *
+     * @param array<string, mixed> $page
+     * @return array{
+     *   placementUid: int,
+     *   menuUid: int,
+     *   submittedLabel: string,
+     *   submittedPrice: string,
+     *   requestError: string,
+     *   blockers: list<PriceOptionCreateBlocker>,
+     *   review: ?PriceOptionCreatePreparationResult,
+     *   context: ?\Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreateContext
+     * }
+     */
+    private function processPriceOptionCreateReview(
+        ServerRequestInterface $request,
+        int $pid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+    ): array {
+        $empty = static function (
+            int $placementUid,
+            int $menuUid,
+            string $submittedLabel,
+            string $submittedPrice,
+            string $requestError = '',
+            array $blockers = [],
+            ?PriceOptionCreatePreparationResult $review = null,
+            $context = null,
+        ): array {
+            return [
+                'placementUid' => $placementUid,
+                'menuUid' => $menuUid,
+                'submittedLabel' => $submittedLabel,
+                'submittedPrice' => $submittedPrice,
+                'requestError' => $requestError,
+                'blockers' => $blockers,
+                'review' => $review,
+                'context' => $context,
+            ];
+        };
+
+        $body = $request->getParsedBody();
+        if (!is_array($body)) {
+            return $empty(0, 0, '', '', 'invalidCsrf');
+        }
+
+        $placementUid = (int)($body['placementUid'] ?? 0);
+        $menuUid = (int)($body['menu'] ?? 0);
+        $submittedLabel = (string)($body['label'] ?? '');
+        $submittedPrice = (string)($body['price'] ?? '');
+
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $submittedToken = (string)($body['priceCreateToken'] ?? '');
+        if (!$formProtection->validateToken($submittedToken, self::BULK_FORM, self::PRICE_CREATE_REVIEW_ACTION)) {
+            return $empty($placementUid, $menuUid, $submittedLabel, $submittedPrice, 'invalidCsrf');
+        }
+
+        $permissionBlocker = $this->accessGuard->priceOptionCreatePermissionBlocker($page, $backendUser);
+        if ($permissionBlocker !== '') {
+            return $empty(
+                $placementUid,
+                $menuUid,
+                $submittedLabel,
+                $submittedPrice,
+                '',
+                [new PriceOptionCreateBlocker($permissionBlocker)],
+            );
+        }
+
+        $editUrlBuilder = new BackendRecordEditUrlBuilder($this->uriBuilder, $request);
+        $load = $this->priceOptionCreateReader->load(
+            $pid,
+            $menuUid,
+            $placementUid,
+            $backendUser,
+            $editUrlBuilder,
+        );
+        if ($load->outcome !== 'loaded' || $load->context === null) {
+            return $empty(
+                $placementUid,
+                $menuUid,
+                $submittedLabel,
+                $submittedPrice,
+                '',
+                $load->blockers !== []
+                    ? $load->blockers
+                    : [new PriceOptionCreateBlocker('inaccessiblePlacement')],
+            );
+        }
+
+        $review = $this->priceOptionCreatePlanBuilder->prepare(
+            $load->context,
+            $submittedLabel,
+            $submittedPrice,
+        );
+
+        $preservedLabel = $review->outcome === 'createReady' && $review->plan !== null
+            ? $review->plan->label
+            : $submittedLabel;
+        $preservedPrice = $review->outcome === 'createReady' && $review->plan !== null
+            ? $review->plan->formattedAmount
+            : $submittedPrice;
+
+        return [
+            'placementUid' => $placementUid,
+            'menuUid' => $menuUid,
+            'submittedLabel' => $preservedLabel,
+            'submittedPrice' => $preservedPrice,
+            'requestError' => '',
+            'blockers' => $review->outcome === 'preparationBlocked' ? $review->blockers : [],
+            'review' => $review,
+            'context' => $load->context,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     * @param array{
+     *   placementUid: int,
+     *   menuUid: int,
+     *   submittedLabel: string,
+     *   submittedPrice: string,
+     *   requestError: string,
+     *   blockers: list<PriceOptionCreateBlocker>,
+     *   review: ?PriceOptionCreatePreparationResult,
+     *   context: ?\Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreateContext
+     * }|null $reviewState
+     */
+    private function buildPriceOptionCreatePanel(
+        ServerRequestInterface $request,
+        int $pid,
+        int $menuUid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+        BackendRecordEditUrlBuilder $editUrlBuilder,
+        ?array $reviewState = null,
+    ): PriceOptionCreatePanelView {
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $priceCreateToken = $formProtection->generateToken(self::BULK_FORM, self::PRICE_CREATE_REVIEW_ACTION);
+        $formAction = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $menuUid]
+        );
+        $cancelUrl = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $menuUid]
+        );
+
+        if ($reviewState !== null) {
+            return new PriceOptionCreatePanelView(
+                formAction: $formAction,
+                priceCreateToken: $priceCreateToken,
+                pid: $pid,
+                menuUid: $menuUid > 0 ? $menuUid : $reviewState['menuUid'],
+                placementUid: $reviewState['placementUid'],
+                context: $reviewState['context'],
+                review: $reviewState['review'],
+                submittedLabel: $reviewState['submittedLabel'],
+                submittedPrice: $reviewState['submittedPrice'],
+                requestError: $reviewState['requestError'],
+                blockers: $reviewState['blockers'],
+                cancelUrl: $cancelUrl,
+            );
+        }
+
+        $placementUid = (int)($request->getQueryParams()['priceOptionCreate'] ?? 0);
+        if ($placementUid <= 0 || $menuUid <= 0) {
+            return new PriceOptionCreatePanelView(
+                formAction: $formAction,
+                priceCreateToken: $priceCreateToken,
+                pid: $pid,
+                menuUid: $menuUid,
+                placementUid: 0,
+                context: null,
+                review: null,
+                submittedLabel: '',
+                submittedPrice: '',
+                requestError: '',
+                blockers: [],
+                cancelUrl: $cancelUrl,
+            );
+        }
+
+        $permissionBlocker = $this->accessGuard->priceOptionCreatePermissionBlocker($page, $backendUser);
+        if ($permissionBlocker !== '') {
+            return new PriceOptionCreatePanelView(
+                formAction: $formAction,
+                priceCreateToken: $priceCreateToken,
+                pid: $pid,
+                menuUid: $menuUid,
+                placementUid: $placementUid,
+                context: null,
+                review: null,
+                submittedLabel: '',
+                submittedPrice: '',
+                requestError: '',
+                blockers: [new PriceOptionCreateBlocker($permissionBlocker)],
+                cancelUrl: $cancelUrl,
+            );
+        }
+
+        $load = $this->priceOptionCreateReader->load(
+            $pid,
+            $menuUid,
+            $placementUid,
+            $backendUser,
+            $editUrlBuilder,
+        );
+
+        $context = $load->outcome === 'loaded' ? $load->context : null;
+
+        return new PriceOptionCreatePanelView(
+            formAction: $formAction,
+            priceCreateToken: $priceCreateToken,
+            pid: $pid,
+            menuUid: $menuUid,
+            placementUid: $placementUid,
+            context: $context,
+            review: null,
+            submittedLabel: '',
+            submittedPrice: '',
             requestError: '',
             blockers: $load->outcome === 'blocked' ? $load->blockers : [],
             cancelUrl: $cancelUrl,

@@ -107,7 +107,7 @@
                                                     <f:for each="{category.placements}" as="placement">
                                                         <f:if condition="{placement.priceOptions}">
                                                             <f:then>
-                                                                <f:for each="{placement.priceOptions}" as="option">
+                                                                <f:for each="{placement.priceOptions}" as="option" iteration="optionIteration">
                                                                     <tr data-arp-price="{option.amountMinor}">
                                                                         <td class="arp-editor-table__index" data-arp-row-index></td>
                                                                         <f:render partial="RestaurantEditor/CategoryCell" arguments="{lll: lll, category: category}"/>
@@ -119,6 +119,18 @@
                                                                                     partial="RestaurantEditor/IconActionLink"
                                                                                     arguments="{url: placement.itemEditUrl, icon: 'actions-open', label: openItemLabel}"
                                                                                 />
+                                                                            </f:if>
+                                                                            <f:if condition="{optionIteration.isFirst} && {placement.addPriceOptionUrl}">
+                                                                                <f:variable name="addPriceOptionLabel"><f:translate key="{lll}priceCreate.addPriceOption"/></f:variable>
+                                                                                <a
+                                                                                    class="arp-editor-icon-action"
+                                                                                    href="{placement.addPriceOptionUrl}"
+                                                                                    title="{addPriceOptionLabel}"
+                                                                                    aria-label="{addPriceOptionLabel}"
+                                                                                    data-arp-add-price-option="1"
+                                                                                >
+                                                                                    <core:icon identifier="actions-plus" size="small"/>
+                                                                                </a>
                                                                             </f:if>
                                                                         </td>
                                                                         <td data-arp-col="variant">{option.displayLabel}</td>
@@ -157,6 +169,18 @@
                                                                                 partial="RestaurantEditor/IconActionLink"
                                                                                 arguments="{url: placement.itemEditUrl, icon: 'actions-open', label: openItemLabelEmpty}"
                                                                             />
+                                                                        </f:if>
+                                                                        <f:if condition="{placement.addPriceOptionUrl}">
+                                                                            <f:variable name="addPriceOptionLabelEmpty"><f:translate key="{lll}priceCreate.addPriceOption"/></f:variable>
+                                                                            <a
+                                                                                class="arp-editor-icon-action"
+                                                                                href="{placement.addPriceOptionUrl}"
+                                                                                title="{addPriceOptionLabelEmpty}"
+                                                                                aria-label="{addPriceOptionLabelEmpty}"
+                                                                                data-arp-add-price-option="1"
+                                                                            >
+                                                                                <core:icon identifier="actions-plus" size="small"/>
+                                                                            </a>
                                                                         </f:if>
                                                                     </td>
                                                                     <td data-arp-col="variant">—</td>
@@ -599,6 +623,134 @@
                                             </p>
                                         </div>
                                     </f:if>
+                                </f:if>
+                            </section>
+                        </f:if>
+
+                        <f:if condition="{priceCreate} && {priceCreate.hasPanel}">
+                            <section class="arp-editor-price-edit arp-editor-price-create" data-arp-price-create="1" id="arp-restaurant-price-create">
+                                <h2 class="arp-editor-price-edit__heading"><f:translate key="{lll}priceCreate.heading"/></h2>
+
+                                <f:if condition="{priceCreate.requestError}">
+                                    <p class="typo3-message message-error">
+                                        <f:switch expression="{priceCreate.requestError}">
+                                            <f:case value="invalidCsrf"><f:translate key="{lll}priceCreate.error.invalidCsrf"/></f:case>
+                                            <f:defaultCase><f:translate key="{lll}priceCreate.error.invalidCsrf"/></f:defaultCase>
+                                        </f:switch>
+                                    </p>
+                                </f:if>
+
+                                <f:if condition="{priceCreate.blockers}">
+                                    <f:for each="{priceCreate.blockers}" as="priceCreateBlocker">
+                                        <p class="typo3-message message-error">
+                                            <f:switch expression="{priceCreateBlocker.code}">
+                                                <f:case value="invalidPrice"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
+                                                <f:case value="missingPrice"><f:translate key="{lll}priceCreate.error.missingPrice"/></f:case>
+                                                <f:case value="negativePrice"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
+                                                <f:case value="tooManyDecimals"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
+                                                <f:case value="labelTooLong"><f:translate key="{lll}priceCreate.error.labelTooLong"/></f:case>
+                                                <f:case value="variantRequired"><f:translate key="{lll}priceCreate.error.variantRequired"/></f:case>
+                                                <f:case value="duplicateVariant"><f:translate key="{lll}priceCreate.error.duplicateVariant"/></f:case>
+                                                <f:case value="simplePriceMustBecomeVariantFirst"><f:translate key="{lll}priceCreate.error.simplePriceMustBecomeVariantFirst"/></f:case>
+                                                <f:case value="existingVariantSetInvalid"><f:translate key="{lll}priceCreate.error.existingVariantSetInvalid"/></f:case>
+                                                <f:case value="sortingOverflow"><f:translate key="{lll}priceCreate.error.sortingOverflow"/></f:case>
+                                                <f:case value="inaccessiblePlacement"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="wrongMenu"><f:translate key="{lll}priceCreate.error.wrongMenu"/></f:case>
+                                                <f:case value="wrongPid"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="translatedPlacement"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="translatedMenu"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="translatedCategory"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="translatedItem"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="brokenCategory"><f:translate key="{lll}priceCreate.error.brokenCategory"/></f:case>
+                                                <f:case value="missingItem"><f:translate key="{lll}priceCreate.error.missingItem"/></f:case>
+                                                <f:case value="missingPublicUuid"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                <f:case value="fieldModifyDenied"><f:translate key="{lll}priceCreate.error.fieldModifyDenied"/></f:case>
+                                                <f:case value="tablesModifyDenied"><f:translate key="{lll}priceCreate.error.tablesModifyDenied"/></f:case>
+                                                <f:case value="nonLiveWorkspace"><f:translate key="{lll}priceCreate.error.nonLiveWorkspace"/></f:case>
+                                                <f:case value="pageContentEditDenied"><f:translate key="{lll}priceCreate.error.pageContentEditDenied"/></f:case>
+                                                <f:defaultCase><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:defaultCase>
+                                            </f:switch>
+                                        </p>
+                                    </f:for>
+                                </f:if>
+
+                                <f:if condition="{priceCreate.context}">
+                                    <form
+                                        id="arp-price-create-form"
+                                        action="{priceCreate.formAction}"
+                                        method="post"
+                                        class="arp-editor-price-edit__form"
+                                        data-arp-price-create-form="1"
+                                    >
+                                        <input type="hidden" name="id" value="{priceCreate.pid}"/>
+                                        <input type="hidden" name="menu" value="{priceCreate.menuUid}"/>
+                                        <input type="hidden" name="placementUid" value="{priceCreate.context.placementUid}"/>
+                                        <input type="hidden" name="priceCreateToken" value="{priceCreate.priceCreateToken}"/>
+
+                                        <p class="arp-editor-price-edit__context">
+                                            <span><f:translate key="{lll}priceCreate.context.menu"/> {priceCreate.context.menuTitle}</span>
+                                            <span><f:translate key="{lll}priceCreate.context.category"/> {priceCreate.context.categoryTitle}</span>
+                                            <span><f:translate key="{lll}priceCreate.context.item"/> {priceCreate.context.itemTitle}</span>
+                                            <span><f:translate key="{lll}priceCreate.context.existingPrices"/> {priceCreate.context.existingPriceCount}</span>
+                                        </p>
+
+                                        <div class="arp-editor-price-edit__fields">
+                                            <label for="arp-price-create-label"><f:translate key="{lll}priceCreate.field.variant"/></label>
+                                            <input
+                                                id="arp-price-create-label"
+                                                type="text"
+                                                name="label"
+                                                value="{priceCreate.submittedLabel}"
+                                                maxlength="255"
+                                                autocomplete="off"
+                                            />
+                                            <label for="arp-price-create-price"><f:translate key="{lll}priceCreate.field.price"/></label>
+                                            <input
+                                                id="arp-price-create-price"
+                                                type="text"
+                                                name="price"
+                                                value="{priceCreate.submittedPrice}"
+                                                inputmode="decimal"
+                                                autocomplete="off"
+                                            />
+                                        </div>
+
+                                        <p class="arp-editor-draft-actions">
+                                            <button type="submit" name="priceOptionCreateReview" value="1" class="btn btn-default">
+                                                <f:translate key="{lll}priceCreate.review"/>
+                                            </button>
+                                            <a class="btn btn-default" href="{priceCreate.cancelUrl}"><f:translate key="{lll}priceCreate.cancel"/></a>
+                                            <f:if condition="{priceCreate.context.recordEditUrl}">
+                                                <a class="arp-editor-inline-link" href="{priceCreate.context.recordEditUrl}"><f:translate key="{lll}priceCreate.openPlacementRecord"/></a>
+                                            </f:if>
+                                        </p>
+                                    </form>
+                                </f:if>
+
+                                <f:if condition="{priceCreate.review} && {priceCreate.review.outcome} == 'createReady' && {priceCreate.review.plan}">
+                                    <div class="arp-editor-price-update-card" data-arp-price-create-plan="1">
+                                        <p class="arp-editor-price-update-card__heading"><f:translate key="{lll}priceCreate.reviewReady"/></p>
+                                        <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceCreate.nothingWritten"/></p>
+                                        <p class="arp-editor-price-update-card__context">
+                                            <f:translate key="{lll}priceCreate.context.menu"/> {priceCreate.review.plan.menuTitle}<br/>
+                                            <f:translate key="{lll}priceCreate.context.category"/> {priceCreate.review.plan.categoryTitle}<br/>
+                                            <f:translate key="{lll}priceCreate.context.item"/> {priceCreate.review.plan.itemTitle}
+                                        </p>
+                                        <div class="arp-editor-price-update-card__diff">
+                                            <p>
+                                                <f:translate key="{lll}priceCreate.newOption"/><br/>
+                                                <f:translate key="{lll}priceCreate.diff.variant"/>
+                                                <f:if condition="{priceCreate.review.plan.label}">
+                                                    <f:then> {priceCreate.review.plan.label}</f:then>
+                                                    <f:else> <f:translate key="{lll}priceCreate.noVariant"/></f:else>
+                                                </f:if>
+                                                <br/>
+                                                <f:translate key="{lll}priceCreate.diff.price"/> {priceCreate.review.plan.formattedAmount}
+                                            </p>
+                                        </div>
+                                        <p class="arp-editor-price-update-card__footer" data-arp-price-create-scope="1"><f:translate key="{lll}priceCreate.scope"/></p>
+                                        <p class="arp-editor-note"><f:translate key="{lll}priceCreate.savingNotAvailable"/></p>
+                                    </div>
                                 </f:if>
                             </section>
                         </f:if>

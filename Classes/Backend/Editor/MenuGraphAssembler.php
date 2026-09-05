@@ -37,6 +37,7 @@ final class MenuGraphAssembler
      * @param callable(int): string|null $moduleUrlBuilder
      * @param callable(int, int): string|null $priceEditUrlBuilder optionUid, menuUid
      * @param callable(int, int): string|null $priceVisibilityUrlBuilder optionUid, menuUid
+     * @param callable(int, int): string|null $priceOptionCreateUrlBuilder placementUid, menuUid
      */
     public function assemble(
         int $pid,
@@ -52,6 +53,7 @@ final class MenuGraphAssembler
         ?RecordEditUrlBuilder $editUrlBuilder = null,
         ?callable $priceEditUrlBuilder = null,
         ?callable $priceVisibilityUrlBuilder = null,
+        ?callable $priceOptionCreateUrlBuilder = null,
     ): EditorScreen {
         $menus = $this->sortRows($menus, 'title', true);
         $categories = $this->sortRows($categories, 'sorting');
@@ -182,6 +184,9 @@ final class MenuGraphAssembler
                         editUrl: $this->editUrl($editUrlBuilder, self::TABLE_PLACEMENT, $placementUid),
                         statusKeys: $placementStatusKeys,
                         priceOptions: $optionRows,
+                        addPriceOptionUrl: $priceOptionCreateUrlBuilder !== null
+                            ? $priceOptionCreateUrlBuilder($placementUid, $menuUid)
+                            : null,
                     );
                 }
 

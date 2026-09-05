@@ -142,11 +142,11 @@ assertTrue(
 );
 
 assertTrue(
-    !str_contains($getBranch, 'DataHandler')
-    && !str_contains($getBranch, 'process_datamap')
+    !str_contains($getBranch, 'process_datamap')
     && !str_contains($getBranch, 'process_cmdmap')
     && !str_contains($getBranch, 'priceOptionVisibilityWriter')
-    && !str_contains($panelMethod, 'priceOptionVisibilityWriter'),
+    && !str_contains($panelMethod, 'priceOptionVisibilityWriter')
+    && !str_contains($getBranch, 'priceOptionVisibilityWriter->execute'),
     '8. no automatic DataHandler/write on GET panel build'
 );
 

@@ -4,7 +4,7 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only). EDITOR-2C3 adds **existing PriceOption visibility review**. EDITOR-2C4 adds the **first confirmed PriceOption.hidden update**.
+Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only). EDITOR-2C3 adds **existing PriceOption visibility review**. EDITOR-2C4 adds the **first confirmed PriceOption.hidden update**. EDITOR-2D1 adds **review-only creation of one new PriceOption under an existing Placement**.
 
 ## EDITOR-2C1 — Existing PriceOption update review
 
@@ -129,6 +129,40 @@ Stale confirmation (`confirmationStale`): fingerprint mismatch → **no DataHand
 Concurrent exact match (`noChanges`): **no DataHandler**; informational “Price option already has this visibility. Nothing was written.”
 
 Semantics: one DataHandler datamap update is attempted; verification follows; no retry; no rollback guarantee; PRG only when `dataHandlerAttempted === true`.
+
+## EDITOR-2D1 — Add PriceOption to an existing Placement (REVIEW ONLY)
+
+EDITOR-2D1 is **review-only**. It prepares creation of **exactly one** new PriceOption under an already-existing default-language Placement. It does **not** persist. There is no DataHandler, no QueryBuilder mutation, no Writer, and no Save control.
+
+Future **EDITOR-2D2** will own the create writer (fresh re-read, fingerprint, DataHandler create, read-back verifier, PRG).
+
+It MUST NOT plan a new Menu, Category, Item, or Placement. The selected Placement is the structural authority. A Placement uid alone is not authority.
+
+| Implemented | Deferred to EDITOR-2D2 |
+|---|---|
+| Saved-table **Add price option** GET `priceOptionCreate=<placementUid>` | Confirmed DataHandler create |
+| Server graph membership: pid → Menu → Category → Placement → Item | Create fingerprint / stale confirmation |
+| Review POST `priceOptionCreateReview` + CSRF `priceCreateToken` | Save / Apply write control |
+| Pure `PriceOptionCreatePlan` (normalized label, amountMinor, plannedSorting) | `public_uuid` / uid / crdate / tstamp minting |
+| Commercial-shape guards (simple vs named vs malformed) | Sorting write; hidden field on create |
+
+Commercial-shape rule:
+
+- A **simple** Placement has exactly one blank-label PriceOption.
+- A **multi-option** Placement has named PriceOptions.
+- Do **not** create mixed blank + named PriceOptions.
+- Adding a second option to a simple Placement is blocked until the existing blank option is named (via EDITOR-2C2).
+
+Contract:
+
+- Graph membership is server-authoritative: selected pid → Menu → Category → Placement → Item. Posted `public_uuid` / `tstamp` / parent relations are not authority.
+- Review re-reads the Placement and its default-language PriceOptions. Hidden and scheduled rows remain readable.
+- Permission preflight: live workspace, page CONTENT_EDIT, `tables_modify` PriceOption, non-exclude `label` / `amount` / `placement`. Menu / Category / Item / Placement `tables_modify` is not required. `PriceOption.hidden` is not required; the future row is visible by default.
+- Variant uses `RestaurantTitleNormalizer::cleanDisplayTitle()` / `matchKey()`. Max 255 Unicode code points. Duplicate matching is case/whitespace insensitive; punctuation is kept (`Small` ≠ `Small!`).
+- Price uses `DecimalMinorUnitParser` (integer minor units) and `MinorUnitMoneyFormatter` for READY display.
+- Planned sorting: step 256; `max(existing sorting) + 256`, or 256 when none exist. Overflow is `sortingOverflow`. 2D2 must recompute sorting fresh before write.
+- Outcomes: `createReady` \| `preparationBlocked`. There is no `noChanges` outcome for a creation request.
+- READY copy: nothing has been written yet; one PriceOption under the existing Placement; saving is not available in this step.
 
 ## EDITOR-2B1 implementation status
 
