@@ -497,12 +497,24 @@
                                         <div class="arp-editor-price-edit__fields">
                                             <label for="arp-price-visibility"><f:translate key="{lll}priceVisibility.field.visibility"/></label>
                                             <select id="arp-price-visibility" name="visibility">
-                                                <option value="visible"{f:if(condition: priceVisibility.submittedVisibility == 'visible', then: ' selected="selected"')}>
-                                                    <f:translate key="{lll}priceVisibility.option.visible"/>
-                                                </option>
-                                                <option value="hidden"{f:if(condition: priceVisibility.submittedVisibility == 'hidden', then: ' selected="selected"')}>
-                                                    <f:translate key="{lll}priceVisibility.option.hidden"/>
-                                                </option>
+                                                <f:switch expression="{priceVisibility.submittedVisibility}">
+                                                    <f:case value="visible">
+                                                        <option value="visible" selected="selected">
+                                                            <f:translate key="{lll}priceVisibility.option.visible"/>
+                                                        </option>
+                                                        <option value="hidden">
+                                                            <f:translate key="{lll}priceVisibility.option.hidden"/>
+                                                        </option>
+                                                    </f:case>
+                                                    <f:case value="hidden">
+                                                        <option value="visible">
+                                                            <f:translate key="{lll}priceVisibility.option.visible"/>
+                                                        </option>
+                                                        <option value="hidden" selected="selected">
+                                                            <f:translate key="{lll}priceVisibility.option.hidden"/>
+                                                        </option>
+                                                    </f:case>
+                                                </f:switch>
                                             </select>
                                         </div>
 
