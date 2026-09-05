@@ -96,12 +96,16 @@ assertTrue(
     && !str_contains($visibilityBlob, 'priceOptionEditApply'),
     '3b. visibility panel/package does not reuse price-edit tokens'
 );
+$savedTableRows = '';
+if (preg_match('/arp-editor-table--saved[\s\S]*?<\/table>/', $template, $savedMatch)) {
+    $savedTableRows = $savedMatch[0];
+}
+assertTrue($savedTableRows !== '', 'saved table extractable for visibility save isolation');
 assertTrue(
-    !str_contains($visibilityPanel, 'Save visibility')
-    && !str_contains($visibilityPanel, 'priceVisibility.save')
-    && !str_contains($visibilityPanel, 'name="priceOptionVisibilityApply"')
+    !str_contains($savedTableRows, 'priceVisibility.save')
+    && !str_contains($savedTableRows, 'name="priceOptionVisibilityApply"')
     && !str_contains($visibilityPanel, 'name="priceOptionEditApply"'),
-    '4. no Save visibility button'
+    '4. no Save visibility control on saved-table rows'
 );
 assertTrue(
     !str_contains($visibilityPanel, 'process_datamap')
@@ -143,10 +147,14 @@ assertTrue(
     '9. scope copy says PriceOption only'
 );
 assertTrue(
-    !str_contains($reviewCard, 'name="priceOptionVisibilityApply"')
-    && !str_contains($reviewCard, 'priceVisibility.save')
-    && str_contains($reviewCard, 'priceVisibility.savingNotAvailable'),
-    '10. READY card has no write control'
+    str_contains($reviewCard, 'form="arp-price-visibility-form"')
+    && str_contains($reviewCard, 'name="priceOptionVisibilityApply"')
+    && str_contains($reviewCard, 'priceVisibility.save')
+    && str_contains($reviewCard, 'priceVisibility.nothingWritten')
+    && !str_contains($reviewCard, 'name="visibility"')
+    && !str_contains($reviewCard, 'name="confirmedFingerprint"')
+    && !str_contains($reviewCard, '<form'),
+    '10. READY Save targets authoritative form; no shadow visibility/fingerprint in card'
 );
 
 $reviewMethod = '';

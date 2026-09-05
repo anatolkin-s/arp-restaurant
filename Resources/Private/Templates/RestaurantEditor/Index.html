@@ -402,6 +402,38 @@
                                     </p>
                                 </f:if>
 
+                                <f:if condition="{priceVisibility.confirmationWarning} == 'confirmationStale'">
+                                    <div
+                                        class="arp-editor-stale-warning typo3-message message-warning"
+                                        role="alert"
+                                        aria-live="polite"
+                                        data-arp-server-status="1"
+                                        data-arp-visibility-confirmation-stale="1"
+                                    >
+                                        <span class="arp-editor-stale-warning__icon" aria-hidden="true">
+                                            <core:icon identifier="status-dialog-warning" size="small"/>
+                                        </span>
+                                        <div class="arp-editor-stale-warning__content">
+                                            <p class="arp-editor-stale-warning__heading">
+                                                <f:translate key="{lll}priceVisibility.confirmationStale.heading"/>
+                                            </p>
+                                            <p class="arp-editor-stale-warning__body">
+                                                <f:translate key="{lll}priceVisibility.confirmationStale.body"/>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </f:if>
+                                <f:if condition="{priceVisibility.confirmationWarning} == 'writePreparationBlocked'">
+                                    <p class="typo3-message message-warning" data-arp-server-status="1" data-arp-visibility-write-preparation-blocked="1">
+                                        <f:translate key="{lll}priceVisibility.writePreparationBlocked"/>
+                                    </p>
+                                </f:if>
+                                <f:if condition="{priceVisibility.confirmationWarning} == 'alreadyMatches'">
+                                    <p class="typo3-message message-notice" data-arp-server-status="1" data-arp-visibility-already-matches="1">
+                                        <f:translate key="{lll}priceVisibility.alreadyMatches"/>
+                                    </p>
+                                </f:if>
+
                                 <f:if condition="{priceVisibility.blockers}">
                                     <f:for each="{priceVisibility.blockers}" as="priceVisibilityBlocker">
                                         <p class="typo3-message message-error">
@@ -435,6 +467,10 @@
                                         <input type="hidden" name="menu" value="{priceVisibility.menuUid}"/>
                                         <input type="hidden" name="priceOptionUid" value="{priceVisibility.context.uid}"/>
                                         <input type="hidden" name="priceVisibilityToken" value="{priceVisibility.priceVisibilityToken}"/>
+                                        <input type="hidden" name="priceVisibilityApplyToken" value="{priceVisibility.priceVisibilityApplyToken}"/>
+                                        <f:if condition="{priceVisibility.review.outcome} == 'visibilityUpdateReady' && {priceVisibility.review.plan} && {priceVisibility.review.plan.fingerprint}">
+                                            <input type="hidden" name="confirmedFingerprint" value="{priceVisibility.review.plan.fingerprint}"/>
+                                        </f:if>
 
                                         <p class="arp-editor-price-edit__context">
                                             <span><f:translate key="{lll}priceVisibility.context.menu"/> {priceVisibility.context.menuTitle}</span>
@@ -483,12 +519,12 @@
                                 </f:if>
 
                                 <f:if condition="{priceVisibility.review}">
-                                    <f:if condition="{priceVisibility.review.outcome} == 'noChanges'">
+                                    <f:if condition="{priceVisibility.review.outcome} == 'noChanges' && {priceVisibility.confirmationWarning} != 'alreadyMatches'">
                                         <p class="typo3-message message-notice" data-arp-price-visibility-no-changes="1">
                                             <f:translate key="{lll}priceVisibility.noChanges"/>
                                         </p>
                                     </f:if>
-                                    <f:if condition="{priceVisibility.review.outcome} == 'visibilityUpdateReady' && {priceVisibility.review.plan}">
+                                    <f:if condition="{priceVisibility.review.outcome} == 'visibilityUpdateReady' && {priceVisibility.review.plan} && {priceVisibility.review.plan.fingerprint}">
                                         <div class="arp-editor-price-update-card" data-arp-visibility-update-plan="1">
                                             <p class="arp-editor-price-update-card__heading"><f:translate key="{lll}priceVisibility.reviewReady"/></p>
                                             <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceVisibility.nothingWritten"/></p>
@@ -521,7 +557,34 @@
                                                 </p>
                                             </div>
                                             <p class="arp-editor-price-update-card__footer" data-arp-visibility-scope="1"><f:translate key="{lll}priceVisibility.scope"/></p>
-                                            <p class="arp-editor-price-update-card__note"><f:translate key="{lll}priceVisibility.savingNotAvailable"/></p>
+                                            <p class="arp-editor-draft-actions">
+                                                <f:if condition="{priceVisibility.confirmationWarning} == 'confirmationStale'">
+                                                    <f:then>
+                                                        <button
+                                                            type="submit"
+                                                            form="arp-price-visibility-form"
+                                                            name="priceOptionVisibilityApply"
+                                                            value="1"
+                                                            class="btn btn-primary"
+                                                            data-arp-visibility-save-refreshed="1"
+                                                        >
+                                                            <f:translate key="{lll}priceVisibility.saveRefreshed"/>
+                                                        </button>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <button
+                                                            type="submit"
+                                                            form="arp-price-visibility-form"
+                                                            name="priceOptionVisibilityApply"
+                                                            value="1"
+                                                            class="btn btn-primary"
+                                                            data-arp-visibility-save="1"
+                                                        >
+                                                            <f:translate key="{lll}priceVisibility.save"/>
+                                                        </button>
+                                                    </f:else>
+                                                </f:if>
+                                            </p>
                                         </div>
                                     </f:if>
                                 </f:if>

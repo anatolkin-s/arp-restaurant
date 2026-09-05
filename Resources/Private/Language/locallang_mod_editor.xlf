@@ -609,6 +609,42 @@
       <trans-unit id="priceVisibility.error.malformedVisibility">
         <source>Choose Visible or Hidden.</source>
       </trans-unit>
+      <trans-unit id="priceVisibility.save">
+        <source>Save visibility</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.saveRefreshed">
+        <source>Save refreshed visibility</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.alreadyMatches">
+        <source>Price option already has this visibility. Nothing was written.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.confirmationStale.heading">
+        <source>PRICE OPTION CHANGED — NOTHING WAS WRITTEN</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.confirmationStale.body">
+        <source>The PriceOption changed since review. Review the refreshed visibility change before saving again.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.writePreparationBlocked">
+        <source>Saving could not start. Nothing was written. Review the visibility and try again.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.flash.updatedTitle">
+        <source>Price option visibility updated</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.flash.updated">
+        <source>The visibility was saved.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.flash.partialTitle">
+        <source>Visibility update may be incomplete</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.flash.partial">
+        <source>Review the current visibility before trying again.</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.flash.failedTitle">
+        <source>Visibility update failed</source>
+      </trans-unit>
+      <trans-unit id="priceVisibility.flash.failed">
+        <source>Nothing could be confirmed as saved. Review the current visibility before trying again.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

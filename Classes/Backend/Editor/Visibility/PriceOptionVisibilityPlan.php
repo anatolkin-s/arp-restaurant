@@ -27,5 +27,6 @@ final readonly class PriceOptionVisibilityPlan
         public string $itemTitle,
         public string $label,
         public string $formattedAmount,
+        public string $fingerprint,
     ) {}
 }

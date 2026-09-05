@@ -16,6 +16,7 @@ final readonly class PriceOptionVisibilityPanelView
     public function __construct(
         public string $formAction,
         public string $priceVisibilityToken,
+        public string $priceVisibilityApplyToken,
         public int $pid,
         public int $menuUid,
         public int $priceOptionUid,
@@ -25,11 +26,13 @@ final readonly class PriceOptionVisibilityPanelView
         public string $requestError,
         public array $blockers,
         public string $cancelUrl,
+        public string $confirmationWarning = '',
     ) {
         $this->hasPanel = $this->priceOptionUid > 0
             || $this->context !== null
             || $this->review !== null
             || $this->requestError !== ''
-            || $this->blockers !== [];
+            || $this->blockers !== []
+            || $this->confirmationWarning !== '';
     }
 }

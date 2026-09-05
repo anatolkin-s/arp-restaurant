@@ -55,6 +55,18 @@ final class PriceOptionVisibilityPlanBuilder
                 itemTitle: $context->itemTitle,
                 label: $context->label,
                 formattedAmount: $context->formattedAmount,
+                fingerprint: PriceOptionVisibilityFingerprint::compute(
+                    $context->uid,
+                    $context->pid,
+                    $context->publicUuid,
+                    $context->tstamp,
+                    $context->placementUid,
+                    $context->menuUid,
+                    $context->categoryUid,
+                    $context->itemUid,
+                    $currentHidden,
+                    $requestedHidden,
+                ),
             ),
             blockers: [],
         );

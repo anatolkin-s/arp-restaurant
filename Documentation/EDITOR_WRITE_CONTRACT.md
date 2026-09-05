@@ -4,7 +4,7 @@ Design-only contract for the first safe write-capable compact-editor import.
 
 This document is canonical for EDITOR-2B0. It does **not** implement writes.
 
-Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only). EDITOR-2C3 adds **existing PriceOption visibility review** (`PriceOption.hidden` only; no persistence).
+Status: EDITOR-2B3 **read-only ApplyPlan** is implemented. EDITOR-2B4 implements the **first write-capable Apply** in-repo (DataHandler `process_datamap`), pending TYPO3 13/14 runtime acceptance. EDITOR-2C1 adds **existing PriceOption edit review**. EDITOR-2C2 adds the **first confirmed PriceOption update** (label + amount only). EDITOR-2C3 adds **existing PriceOption visibility review**. EDITOR-2C4 adds the **first confirmed PriceOption.hidden update**.
 
 ## EDITOR-2C1 — Existing PriceOption update review
 
@@ -71,14 +71,14 @@ It owns **only** `tx_arprestaurant_domain_model_priceoption.hidden`. It does **n
 
 Changing `PriceOption.hidden` does **not** override effective frontend visibility when a parent entity is hidden or otherwise unavailable. Copy is scoped as “Price option visibility” / “this PriceOption only.”
 
-| Implemented | Not implemented |
+| Implemented | Not implemented (at 2C3) |
 |---|---|
-| Saved-table GET `priceOptionVisibility=<uid>` | Confirmed DataHandler update of `hidden` |
+| Saved-table GET `priceOptionVisibility=<uid>` | Confirmed DataHandler update of `hidden` (EDITOR-2C4) |
 | Status icon entry (Core eye / hide) when PriceOption.hidden is unambiguous | Clickable scheduled / parent-hidden / item-hidden icons |
 | POST `priceOptionVisibilityReview` + CSRF `priceVisibilityToken` | Reuse of `priceOptionEditReview` / `priceEditToken` / Apply tokens |
-| Pure `PriceOptionVisibilityPlan` current→requested hidden | Fingerprint / Save visibility |
-| `noChanges` when requested state equals current `hidden` | Category / Item / Placement / Menu writes |
-| Permission preflight: live workspace, CONTENT_EDIT, `tables_modify` PriceOption, `hidden` not excluded | Schema/TCA |
+| Pure `PriceOptionVisibilityPlan` current→requested hidden | Category / Item / Placement / Menu writes |
+| `noChanges` when requested state equals current `hidden` | Schema/TCA |
+| Permission preflight: live workspace, CONTENT_EDIT, `tables_modify` PriceOption, `hidden` not excluded | |
 
 Contract:
 
@@ -88,6 +88,47 @@ Contract:
 - Outcomes: `visibilityUpdateReady` \| `noChanges` \| `preparationBlocked`.
 - Status search/sort still use visually-hidden localized Visible/Hidden/Scheduled text. Clickable icons do not replace that innerText.
 - EDITOR-2C2 label/amount write semantics are unchanged.
+
+## EDITOR-2C4 — Confirmed existing PriceOption visibility update
+
+EDITOR-2C4 is the **only PriceOption visibility writer**. It remains a separate boundary from Bulk Apply and from EDITOR-2C2 label/amount update.
+
+Write scope is **exactly** `tx_arprestaurant_domain_model_priceoption.hidden` (`0` or `1`) on an existing numeric uid.
+
+Effective frontend availability can still depend on Menu / Category / Placement / Item state and scheduling. This workflow does **not** override parent visibility or schedules.
+
+| Implemented | Not implemented |
+|---|---|
+| Explicit POST `priceOptionVisibilityApply` + CSRF `priceVisibilityApplyToken` | Category / Item / Placement / Menu writes |
+| Fresh permission + graph re-read before write | `PriceOption.label` / `amount` in this workflow |
+| Rebuild `PriceOptionVisibilityPlan` + SHA-256 fingerprint `hash_equals` | Create / delete PriceOption |
+| `RestaurantPriceOptionVisibilityWriter` sole visibility DataHandler boundary | `process_cmdmap`, QueryBuilder/SQL UPDATE |
+| Datamap field **only** `hidden` on existing uid | Transaction / rollback / retry |
+| Read-back verification → outcomes `updated` \| `partialFailure` \| `failed` | Schema/TCA / starttime / endtime |
+| HTTP 303 PRG after attempted write; stale / noChanges / prep blocked stay rendered | Custom JS |
+
+Pipeline:
+
+```
+Review (visibilityUpdateReady + fingerprint)
+  → explicit Save visibility
+  → CSRF priceVisibilityApplyToken
+  → fresh permission preflight
+  → fresh RestaurantPriceOptionVisibilityReader::load
+  → rebuild PriceOptionVisibilityPlan from current DB + submitted visible|hidden enum
+  → compare confirmedFingerprint (hash_equals)
+  → DataHandler start + process_datamap (hidden only)
+  → SELECT read-back verification
+  → flash + POST/Redirect/GET (id + menu + priceOptionVisibility; no fragment)
+```
+
+Fingerprint payload (`price-option-visibility-v1`): uid, pid, public_uuid, tstamp, placementUid, menuUid, categoryUid, itemUid, before/after hidden. Display titles, variant label, and formatted amounts are not authority.
+
+Stale confirmation (`confirmationStale`): fingerprint mismatch → **no DataHandler**, refreshed READY plan, prominent warning, **Save refreshed visibility** with the new server fingerprint.
+
+Concurrent exact match (`noChanges`): **no DataHandler**; informational “Price option already has this visibility. Nothing was written.”
+
+Semantics: one DataHandler datamap update is attempted; verification follows; no retry; no rollback guarantee; PRG only when `dataHandlerAttempted === true`.
 
 ## EDITOR-2B1 implementation status
 

@@ -8,6 +8,7 @@ use Anatolkin\ArpRestaurant\Backend\Editor\Visibility\PriceOptionVisibilityPlanB
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Visibility/PriceOptionVisibilityBlocker.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Visibility/PriceOptionVisibilityContext.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Visibility/PriceOptionVisibilityPlan.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Visibility/PriceOptionVisibilityFingerprint.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Visibility/PriceOptionVisibilityPreparationResult.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Visibility/PriceOptionVisibilityPlanBuilder.php';
 
@@ -62,7 +63,9 @@ assertTrue(
     && $toHidden->plan?->placementUid === 30
     && $toHidden->plan?->menuUid === 5
     && $toHidden->plan?->categoryUid === 20
-    && $toHidden->plan?->itemUid === 50,
+    && $toHidden->plan?->itemUid === 50
+    && is_string($toHidden->plan?->fingerprint)
+    && preg_match('/^[0-9a-f]{64}$/', $toHidden->plan->fingerprint) === 1,
     '1b. plan snapshot fields for visible → hidden'
 );
 
