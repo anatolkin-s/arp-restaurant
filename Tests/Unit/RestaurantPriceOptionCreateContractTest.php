@@ -203,6 +203,61 @@ assertTrue(
     'permission preflight wired'
 );
 
+$blockerCard = '';
+if (preg_match('/<f:if condition="\{priceCreate.blockers\}">([\s\S]*?)<\/f:if>/', $createPanel, $blockerMatch) === 1) {
+    $blockerCard = $blockerMatch[1];
+}
+assertTrue(
+    str_contains($blockerCard, 'class="arp-editor-blocker"')
+    && str_contains($blockerCard, 'role="alert"')
+    && str_contains($blockerCard, 'aria-live="polite"')
+    && str_contains($blockerCard, 'identifier="status-dialog-warning"')
+    && str_contains($blockerCard, 'aria-hidden="true"')
+    && str_contains($blockerCard, 'priceCreate.blocker.heading')
+    && str_contains($xlf, 'id="priceCreate.blocker.heading"')
+    && str_contains($xlf, 'PRICE OPTION CANNOT BE ADDED'),
+    'L. conditional prominent blocker has accessible alert, Core icon and localized heading'
+);
+assertTrue(
+    str_contains($blockerCard, 'class="arp-editor-blocker__body"')
+    && !str_contains($blockerCard, 'typo3-message')
+    && !str_contains($blockerCard, 'arp-editor-stale-warning')
+    && str_contains($blockerCard, '<f:switch expression="{priceCreateBlocker.code}">')
+    && str_contains($blockerCard, 'value="duplicateVariant"><f:translate key="{lll}priceCreate.error.duplicateVariant"')
+    && str_contains($blockerCard, 'value="simplePriceMustBecomeVariantFirst"><f:translate key="{lll}priceCreate.error.simplePriceMustBecomeVariantFirst"')
+    && substr_count($blockerCard, '<f:case ') === 24,
+    'L. all blocker-specific cases remain in dedicated card, without legacy bare message styling'
+);
+assertTrue(
+    strpos($createPanel, 'priceCreate.heading') < strpos($createPanel, 'data-arp-price-create-blocker')
+    && strpos($createPanel, 'data-arp-price-create-blocker') < strpos($createPanel, 'priceCreate.context.menu')
+    && str_contains($createPanel, 'value="{priceCreate.submittedLabel}"')
+    && str_contains($createPanel, 'value="{priceCreate.submittedPrice}"')
+    && preg_match('/<button type="submit" name="priceOptionCreateReview" value="1" class="btn btn-default">/', $createPanel) === 1,
+    'L. blocker precedes context; submitted fields and enabled Review remain available'
+);
+assertTrue(
+    !str_contains($blockerCard, 'data-arp-price-create-plan')
+    && str_contains($createPanel, '<f:if condition="{priceCreate.review} && {priceCreate.review.outcome} == \'createReady\' && {priceCreate.review.plan}">')
+    && substr_count($createPanel, 'data-arp-price-create-blocker="1"') === 1
+    && !str_contains($createPanel, '<svg')
+    && !str_contains($createPanel, '<script'),
+    'L. blocker and READY retain separate state gates; no custom SVG or JS'
+);
+$css = file_get_contents($root . '/Resources/Public/Css/restaurant-editor.css') ?: '';
+$blockerCss = '';
+if (preg_match('/\.arp-editor-blocker \{([^}]+)\}/', $css, $cssMatch) === 1) {
+    $blockerCss = $cssMatch[1];
+}
+assertTrue(
+    str_contains($blockerCss, 'background: var(--typo3-state-warning-bg, #fbf6e5)')
+    && str_contains($blockerCss, 'border-left-width: 4px')
+    && str_contains($blockerCss, 'padding: 0.75rem 0.9rem')
+    && str_contains($blockerCss, 'margin: 0 0 1rem')
+    && preg_match('/\.arp-editor-blocker__heading \{[^}]*font-weight: 700;[^}]*text-transform: uppercase;/s', $css) === 1,
+    'L. dedicated warning card has tinted background, strong border, spacing and bold uppercase heading'
+);
+
 echo $failures === 0
     ? "\nAll RestaurantPriceOptionCreateContract tests passed.\n"
     : "\n{$failures} RestaurantPriceOptionCreateContract test(s) failed.\n";

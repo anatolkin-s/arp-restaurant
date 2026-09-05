@@ -651,6 +651,9 @@
       <trans-unit id="priceCreate.heading">
         <source>Add price option</source>
       </trans-unit>
+      <trans-unit id="priceCreate.blocker.heading">
+        <source>PRICE OPTION CANNOT BE ADDED</source>
+      </trans-unit>
       <trans-unit id="priceCreate.review">
         <source>Review addition</source>
       </trans-unit>

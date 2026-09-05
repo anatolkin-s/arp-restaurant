@@ -641,37 +641,45 @@
                                 </f:if>
 
                                 <f:if condition="{priceCreate.blockers}">
-                                    <f:for each="{priceCreate.blockers}" as="priceCreateBlocker">
-                                        <p class="typo3-message message-error">
-                                            <f:switch expression="{priceCreateBlocker.code}">
-                                                <f:case value="invalidPrice"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
-                                                <f:case value="missingPrice"><f:translate key="{lll}priceCreate.error.missingPrice"/></f:case>
-                                                <f:case value="negativePrice"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
-                                                <f:case value="tooManyDecimals"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
-                                                <f:case value="labelTooLong"><f:translate key="{lll}priceCreate.error.labelTooLong"/></f:case>
-                                                <f:case value="variantRequired"><f:translate key="{lll}priceCreate.error.variantRequired"/></f:case>
-                                                <f:case value="duplicateVariant"><f:translate key="{lll}priceCreate.error.duplicateVariant"/></f:case>
-                                                <f:case value="simplePriceMustBecomeVariantFirst"><f:translate key="{lll}priceCreate.error.simplePriceMustBecomeVariantFirst"/></f:case>
-                                                <f:case value="existingVariantSetInvalid"><f:translate key="{lll}priceCreate.error.existingVariantSetInvalid"/></f:case>
-                                                <f:case value="sortingOverflow"><f:translate key="{lll}priceCreate.error.sortingOverflow"/></f:case>
-                                                <f:case value="inaccessiblePlacement"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="wrongMenu"><f:translate key="{lll}priceCreate.error.wrongMenu"/></f:case>
-                                                <f:case value="wrongPid"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="translatedPlacement"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="translatedMenu"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="translatedCategory"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="translatedItem"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="brokenCategory"><f:translate key="{lll}priceCreate.error.brokenCategory"/></f:case>
-                                                <f:case value="missingItem"><f:translate key="{lll}priceCreate.error.missingItem"/></f:case>
-                                                <f:case value="missingPublicUuid"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
-                                                <f:case value="fieldModifyDenied"><f:translate key="{lll}priceCreate.error.fieldModifyDenied"/></f:case>
-                                                <f:case value="tablesModifyDenied"><f:translate key="{lll}priceCreate.error.tablesModifyDenied"/></f:case>
-                                                <f:case value="nonLiveWorkspace"><f:translate key="{lll}priceCreate.error.nonLiveWorkspace"/></f:case>
-                                                <f:case value="pageContentEditDenied"><f:translate key="{lll}priceCreate.error.pageContentEditDenied"/></f:case>
-                                                <f:defaultCase><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:defaultCase>
-                                            </f:switch>
-                                        </p>
-                                    </f:for>
+                                    <div class="arp-editor-blocker" role="alert" aria-live="polite" data-arp-price-create-blocker="1">
+                                        <span class="arp-editor-blocker__icon" aria-hidden="true">
+                                            <core:icon identifier="status-dialog-warning" size="small"/>
+                                        </span>
+                                        <div class="arp-editor-blocker__content">
+                                            <p class="arp-editor-blocker__heading"><f:translate key="{lll}priceCreate.blocker.heading"/></p>
+                                            <f:for each="{priceCreate.blockers}" as="priceCreateBlocker">
+                                                <p class="arp-editor-blocker__body">
+                                                    <f:switch expression="{priceCreateBlocker.code}">
+                                                        <f:case value="invalidPrice"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
+                                                        <f:case value="missingPrice"><f:translate key="{lll}priceCreate.error.missingPrice"/></f:case>
+                                                        <f:case value="negativePrice"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
+                                                        <f:case value="tooManyDecimals"><f:translate key="{lll}priceCreate.error.invalidPrice"/></f:case>
+                                                        <f:case value="labelTooLong"><f:translate key="{lll}priceCreate.error.labelTooLong"/></f:case>
+                                                        <f:case value="variantRequired"><f:translate key="{lll}priceCreate.error.variantRequired"/></f:case>
+                                                        <f:case value="duplicateVariant"><f:translate key="{lll}priceCreate.error.duplicateVariant"/></f:case>
+                                                        <f:case value="simplePriceMustBecomeVariantFirst"><f:translate key="{lll}priceCreate.error.simplePriceMustBecomeVariantFirst"/></f:case>
+                                                        <f:case value="existingVariantSetInvalid"><f:translate key="{lll}priceCreate.error.existingVariantSetInvalid"/></f:case>
+                                                        <f:case value="sortingOverflow"><f:translate key="{lll}priceCreate.error.sortingOverflow"/></f:case>
+                                                        <f:case value="inaccessiblePlacement"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="wrongMenu"><f:translate key="{lll}priceCreate.error.wrongMenu"/></f:case>
+                                                        <f:case value="wrongPid"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="translatedPlacement"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="translatedMenu"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="translatedCategory"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="translatedItem"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="brokenCategory"><f:translate key="{lll}priceCreate.error.brokenCategory"/></f:case>
+                                                        <f:case value="missingItem"><f:translate key="{lll}priceCreate.error.missingItem"/></f:case>
+                                                        <f:case value="missingPublicUuid"><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:case>
+                                                        <f:case value="fieldModifyDenied"><f:translate key="{lll}priceCreate.error.fieldModifyDenied"/></f:case>
+                                                        <f:case value="tablesModifyDenied"><f:translate key="{lll}priceCreate.error.tablesModifyDenied"/></f:case>
+                                                        <f:case value="nonLiveWorkspace"><f:translate key="{lll}priceCreate.error.nonLiveWorkspace"/></f:case>
+                                                        <f:case value="pageContentEditDenied"><f:translate key="{lll}priceCreate.error.pageContentEditDenied"/></f:case>
+                                                        <f:defaultCase><f:translate key="{lll}priceCreate.error.inaccessiblePlacement"/></f:defaultCase>
+                                                    </f:switch>
+                                                </p>
+                                            </f:for>
+                                        </div>
+                                    </div>
                                 </f:if>
 
                                 <f:if condition="{priceCreate.context}">
