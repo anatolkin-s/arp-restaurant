@@ -73,9 +73,9 @@ assertTrue(
 );
 assertTrue(
     str_contains($xlf, 'id="priceVisibility.entry.visible"')
-    && str_contains($xlf, 'Visible — review price option visibility')
+    && str_contains($xlf, 'Visible — hide price option')
     && str_contains($xlf, 'id="priceVisibility.entry.hidden"')
-    && str_contains($xlf, 'Hidden — review price option visibility'),
+    && str_contains($xlf, 'Hidden — show price option'),
     '2b. tooltip copy is localized, not row clutter'
 );
 assertTrue(

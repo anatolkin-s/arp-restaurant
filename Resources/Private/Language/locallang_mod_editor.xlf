@@ -589,10 +589,10 @@
         <source>After:</source>
       </trans-unit>
       <trans-unit id="priceVisibility.entry.visible">
-        <source>Visible — review price option visibility</source>
+        <source>Visible — hide price option</source>
       </trans-unit>
       <trans-unit id="priceVisibility.entry.hidden">
-        <source>Hidden — review price option visibility</source>
+        <source>Hidden — show price option</source>
       </trans-unit>
       <trans-unit id="priceVisibility.error.invalidCsrf">
         <source>The form token was invalid. Reload and try again.</source>

@@ -1222,7 +1222,7 @@ final class RestaurantEditorController
 
         $context = $load->outcome === 'loaded' ? $load->context : null;
         $submittedVisibility = $context !== null
-            ? ($context->hidden ? 'hidden' : 'visible')
+            ? ($context->hidden ? 'visible' : 'hidden')
             : '';
 
         return new PriceOptionVisibilityPanelView(
