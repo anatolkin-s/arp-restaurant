@@ -15,6 +15,7 @@ require dirname(__DIR__, 2) . '/Classes/Backend/Editor/Bulk/DecimalMinorUnitPars
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/PriceOptionCreateBlocker.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/ExistingPriceOptionSnapshot.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/PriceOptionCreateContext.php';
+require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/PriceOptionCreateFingerprint.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/PriceOptionCreatePlan.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/PriceOptionCreatePreparationResult.php';
 require dirname(__DIR__, 2) . '/Classes/Backend/Editor/PriceCreate/PriceOptionCreatePlanBuilder.php';

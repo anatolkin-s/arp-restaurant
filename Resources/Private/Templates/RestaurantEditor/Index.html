@@ -694,6 +694,8 @@
                                         <input type="hidden" name="menu" value="{priceCreate.menuUid}"/>
                                         <input type="hidden" name="placementUid" value="{priceCreate.context.placementUid}"/>
                                         <input type="hidden" name="priceCreateToken" value="{priceCreate.priceCreateToken}"/>
+                                        <input type="hidden" name="priceCreateApplyToken" value="{priceCreate.priceCreateApplyToken}"/>
+                                        <input type="hidden" name="confirmedFingerprint" value="{priceCreate.review.plan.fingerprint}"/>
 
                                         <p class="arp-editor-price-edit__context">
                                             <span><f:translate key="{lll}priceCreate.context.menu"/> {priceCreate.context.menuTitle}</span>
@@ -734,6 +736,18 @@
                                     </form>
                                 </f:if>
 
+                                <f:if condition="{priceCreate.confirmationWarning} == 'confirmationStale'">
+                                    <div class="arp-editor-stale-warning" role="alert" aria-live="polite" data-arp-price-create-stale="1">
+                                        <span class="arp-editor-stale-warning__icon" aria-hidden="true"><core:icon identifier="status-dialog-warning" size="small"/></span>
+                                        <div class="arp-editor-stale-warning__content">
+                                            <p class="arp-editor-stale-warning__heading"><f:translate key="{lll}priceCreate.confirmationStale.heading"/></p>
+                                            <p class="arp-editor-stale-warning__body"><f:translate key="{lll}priceCreate.confirmationStale.body"/></p>
+                                        </div>
+                                    </div>
+                                </f:if>
+                                <f:if condition="{priceCreate.confirmationWarning} == 'writePreparationBlocked'">
+                                    <p class="typo3-message message-warning"><f:translate key="{lll}priceCreate.writePreparationBlocked"/></p>
+                                </f:if>
                                 <f:if condition="{priceCreate.review} && {priceCreate.review.outcome} == 'createReady' && {priceCreate.review.plan}">
                                     <div class="arp-editor-price-update-card" data-arp-price-create-plan="1">
                                         <p class="arp-editor-price-update-card__heading"><f:translate key="{lll}priceCreate.reviewReady"/></p>
@@ -756,7 +770,15 @@
                                             </p>
                                         </div>
                                         <p class="arp-editor-price-update-card__footer" data-arp-price-create-scope="1"><f:translate key="{lll}priceCreate.scope"/></p>
-                                        <p class="arp-editor-note"><f:translate key="{lll}priceCreate.savingNotAvailable"/></p>
+                                        <p class="arp-editor-note"><f:translate key="{lll}priceCreate.parentUnchanged"/></p>
+                                        <p class="arp-editor-draft-actions">
+                                            <button type="submit" form="arp-price-create-form" name="priceOptionCreateApply" value="1" class="btn btn-primary" data-arp-price-create-save="1">
+                                                <f:if condition="{priceCreate.confirmationWarning} == 'confirmationStale'">
+                                                    <f:then><f:translate key="{lll}priceCreate.saveRefreshed"/></f:then>
+                                                    <f:else><f:translate key="{lll}priceCreate.save"/></f:else>
+                                                </f:if>
+                                            </button>
+                                        </p>
                                     </div>
                                 </f:if>
                             </section>

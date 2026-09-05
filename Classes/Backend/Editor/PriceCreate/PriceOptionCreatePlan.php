@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate;
 
 /**
- * Review-only plan for creating one PriceOption under an existing Placement.
+ * Pure review/confirmation plan for one PriceOption under an existing Placement.
  * Does not mint uid, public_uuid, crdate, or tstamp for the future row.
  *
  * @param list<ExistingPriceOptionSnapshot> $existingPriceOptions
  */
 final readonly class PriceOptionCreatePlan
 {
+    public string $fingerprint;
     /**
      * @param list<ExistingPriceOptionSnapshot> $existingPriceOptions
      */
@@ -37,5 +38,7 @@ final readonly class PriceOptionCreatePlan
         public string $formattedAmount,
         public int $plannedSorting,
         public array $existingPriceOptions,
-    ) {}
+    ) {
+        $this->fingerprint = PriceOptionCreateFingerprint::fromPlan($this);
+    }
 }

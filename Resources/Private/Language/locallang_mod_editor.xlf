@@ -700,11 +700,22 @@
         <source>(no variant)</source>
       </trans-unit>
       <trans-unit id="priceCreate.scope">
-        <source>This will create one PriceOption under the existing Placement.</source>
+        <source>Saving will create one PriceOption under the existing Placement.</source>
       </trans-unit>
-      <trans-unit id="priceCreate.savingNotAvailable">
-        <source>Saving is not available in this step.</source>
+      <trans-unit id="priceCreate.parentUnchanged">
+        <source>The existing Placement itself will not be changed.</source>
       </trans-unit>
+      <trans-unit id="priceCreate.save"><source>Save price option</source></trans-unit>
+      <trans-unit id="priceCreate.saveRefreshed"><source>Save refreshed price option</source></trans-unit>
+      <trans-unit id="priceCreate.confirmationStale.heading"><source>PRICE OPTION ADDITION CHANGED — NOTHING WAS WRITTEN</source></trans-unit>
+      <trans-unit id="priceCreate.confirmationStale.body"><source>The Placement or requested price option changed since review. Review the refreshed addition before saving again.</source></trans-unit>
+      <trans-unit id="priceCreate.writePreparationBlocked"><source>The addition could not be prepared for saving. Nothing was written. Review the addition before saving again.</source></trans-unit>
+      <trans-unit id="priceCreate.flash.createdTitle"><source>Price option added</source></trans-unit>
+      <trans-unit id="priceCreate.flash.created"><source>The new price option was saved.</source></trans-unit>
+      <trans-unit id="priceCreate.flash.partialTitle"><source>Price option save needs attention</source></trans-unit>
+      <trans-unit id="priceCreate.flash.partial"><source>TYPO3 attempted the create, but verification was not fully clean. Review the saved records before trying again.</source></trans-unit>
+      <trans-unit id="priceCreate.flash.failedTitle"><source>Price option was not added</source></trans-unit>
+      <trans-unit id="priceCreate.flash.failed"><source>TYPO3 could not verify the new price option.</source></trans-unit>
       <trans-unit id="priceCreate.error.invalidCsrf">
         <source>The form token was invalid. Reload and try again.</source>
       </trans-unit>

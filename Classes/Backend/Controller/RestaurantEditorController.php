@@ -25,6 +25,8 @@ use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePanelVie
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePlanBuilder;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\PriceOptionCreatePreparationResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\RestaurantPriceOptionCreateReader;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\Write\RestaurantPriceOptionCreateWriter;
+use Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate\Write\PriceOptionCreateExecutionResult;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\PriceOptionEditBlocker;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\PriceOptionEditPanelView;
 use Anatolkin\ArpRestaurant\Backend\Editor\PriceEdit\PriceOptionUpdatePlanBuilder;
@@ -74,6 +76,7 @@ final class RestaurantEditorController
     private const PRICE_VISIBILITY_REVIEW_ACTION = 'priceOptionVisibilityReview';
     private const PRICE_VISIBILITY_APPLY_ACTION = 'priceOptionVisibilityApply';
     private const PRICE_CREATE_REVIEW_ACTION = 'priceOptionCreateReview';
+    private const PRICE_CREATE_APPLY_ACTION = 'priceOptionCreateApply';
     private const FINGERPRINT_PATTERN = '/^[0-9a-f]{64}$/';
 
     public function __construct(
@@ -100,6 +103,7 @@ final class RestaurantEditorController
         private readonly RestaurantPriceOptionVisibilityWriter $priceOptionVisibilityWriter,
         private readonly RestaurantPriceOptionCreateReader $priceOptionCreateReader,
         private readonly PriceOptionCreatePlanBuilder $priceOptionCreatePlanBuilder,
+        private readonly RestaurantPriceOptionCreateWriter $priceOptionCreateWriter,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -179,6 +183,12 @@ final class RestaurantEditorController
             $visibilityReviewState = $visibilityHandled;
         } elseif (is_array($body) && isset($body['priceOptionVisibilityReview'])) {
             $visibilityReviewState = $this->processPriceOptionVisibilityReview($request, $pid, $page, $backendUser);
+        } elseif (is_array($body) && isset($body['priceOptionCreateApply'])) {
+            $createHandled = $this->processPriceOptionCreateApply($request, $pid, $page, $backendUser, $languageService);
+            if ($createHandled instanceof RedirectResponse) {
+                return $createHandled;
+            }
+            $priceCreateReviewState = $createHandled;
         } elseif (is_array($body) && isset($body['priceOptionCreateReview'])) {
             $priceCreateReviewState = $this->processPriceOptionCreateReview($request, $pid, $page, $backendUser);
         }
@@ -1413,6 +1423,7 @@ final class RestaurantEditorController
     ): PriceOptionCreatePanelView {
         $formProtection = $this->formProtectionFactory->createFromRequest($request);
         $priceCreateToken = $formProtection->generateToken(self::BULK_FORM, self::PRICE_CREATE_REVIEW_ACTION);
+        $priceCreateApplyToken = $formProtection->generateToken(self::BULK_FORM, self::PRICE_CREATE_APPLY_ACTION);
         $formAction = (string)$this->uriBuilder->buildUriFromRoute(
             'web_arp_restaurant_editor',
             ['id' => $pid, 'menu' => $menuUid]
@@ -1426,6 +1437,7 @@ final class RestaurantEditorController
             return new PriceOptionCreatePanelView(
                 formAction: $formAction,
                 priceCreateToken: $priceCreateToken,
+                priceCreateApplyToken: $priceCreateApplyToken,
                 pid: $pid,
                 menuUid: $menuUid > 0 ? $menuUid : $reviewState['menuUid'],
                 placementUid: $reviewState['placementUid'],
@@ -1435,6 +1447,7 @@ final class RestaurantEditorController
                 submittedPrice: $reviewState['submittedPrice'],
                 requestError: $reviewState['requestError'],
                 blockers: $reviewState['blockers'],
+                confirmationWarning: $reviewState['confirmationWarning'] ?? '',
                 cancelUrl: $cancelUrl,
             );
         }
@@ -1444,6 +1457,7 @@ final class RestaurantEditorController
             return new PriceOptionCreatePanelView(
                 formAction: $formAction,
                 priceCreateToken: $priceCreateToken,
+                priceCreateApplyToken: $priceCreateApplyToken,
                 pid: $pid,
                 menuUid: $menuUid,
                 placementUid: 0,
@@ -1462,6 +1476,7 @@ final class RestaurantEditorController
             return new PriceOptionCreatePanelView(
                 formAction: $formAction,
                 priceCreateToken: $priceCreateToken,
+                priceCreateApplyToken: $priceCreateApplyToken,
                 pid: $pid,
                 menuUid: $menuUid,
                 placementUid: $placementUid,
@@ -1488,6 +1503,7 @@ final class RestaurantEditorController
         return new PriceOptionCreatePanelView(
             formAction: $formAction,
             priceCreateToken: $priceCreateToken,
+            priceCreateApplyToken: $priceCreateApplyToken,
             pid: $pid,
             menuUid: $menuUid,
             placementUid: $placementUid,
@@ -1713,6 +1729,94 @@ final class RestaurantEditorController
             $itemCandidates,
             $categoryCandidates,
         );
+    }
+
+    /** Fresh confirmation gate; only the dedicated writer may persist. */
+    private function processPriceOptionCreateApply(
+        ServerRequestInterface $request,
+        int $pid,
+        array $page,
+        BackendUserAuthentication $backendUser,
+        LanguageService $languageService,
+    ): RedirectResponse|array {
+        $state = [
+            'placementUid' => 0, 'menuUid' => 0, 'submittedLabel' => '', 'submittedPrice' => '',
+            'requestError' => '', 'blockers' => [], 'review' => null, 'context' => null, 'confirmationWarning' => '',
+        ];
+        $body = $request->getParsedBody();
+        if (!is_array($body)) {
+            $state['requestError'] = 'invalidCsrf';
+            return $state;
+        }
+        $formProtection = $this->formProtectionFactory->createFromRequest($request);
+        $token = is_string($body['priceCreateApplyToken'] ?? null) ? $body['priceCreateApplyToken'] : '';
+        if (!$formProtection->validateToken($token, self::BULK_FORM, self::PRICE_CREATE_APPLY_ACTION)) {
+            $state['requestError'] = 'invalidCsrf';
+            return $state;
+        }
+        $placementUid = MathUtility::canBeInterpretedAsInteger($body['placementUid'] ?? null) ? (int)$body['placementUid'] : 0;
+        $menuUid = MathUtility::canBeInterpretedAsInteger($body['menu'] ?? null) ? (int)$body['menu'] : 0;
+        $label = is_string($body['label'] ?? null) ? $body['label'] : '';
+        $price = is_string($body['price'] ?? null) ? $body['price'] : '';
+        $state = array_replace($state, [
+            'placementUid' => $placementUid, 'menuUid' => $menuUid, 'submittedLabel' => $label, 'submittedPrice' => $price,
+        ]);
+        $permissionBlocker = $this->accessGuard->priceOptionCreatePermissionBlocker($page, $backendUser);
+        if ($permissionBlocker !== '') {
+            $state['blockers'] = [new PriceOptionCreateBlocker($permissionBlocker)];
+            return $state;
+        }
+        $load = $this->priceOptionCreateReader->load(
+            $pid, $menuUid, $placementUid, $backendUser,
+            new BackendRecordEditUrlBuilder($this->uriBuilder, $request),
+        );
+        if ($load->outcome !== 'loaded' || $load->context === null) {
+            $state['blockers'] = $load->blockers !== [] ? $load->blockers : [new PriceOptionCreateBlocker('inaccessiblePlacement')];
+            return $state;
+        }
+        $review = $this->priceOptionCreatePlanBuilder->prepare($load->context, $label, $price);
+        $state['context'] = $load->context;
+        $state['review'] = $review;
+        if ($review->outcome !== 'createReady' || $review->plan === null) {
+            $state['blockers'] = $review->blockers !== [] ? $review->blockers : [new PriceOptionCreateBlocker('inaccessiblePlacement')];
+            return $state;
+        }
+        $confirmedFingerprint = is_string($body['confirmedFingerprint'] ?? null) ? $body['confirmedFingerprint'] : '';
+        if (strlen($confirmedFingerprint) !== 64 || preg_match(self::FINGERPRINT_PATTERN, $confirmedFingerprint) !== 1) {
+            $state['confirmationWarning'] = 'writePreparationBlocked';
+            return $state;
+        }
+        if (!hash_equals($review->plan->fingerprint, $confirmedFingerprint)) {
+            $state['confirmationWarning'] = 'confirmationStale';
+            return $state;
+        }
+        $execution = $this->priceOptionCreateWriter->execute($review->plan, $backendUser);
+        if (!$execution->dataHandlerAttempted) {
+            $state['confirmationWarning'] = 'writePreparationBlocked';
+            return $state;
+        }
+        $this->enqueuePriceCreateFlash($execution, $languageService);
+        $redirectUri = (string)$this->uriBuilder->buildUriFromRoute(
+            'web_arp_restaurant_editor',
+            ['id' => $pid, 'menu' => $menuUid, 'priceOptionCreate' => $placementUid],
+        );
+
+        return new RedirectResponse($redirectUri, 303);
+    }
+
+    private function enqueuePriceCreateFlash(PriceOptionCreateExecutionResult $execution, LanguageService $languageService): void
+    {
+        [$key, $severity] = match ($execution->outcome) {
+            'created' => ['created', ContextualFeedbackSeverity::OK],
+            'partialFailure' => ['partial', ContextualFeedbackSeverity::WARNING],
+            default => ['failed', ContextualFeedbackSeverity::ERROR],
+        };
+        $this->flashMessageService->getMessageQueueByIdentifier()->enqueue(new FlashMessage(
+            $languageService->sL(self::LLL . 'priceCreate.flash.' . $key),
+            $languageService->sL(self::LLL . 'priceCreate.flash.' . $key . 'Title'),
+            $severity,
+            true,
+        ));
     }
 
     private function enqueuePriceUpdateFlash(

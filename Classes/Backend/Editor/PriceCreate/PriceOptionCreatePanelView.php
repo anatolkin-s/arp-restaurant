@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Anatolkin\ArpRestaurant\Backend\Editor\PriceCreate;
 
 /**
- * Fluid-facing add-PriceOption review panel. No Save / Apply.
+ * Fluid-facing add-PriceOption review and confirmation panel.
  *
  * @param list<PriceOptionCreateBlocker> $blockers
  */
@@ -26,6 +26,8 @@ final readonly class PriceOptionCreatePanelView
         public string $requestError,
         public array $blockers,
         public string $cancelUrl,
+        public string $priceCreateApplyToken = '',
+        public string $confirmationWarning = '',
     ) {
         $this->hasPanel = $this->placementUid > 0
             || $this->context !== null

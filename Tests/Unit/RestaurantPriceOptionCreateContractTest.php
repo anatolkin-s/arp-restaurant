@@ -36,13 +36,12 @@ foreach (glob($createDir . '/*.php') ?: [] as $file) {
 assertTrue($createBlob !== '', 'PriceCreate package extractable');
 assertTrue(
     is_dir($createDir)
-    && !is_dir($createDir . '/Write')
     && !str_contains($createBlob, 'DataHandler')
     && !str_contains($createBlob, 'process_datamap')
     && !str_contains($createBlob, 'process_cmdmap')
     && !preg_match('/\b(insert|update|delete|executeStatement)\s*\(/i', $createBlob)
     && !preg_match('/\b(INSERT|UPDATE|DELETE)\b/', $createBlob),
-    'I/no-write: PriceCreate package has no Write/ writer / mutation APIs'
+    'I/no-write: PriceCreate review classes have no mutation APIs'
 );
 
 assertTrue(
@@ -58,9 +57,9 @@ assertTrue(
     && str_contains($controller, 'priceCreateToken')
     && str_contains($template, 'name="priceOptionCreateReview"')
     && str_contains($template, 'name="priceCreateToken"')
-    && !str_contains($template, 'name="priceCreateApplyToken"')
-    && !str_contains($template, 'priceOptionCreateApply'),
-    'I. dedicated review action/token; no create Apply token'
+    && str_contains($template, 'name="priceCreateApplyToken"')
+    && str_contains($template, 'priceOptionCreateApply'),
+    'I. dedicated review action/token remains separate from Apply'
 );
 
 $reviewMethod = '';
@@ -166,20 +165,19 @@ assertTrue(
 );
 assertTrue(
     str_contains($createPanel, 'name="priceOptionCreateReview"')
-    && !str_contains($createPanel, 'priceOptionCreateApply')
-    && !str_contains($createPanel, 'data-arp-price-create-save')
-    && !str_contains($createPanel, 'btn-primary'),
-    'K. Review addition only; no Save button for createReady'
+    && str_contains($createPanel, 'form="arp-price-create-form" name="priceOptionCreateApply"')
+    && str_contains($createPanel, 'data-arp-price-create-save'),
+    'K. Review and confirmed Save use the same authoritative form'
 );
 assertTrue(
     str_contains($xlf, 'PRICE OPTION CREATE · READY')
     && str_contains($xlf, 'Nothing has been written yet.')
-    && str_contains($xlf, 'This will create one PriceOption under the existing Placement.')
-    && str_contains($xlf, 'Saving is not available in this step.')
+    && str_contains($xlf, 'Saving will create one PriceOption under the existing Placement.')
+    && !str_contains($xlf, 'id="priceCreate.savingNotAvailable"')
     && str_contains($createPanel, 'priceCreate.nothingWritten')
     && str_contains($createPanel, 'priceCreate.scope')
-    && str_contains($createPanel, 'priceCreate.savingNotAvailable'),
-    'K. READY says nothing written; one PriceOption under existing Placement; no save'
+    && str_contains($createPanel, 'priceCreate.parentUnchanged'),
+    'K. READY says nothing written yet; one PriceOption under existing Placement'
 );
 assertTrue(
     str_contains($createPanel, 'priceCreate.openPlacementRecord')
@@ -256,6 +254,75 @@ assertTrue(
     && str_contains($blockerCss, 'margin: 0 0 1rem')
     && preg_match('/\.arp-editor-blocker__heading \{[^}]*font-weight: 700;[^}]*text-transform: uppercase;/s', $css) === 1,
     'L. dedicated warning card has tinted background, strong border, spacing and bold uppercase heading'
+);
+
+$applyMethod = '';
+if (preg_match('/function processPriceOptionCreateApply\(.*?(?=    private function enqueuePriceCreateFlash)/s', $controller, $applyMatch) === 1) {
+    $applyMethod = $applyMatch[0];
+}
+$steps = ['getParsedBody', 'validateToken', "\$body['placementUid']", 'priceOptionCreatePermissionBlocker',
+    'priceOptionCreateReader->load', 'priceOptionCreatePlanBuilder->prepare', 'preg_match', 'hash_equals',
+    'priceOptionCreateWriter->execute', '!$execution->dataHandlerAttempted', 'enqueuePriceCreateFlash', 'new RedirectResponse'];
+$previous = -1;
+$ordered = true;
+foreach ($steps as $step) {
+    $position = strpos($applyMethod, $step);
+    $ordered = $ordered && $position !== false && $position > $previous;
+    $previous = $position;
+}
+assertTrue($applyMethod !== '' && $ordered, 'M. Apply order: CSRF, live intent, permission, graph, plan, confirmation, writer, attempt gate, flash, PRG');
+assertTrue(
+    str_contains($controller, "PRICE_CREATE_APPLY_ACTION = 'priceOptionCreateApply'")
+    && str_contains($applyMethod, "\$body['priceCreateApplyToken']")
+    && !str_contains($applyMethod, "\$body['priceCreateToken']")
+    && substr_count($applyMethod, 'priceOptionCreateWriter->execute') === 1
+    && str_contains($applyMethod, "\$state['confirmationWarning'] = 'confirmationStale'")
+    && str_contains($applyMethod, "\$state['confirmationWarning'] = 'writePreparationBlocked'")
+    && !str_contains($applyMethod, 'strtolower')
+    && !str_contains($applyMethod, 'noChanges'),
+    'M. dedicated Apply token, one writer call and strict confirmation failure states'
+);
+$ignored = true;
+foreach (['plannedSorting', 'public_uuid', 'tstamp', 'category', 'item', 'existingPriceOptions'] as $field) {
+    $ignored = $ignored && !str_contains($applyMethod, "\$body['" . $field . "']");
+}
+assertTrue($ignored && str_contains($applyMethod, "\$body['label']") && str_contains($applyMethod, "\$body['price']"), 'M. live values used; posted authority ignored');
+assertTrue(
+    str_contains($applyMethod, "['id' => \$pid, 'menu' => \$menuUid, 'priceOptionCreate' => \$placementUid]")
+    && str_contains($applyMethod, 'new RedirectResponse($redirectUri, 303)')
+    && !str_contains($applyMethod, '#'),
+    'M. attempted outcomes PRG to same Placement without fragment'
+);
+$form = '';
+if (preg_match('/<form\s+id="arp-price-create-form".*?<\/form>/s', $createPanel, $formMatch) === 1) {
+    $form = $formMatch[0];
+}
+assertTrue(
+    substr_count($form, 'name="label"') === 1 && substr_count($form, 'name="price"') === 1
+    && str_contains($form, 'name="priceCreateApplyToken"') && str_contains($form, 'name="confirmedFingerprint"')
+    && !preg_match('/<input[^>]*type="hidden"[^>]*name="(?:label|price)"/', $form)
+    && str_contains($createPanel, 'form="arp-price-create-form" name="priceOptionCreateApply"')
+    && !str_contains($blockerCard, 'priceOptionCreateApply'),
+    'M. Save submits live fields from exactly one authoritative form; blockers contain no Save'
+);
+assertTrue(
+    str_contains($createPanel, 'data-arp-price-create-stale="1"')
+    && str_contains($createPanel, 'priceCreate.confirmationStale.heading')
+    && str_contains($createPanel, 'priceCreate.saveRefreshed')
+    && strpos($createPanel, 'priceOptionCreateApply') > strpos($createPanel, "== 'createReady'")
+    && !str_contains($createPanel, 'priceCreate.savingNotAvailable'),
+    'M. Save only inside READY gate; stale warning and refreshed Save available'
+);
+$writeBlob = '';
+foreach (glob($createDir . '/Write/*.php') ?: [] as $file) { $writeBlob .= file_get_contents($file); }
+$writer = file_get_contents($createDir . '/Write/RestaurantPriceOptionCreateWriter.php');
+assertTrue(
+    substr_count($writeBlob, '->process_datamap()') === 1
+    && str_contains($writer, '$dataHandler->start($map->dataMap, [], $backendUser)')
+    && preg_match('/\$dataHandlerAttempted = true;\s*\$dataHandler->process_datamap\(\);/', $writer) === 1
+    && str_contains($writeBlob, 'substNEWwithIDs_table')
+    && !preg_match('/process_cmdmap|executeStatement|->(?:insert|update|delete|transactional|beginTransaction|rollBack)\s*\(/', $writeBlob),
+    'M. sole DataHandler attempt, captured substitutions, no SQL mutation or transaction APIs'
 );
 
 echo $failures === 0
