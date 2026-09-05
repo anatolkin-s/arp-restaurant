@@ -160,8 +160,9 @@ assertTrue(
     substr_count($createPanel, 'id="arp-price-create-form"') === 1
     && substr_count($createPanel, 'name="label"') === 1
     && substr_count($createPanel, 'name="price"') === 1
-    && preg_match('/id="arp-price-create-label"[^>]*maxlength="255"/', $createPanel) === 1,
-    'K. one authoritative form; exactly one Variant and one Price; maxlength 255'
+    && preg_match('/<input\b[^>]*id="arp-price-create-label"[^>]*>/', $createPanel, $variantInput) === 1
+    && !preg_match('/\bmaxlength\s*=/i', $variantInput[0]),
+    'K. one authoritative form; exactly one Variant and one Price; no native maxlength'
 );
 assertTrue(
     str_contains($createPanel, 'name="priceOptionCreateReview"')

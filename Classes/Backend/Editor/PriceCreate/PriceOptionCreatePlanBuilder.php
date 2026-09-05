@@ -91,7 +91,11 @@ final class PriceOptionCreatePlanBuilder
                 ++$blankCount;
                 continue;
             }
-            $namedKeys[] = $this->titleNormalizer->matchKey($existingLabel);
+            $existingKey = $this->titleNormalizer->matchKey($existingLabel);
+            if (in_array($existingKey, $namedKeys, true)) {
+                return 'existingVariantSetInvalid';
+            }
+            $namedKeys[] = $existingKey;
         }
         $namedCount = count($namedKeys);
         if ($blankCount === 0 && $namedCount === 0) {

@@ -150,6 +150,7 @@ Commercial-shape rule:
 
 - A **simple** Placement has exactly one blank-label PriceOption.
 - A **multi-option** Placement has named PriceOptions.
+- An all-named set with duplicate normalized Variant match keys is invalid (`existingVariantSetInvalid`), even when the submitted name is unique.
 - Do **not** create mixed blank + named PriceOptions.
 - Adding a second option to a simple Placement is blocked until the existing blank option is named (via EDITOR-2C2).
 
@@ -158,7 +159,7 @@ Contract:
 - Graph membership is server-authoritative: selected pid → Menu → Category → Placement → Item. Posted `public_uuid` / `tstamp` / parent relations are not authority.
 - Review re-reads the Placement and its default-language PriceOptions. Hidden and scheduled rows remain readable.
 - Permission preflight: live workspace, page CONTENT_EDIT, `tables_modify` PriceOption, non-exclude `label` / `amount` / `placement`. Menu / Category / Item / Placement `tables_modify` is not required. `PriceOption.hidden` is not required; the future row is visible by default.
-- Variant uses `RestaurantTitleNormalizer::cleanDisplayTitle()` / `matchKey()`. Max 255 Unicode code points. Duplicate matching is case/whitespace insensitive; punctuation is kept (`Small` ≠ `Small!`).
+- Variant uses `RestaurantTitleNormalizer::cleanDisplayTitle()` / `matchKey()`. The maximum of 255 Unicode code points is authoritative server-side. Native HTML `maxlength` is intentionally omitted for PriceCreate because it counts UTF-16 code units. Duplicate matching is case/whitespace insensitive; punctuation is kept (`Small` ≠ `Small!`).
 - Price uses `DecimalMinorUnitParser` (integer minor units) and `MinorUnitMoneyFormatter` for READY display.
 - Planned sorting: step 256; `max(existing sorting) + 256`, or 256 when none exist. Overflow is `sortingOverflow`. 2D2 must recompute sorting fresh before write.
 - Outcomes: `createReady` \| `preparationBlocked`. There is no `noChanges` outcome for a creation request.

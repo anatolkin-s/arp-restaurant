@@ -129,6 +129,15 @@ assertTrue(($dupSpace->blockers[0]->code ?? '') === 'duplicateVariant', 'D. " Sm
 $bang = $builder->prepare($namedExisting, 'Small!', '7.99');
 assertTrue($bang->outcome === 'createReady' && $bang->plan?->label === 'Small!', 'D. Small! => allowed');
 
+foreach (['small', ' Small ', "\u{00A0}Small\u{2003}"] as $duplicateLabel) {
+    $duplicated = createContext([snap('Small', 256, 40), snap($duplicateLabel, 512, 41)]);
+    $result = $builder->prepare($duplicated, 'Family', '7.99');
+    assertTrue(($result->blockers[0]->code ?? '') === 'existingVariantSetInvalid', 'D. existing case/Unicode-whitespace duplicate blocks unique addition');
+}
+
+$punctuationDistinct = createContext([snap('Small', 256, 40), snap('Small!', 512, 41)]);
+assertTrue($builder->prepare($punctuationDistinct, 'Family', '7.99')->outcome === 'createReady', 'D. existing punctuation-distinct names allow addition');
+
 $simple = createContext([snap('', 256, 40)]);
 $simpleBlank = $builder->prepare($simple, '', '9.00');
 assertTrue(($simpleBlank->blockers[0]->code ?? '') === 'simplePriceMustBecomeVariantFirst', 'E. new blank against simple price => blocked');
@@ -150,6 +159,15 @@ assertTrue($ok255->outcome === 'createReady' && $ok255->plan?->label === $ascii2
 $ascii256 = str_repeat('a', 256);
 $blocked256 = $builder->prepare(createContext(), $ascii256, '8.00');
 assertTrue(($blocked256->blockers[0]->code ?? '') === 'labelTooLong', 'G. 256 blocked');
+
+$supplementary255 = str_repeat("\u{1F600}", 255);
+$supplementaryReady = $builder->prepare(createContext(), $supplementary255, '8.00');
+assertTrue(
+    $supplementaryReady->outcome === 'createReady' && $supplementaryReady->plan?->label === $supplementary255,
+    'G. 255 supplementary Unicode code points accepted intact'
+);
+$supplementary256 = $builder->prepare(createContext(), str_repeat("\u{1F600}", 256), '8.00');
+assertTrue(($supplementary256->blockers[0]->code ?? '') === 'labelTooLong', 'G. 256 supplementary Unicode code points blocked');
 
 $twentyThree = $builder->prepare(createContext(), 'Family', '23');
 assertTrue($twentyThree->plan?->amountMinor === 2300, 'G. 23 => 2300');
